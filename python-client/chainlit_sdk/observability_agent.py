@@ -4,15 +4,21 @@ import uuid
 from contextvars import ContextVar
 from typing import Any
 
-from .event_processor import AbstractEventProcessor
+from .event_processor import EventProcessor
 from .wrappers import async_wrapper, sync_wrapper
 
 active_spans_var = ContextVar("active_spans", default=[])
 
 
 class Span:
-    def __init__(self, name="", type=None, processor: AbstractEventProcessor = None):
-        if self.processor is None:
+    def __init__(
+        self,
+        name="",
+        type=None,
+        thread_id=None,
+        processor: EventProcessor = None,
+    ):
+        if processor is None:
             raise Exception("Span must be initialized with a processor.")
 
         self.id = uuid.uuid4()
@@ -27,7 +33,11 @@ class Span:
 
         active_spans = active_spans_var.get()
         if active_spans:
-            self.parent = active_spans[-1].id
+            parent_span = active_spans[-1]
+            self.parent = parent_span.id
+            self.thread_id = parent_span.thread_id
+        else:
+            self.thread_id = thread_id
         active_spans.append(self)
         active_spans_var.set(active_spans)
 
@@ -40,7 +50,7 @@ class Span:
         self.duration = end_time - self.start
         active_spans = active_spans_var.get()
         active_spans.pop()
-        self.processor.add_event(json.dumps(self.to_dict(), indent=2))
+        self.processor.add_event(self.to_dict())
         active_spans_var.set(active_spans)
 
     def to_dict(self):
@@ -53,18 +63,22 @@ class Span:
             "end": self.end,
             "duration": self.duration,
             "type": self.type,
+            "thread_id": str(self.thread_id),
         }
 
 
 class SpanContextManager:
-    def __init__(self, agent, name="", type=None):
+    def __init__(self, agent, name="", type=None, thread_id=None):
         self.agent = agent
         self.span_name = name
         self.span_type = type
         self.span = None
+        self.thread_id = thread_id
 
     def __enter__(self):
-        self.span = self.agent.create_span(name=self.span_name, type=self.span_type)
+        self.span = self.agent.create_span(
+            name=self.span_name, type=self.span_type, thread_id=self.thread_id
+        )
         return self.span
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -73,14 +87,14 @@ class SpanContextManager:
 
 class ObservabilityAgent:
     _instance = None
-    processor: AbstractEventProcessor = None
+    processor: EventProcessor = None
 
-    def __new__(cls, processor: AbstractEventProcessor = None):
+    def __new__(cls, processor: EventProcessor = None):
         if not cls._instance:
             cls._instance = super(ObservabilityAgent, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, processor: AbstractEventProcessor = None):
+    def __init__(self, processor: EventProcessor = None):
         if self.processor is None:
             self.processor = processor
         elif processor is not None:
@@ -98,9 +112,15 @@ class ObservabilityAgent:
 
         return after
 
-    def agent(self, func):
+    def run(self, func):
         return sync_wrapper(
-            before_func=self.before_wrapper(type="agent"),
+            before_func=self.before_wrapper(type="run"),
+            after_func=self.after_wrapper(),
+        )(func)
+
+    def message(self, func):
+        return sync_wrapper(
+            before_func=self.before_wrapper(type="message"),
             after_func=self.after_wrapper(),
         )(func)
 
@@ -110,9 +130,15 @@ class ObservabilityAgent:
             after_func=self.after_wrapper(),
         )(func)
 
-    def a_agent(self, func):
+    def a_run(self, func):
         return async_wrapper(
-            before_func=self.before_wrapper(type="agent"),
+            before_func=self.before_wrapper(type="run"),
+            after_func=self.after_wrapper(),
+        )(func)
+
+    def a_message(self, func):
+        return async_wrapper(
+            before_func=self.before_wrapper(type="message"),
             after_func=self.after_wrapper(),
         )(func)
 
@@ -122,14 +148,14 @@ class ObservabilityAgent:
             after_func=self.after_wrapper(),
         )(func)
 
-    def create_span(self, name="", type=None):
+    def create_span(self, name="", type=None, thread_id=None):
         if self.processor is None:
             raise Exception("ObservabilityAgent not initialized.")
-        span = Span(name=name, type=type, processor=self.processor)
+        span = Span(name=name, type=type, thread_id=thread_id, processor=self.processor)
         return span
 
-    def span(self, name="", type=None):
-        return SpanContextManager(self, name=name, type=type)
+    def span(self, name="", type=None, thread_id=None):
+        return SpanContextManager(self, name=name, type=type, thread_id=thread_id)
 
     def set_span_parameter(self, key, value):
         active_spans = active_spans_var.get()

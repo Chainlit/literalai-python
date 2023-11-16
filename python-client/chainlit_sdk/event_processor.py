@@ -2,20 +2,17 @@ import asyncio
 import json
 import queue
 import threading
-from typing import Any
+from typing import Dict
+import os
+
+from chainlit_sdk.api import API
 
 
-class AbstractEventProcessor:
-    def add_event(self, event_json: str):
-        raise NotImplementedError
-
-    async def a_add_events(self, event_json: str):
-        raise NotImplementedError
-
-
-class EventProcessor(AbstractEventProcessor):
-    def __init__(self, batch_size: int = 1):
+class EventProcessor:
+    def __init__(self, api: API = None, project_id: str = None, batch_size: int = 1):
         self.batch_size = batch_size
+        self.project_id = project_id
+        self.api = api
         self.event_queue = queue.Queue()
         self.processing_thread = threading.Thread(
             target=self._process_events, daemon=True
@@ -23,8 +20,7 @@ class EventProcessor(AbstractEventProcessor):
         self.processing_thread.start()
         self.stop_event = threading.Event()
 
-    def add_event(self, event_json: str):
-        event = json.loads(event_json)
+    def add_event(self, event: Dict):
         self.event_queue.put(event)
 
     async def a_add_events(self, event_json: str):
@@ -54,11 +50,11 @@ class EventProcessor(AbstractEventProcessor):
             if self.stop_event.is_set() and self.event_queue.empty():
                 break
 
-    async def _process_batch(self, batch: str):
-        # pretty print the `batch` json string
-        print(f"Processing batch: {json.dumps(batch, indent=2)}")
-        # Simulate processing time
-        await asyncio.sleep(1)
+    async def _process_batch(self, batch):
+        await self.api.send_steps(
+            steps=batch,
+            project_id=self.project_id,
+        )
 
     def wait_until_queue_empty(self):
         self.stop_event.set()

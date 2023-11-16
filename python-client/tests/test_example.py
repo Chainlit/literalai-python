@@ -11,7 +11,7 @@ class TestExample(unittest.IsolatedAsyncioTestCase):
         event_processor = chainlit_sdk.EventProcessor()
         observer = chainlit_sdk.ObservabilityAgent(processor=event_processor)
 
-        @observer.agent
+        @observer.run
         def sync_function():
             observer.set_span_parameter("key", "value")
             return "result"
