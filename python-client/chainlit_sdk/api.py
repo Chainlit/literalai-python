@@ -82,7 +82,9 @@ def query_builder(steps):
 class API:
     def __init__(self):
         self.api_key = os.getenv("SDK_API_KEY")
-        self.endpoint = os.getenv("SDK_ENDPOINT")
+        self.endpoint = os.getenv("SDK_ENDPOINT", "http://localhost:3000/graphql")
+        if self.api_key is None:
+            raise Exception("SDK_API_KEY not set")
 
     async def send_steps(self, steps, project_id):
         query = query_builder(steps)

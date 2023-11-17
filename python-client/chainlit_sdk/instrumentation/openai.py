@@ -10,21 +10,21 @@ agent = ObservabilityAgent()
 
 def before_wrapper():
     def before(context, *args, **kwargs):
-        span = agent.create_span(name=context["original_func"].__name__, type="llm")
-        span.set_parameter("model", kwargs.get("model"))
-        context["span"] = span
+        step = agent.create_step(name=context["original_func"].__name__, type="llm")
+        step.set_parameter("model", kwargs.get("model"))
+        context["step"] = step
 
     return before
 
 
 def after_wrapper():
     def after(result, context, *args, **kwargs):
-        span = context["span"]
-        span.set_parameter("response", result.choices[0].message.content)
-        span.set_parameter("prompt_tokens", result.usage.prompt_tokens)
-        span.set_parameter("completion_tokens", result.usage.completion_tokens)
-        span.set_parameter("total_tokens", result.usage.total_tokens)
-        span.finalize()
+        step = context["step"]
+        step.set_parameter("response", result.choices[0].message.content)
+        step.set_parameter("prompt_tokens", result.usage.prompt_tokens)
+        step.set_parameter("completion_tokens", result.usage.completion_tokens)
+        step.set_parameter("total_tokens", result.usage.total_tokens)
+        step.finalize()
 
     return after
 
