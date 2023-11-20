@@ -49,9 +49,16 @@ class EventProcessor:
                 break
 
     async def _process_batch(self, batch):
-        await self.api.send_steps(
+        res = await self.api.send_steps(
             steps=batch,
         )
+        # simple one-try retry in case of network failure (no retry on graphql errors)
+        if not res:
+            await asyncio.sleep(0.5)
+            await self.api.send_steps(
+                steps=batch,
+            )
+            return
 
     def wait_until_queue_empty(self):
         self.stop_event.set()

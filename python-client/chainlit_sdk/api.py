@@ -15,32 +15,20 @@ def step_type(type):
 
 def serialize_step(event, id):
     metadata = {}
-    # return {
-    #     f"id_{id}": event.get("id"),
-    #     f"traceId_{id}": event.get("thread_id"),
-    #     f"startTime_{id}": event.get("start"),
-    #     f"endTime_{id}": event.get("end"),
-    #     f"operation_{id}": step_type(event.get("type")),
-    #     f"metadata_{id}": metadata,
-    # }
     return {
-        f"id": event.get("id"),
-        f"traceId": event.get("thread_id"),
-        f"startTime": event.get("start"),
-        f"endTime": event.get("end"),
-        f"operation": step_type(event.get("type")),
-        f"metadata": metadata,
+        f"id_{id}": event.get("id"),
+        f"threadId_{id}": event.get("thread_id"),
+        f"startTime_{id}": event.get("start"),
+        f"endTime_{id}": event.get("end"),
+        f"type_{id}": step_type(event.get("type")),
+        f"metadata_{id}": metadata,
     }
 
 
 def variables_builder(steps):
-    # variables = {}
-    # for i in range(len(steps)):
-    #     variables.update(serialize_step(steps[i], i))
-    # return variables
-    variables = []
+    variables = {}
     for i in range(len(steps)):
-        variables.append(serialize_step(steps[i], i))
+        variables.update(serialize_step(steps[i], i))
     return variables
 
 
@@ -48,8 +36,8 @@ def query_variables_builder(steps):
     generated = ""
     for id in range(len(steps)):
         generated += f"""$id_{id}: String!
-        $traceId_{id}: String!
-        $operation_{id}: StepOperation
+        $threadId_{id}: String!
+        $type_{id}: StepType
         $startTime_{id}: DateTime
         $endTime_{id}: DateTime
         $input_{id}: String
@@ -65,10 +53,10 @@ def ingest_steps_builder(steps):
         generated += f"""
       step{id}: ingestStep(
         id: $id_{id}
-        traceId: $traceId_{id}
+        threadId: $threadId_{id}
         startTime: $startTime_{id}
         endTime: $endTime_{id}
-        operation: $operation_{id}
+        type: $type_{id}
         input: $input_{id}
         output: $output_{id}
         metadata: $metadata_{id}
@@ -81,19 +69,11 @@ def ingest_steps_builder(steps):
 
 
 def query_builder(steps):
-    # return f"""
-    # mutation AddStep({query_variables_builder(steps)}) {{
-    #   {ingest_steps_builder(steps)}
-    # }}
-    # """
-    return """
-mutation addSteps($steps: [StepInput!]!) {
-    ingestSteps(steps: $steps) {
-        ok
-        message
-    }
-}
-"""
+    return f"""
+    mutation AddStep({query_variables_builder(steps)}) {{
+      {ingest_steps_builder(steps)}
+    }}
+    """
 
 
 class API:
@@ -116,13 +96,11 @@ class API:
                         "Content-Type": "application/json",
                         "x-api-key": self.api_key,
                     },
+                    timeout=10,
                 )
-
-                print(response)
 
                 return response.json()
             except Exception as e:
-                print(e)
                 return None
 
     async def get_thread(self, id):
@@ -167,6 +145,7 @@ class API:
                         "Content-Type": "application/json",
                         "x-api-key": self.api_key,
                     },
+                    timeout=10,
                 )
 
                 return response.json()
