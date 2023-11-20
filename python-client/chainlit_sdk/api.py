@@ -1,5 +1,4 @@
 import httpx
-import os
 
 
 def step_type(type):
@@ -77,11 +76,13 @@ def query_builder(steps):
 
 
 class API:
-    def __init__(self):
-        self.api_key = os.getenv("SDK_API_KEY")
-        self.endpoint = os.getenv("SDK_ENDPOINT", "http://localhost:3000/graphql")
+    def __init__(self, api_key=None, endpoint=None):
+        self.api_key = api_key
+        self.endpoint = endpoint
         if self.api_key is None:
-            raise Exception("SDK_API_KEY not set")
+            raise Exception("CHAINLIT_API_KEY not set")
+        if self.endpoint is None:
+            raise Exception("CHAINLIT_ENDPOINT not set")
 
     async def send_steps(self, steps):
         query = query_builder(steps)
