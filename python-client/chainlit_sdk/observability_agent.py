@@ -86,21 +86,10 @@ class StepContextManager:
 
 
 class ObservabilityAgent:
-    _instance = None
     processor: EventProcessor = None
 
-    def __new__(cls, processor: EventProcessor = None):
-        if not cls._instance:
-            cls._instance = super(ObservabilityAgent, cls).__new__(cls)
-        return cls._instance
-
     def __init__(self, processor: EventProcessor = None):
-        if self.processor is None:
-            self.processor = processor
-        elif processor is not None:
-            print(
-                "Warning: ObservabilityAgent already initialized. Ignoring new processor."
-            )
+        self.processor = processor
 
     def before_wrapper(self, type=None):
         def before(context, *args, **kwargs):

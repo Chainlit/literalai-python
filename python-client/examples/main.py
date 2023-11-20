@@ -2,7 +2,7 @@ import asyncio
 import json
 import uuid
 
-import chainlit_sdk
+from chainlit_sdk import Chainlit
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -10,8 +10,8 @@ load_dotenv()
 
 client = OpenAI()
 
-sdk = chainlit_sdk.ChainlitSDK(batch_size=2)
-chainlit_sdk.instrument_openai()
+sdk = Chainlit(batch_size=2)
+sdk.instrument_openai()
 
 thread_id = uuid.uuid4()
 
