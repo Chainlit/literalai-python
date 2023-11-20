@@ -10,9 +10,7 @@ load_dotenv()
 
 client = OpenAI()
 
-project_id = "test-Sj7iBawHzKSA"
-
-sdk = chainlit_sdk.ChainlitSDK(project_id=project_id, batch_size=2)
+sdk = chainlit_sdk.ChainlitSDK(batch_size=2)
 chainlit_sdk.instrument_openai()
 
 thread_id = uuid.uuid4()
@@ -56,8 +54,8 @@ sdk.wait_until_queue_empty()
 
 # Get the steps from the API for the demo
 async def main():
-    print("\nSearching for the conversation", thread_id, "...")
-    steps = await sdk.api.get_steps(thread_id=str(thread_id), project_id=project_id)
+    print("\nSearching for the thread", thread_id, "...")
+    steps = await sdk.api.get_thread(id=str(thread_id))
 
     thread = steps
 

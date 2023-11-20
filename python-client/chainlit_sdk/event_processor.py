@@ -9,9 +9,8 @@ from chainlit_sdk.api import API
 
 
 class EventProcessor:
-    def __init__(self, api: API = None, project_id: str = None, batch_size: int = 1):
+    def __init__(self, api: API = None, batch_size: int = 1):
         self.batch_size = batch_size
-        self.project_id = project_id
         self.api = api
         self.event_queue = queue.Queue()
         self.processing_thread = threading.Thread(
@@ -23,8 +22,7 @@ class EventProcessor:
     def add_event(self, event: Dict):
         self.event_queue.put(event)
 
-    async def a_add_events(self, event_json: str):
-        event = json.loads(event_json)
+    async def a_add_events(self, event: Dict):
         await asyncio.to_thread(self.event_queue.put, event)
 
     def _process_events(self):
@@ -53,7 +51,6 @@ class EventProcessor:
     async def _process_batch(self, batch):
         await self.api.send_steps(
             steps=batch,
-            project_id=self.project_id,
         )
 
     def wait_until_queue_empty(self):

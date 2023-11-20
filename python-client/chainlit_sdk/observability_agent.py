@@ -151,7 +151,7 @@ class ObservabilityAgent:
     def create_step(self, name="", type=None, thread_id=None):
         if self.processor is None:
             raise Exception("ObservabilityAgent not initialized.")
-        step = step(name=name, type=type, thread_id=thread_id, processor=self.processor)
+        step = Step(name=name, type=type, thread_id=thread_id, processor=self.processor)
         return step
 
     def step(self, name="", type=None, thread_id=None):
