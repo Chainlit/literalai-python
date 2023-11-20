@@ -98,7 +98,9 @@ class ObservabilityAgent:
         if self.processor is None:
             self.processor = processor
         elif processor is not None:
-            raise Exception("ObservabilityAgent already initialized.")
+            print(
+                "Warning: ObservabilityAgent already initialized. Ignoring new processor."
+            )
 
     def before_wrapper(self, type=None):
         def before(context, *args, **kwargs):
