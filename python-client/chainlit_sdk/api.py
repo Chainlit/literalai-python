@@ -23,6 +23,9 @@ def serialize_step(event, id):
         f"metadata_{id}": metadata,
         f"parentId_{id}": event.get("parent"),
         f"operatorName_{id}": event.get("name"),
+        f"input_{id}": event.get("input"),
+        f"output_{id}": event.get("output"),
+        f"generation_{id}": event.get("generation"),
     }
 
 
@@ -46,6 +49,7 @@ def query_variables_builder(steps):
         $metadata_{id}: Json
         $parentId_{id}: String
         $operatorName_{id}: String
+        $generation_{id}: GenerationPayloadInput
         """
     return generated
 
@@ -65,6 +69,7 @@ def ingest_steps_builder(steps):
         metadata: $metadata_{id}
         parentId: $parentId_{id}
         operatorName: $operatorName_{id}
+        generation: $generation_{id}
       ) {{
         ok
         message
@@ -93,6 +98,7 @@ class API:
     async def send_steps(self, steps):
         query = query_builder(steps)
         variables = variables_builder(steps)
+        print(variables)
 
         async with httpx.AsyncClient() as client:
             try:

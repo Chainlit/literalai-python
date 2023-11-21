@@ -32,6 +32,9 @@ class Step:
         self.duration = None
         self.type = type
         self.processor = processor
+        self.input = None
+        self.output = None
+        self.generation = {}
 
         active_steps = active_steps_var.get()
         if active_steps:
@@ -68,6 +71,9 @@ class Step:
             "duration": self.duration,
             "type": self.type,
             "thread_id": str(self.thread_id),
+            "input": self.input,
+            "output": self.output,
+            "generation": self.generation if self.type == "llm" else None,
         }
 
 

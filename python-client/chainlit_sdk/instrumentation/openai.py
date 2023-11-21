@@ -1,7 +1,9 @@
-from chainlit_sdk.observability_agent import ObservabilityAgent
-from chainlit_sdk.wrappers import sync_wrapper, async_wrapper
+import json
 from importlib import import_module
 from importlib.metadata import version
+
+from chainlit_sdk.observability_agent import ObservabilityAgent
+from chainlit_sdk.wrappers import async_wrapper, sync_wrapper
 from packaging import version as packaging_version
 
 
@@ -12,12 +14,23 @@ def instrument_openai(observer: ObservabilityAgent):
         # openai not installed, no need to patch
         return
 
-    def before_wrapper():
+    is_legacy = packaging_version.parse(version("openai")) < packaging_version.parse(
+        "1.0.0"
+    )
+
+    def before_wrapper(generation_type: str = "COMPLETION"):
         def before(context, *args, **kwargs):
             step = observer.create_step(
                 name=context["original_func"].__name__, type="llm"
             )
-            step.set_parameter("model", kwargs.get("model"))
+            if kwargs.get("messages"):
+                step.input = json.dumps(kwargs.get("messages"))
+                step.generation["messages"] = kwargs.get("messages")
+            step.generation["provider"] = "openai"
+            step.generation["settings"] = {
+                "model": kwargs.get("model"),
+            }
+            step.generation["type"] = generation_type
             context["step"] = step
 
         return before
@@ -25,64 +38,73 @@ def instrument_openai(observer: ObservabilityAgent):
     def after_wrapper():
         def after(result, context, *args, **kwargs):
             step = context["step"]
-            step.set_parameter("response", result.choices[0].message.content)
-            step.set_parameter("prompt_tokens", result.usage.prompt_tokens)
-            step.set_parameter("completion_tokens", result.usage.completion_tokens)
-            step.set_parameter("total_tokens", result.usage.total_tokens)
+            if is_legacy:
+                step.output = result.choices[0].text
+            else:
+                step.output = result.choices[0].message.content
+            step.generation["tokenCount"] = result.usage.total_tokens
             step.finalize()
 
         return after
 
     sync_patches = []
     async_patches = []
-    if packaging_version.parse(version("openai")) >= packaging_version.parse("1.0.0"):
+    if is_legacy:
         sync_patches = [
             {
-                "module": "openai.resources.chat.completions",
-                "object": "Completions",
+                "module": "openai",
+                "object": "Completion",
                 "method": "create",
+                "type": "COMPLETION",
             },
             {
-                "module": "openai.resources.completions",
-                "object": "Completions",
+                "module": "openai",
+                "object": "ChatCompletion",
                 "method": "create",
+                "type": "CHAT",
             },
         ]
         async_patches = [
             {
-                "module": "openai.resources.chat.completions",
-                "object": "AsyncCompletions",
-                "method": "create",
+                "module": "openai",
+                "object": "Completion",
+                "method": "acreate",
+                "type": "COMPLETION",
             },
             {
-                "module": "openai.resources.completions",
-                "object": "AsyncCompletions",
-                "method": "create",
+                "module": "openai",
+                "object": "ChatCompletion",
+                "method": "acreate",
+                "type": "CHAT",
             },
         ]
     else:
         sync_patches = [
             {
-                "module": "openai",
-                "object": "Completion",
+                "module": "openai.resources.chat.completions",
+                "object": "Completions",
                 "method": "create",
+                "type": "CHAT",
             },
             {
-                "module": "openai",
-                "object": "ChatCompletion",
+                "module": "openai.resources.completions",
+                "object": "Completions",
                 "method": "create",
+                "type": "COMPLETION",
             },
         ]
         async_patches = [
             {
-                "module": "openai",
-                "object": "Completion",
-                "method": "acreate",
+                "module": "openai.resources.chat.completions",
+                "object": "AsyncCompletions",
+                "method": "create",
+                "type": "CHAT",
             },
             {
-                "module": "openai",
-                "object": "ChatCompletion",
-                "method": "acreate",
+                "module": "openai.resources.completions",
+                "object": "AsyncCompletions",
+                "method": "create",
+                "type": "COMPLETION",
             },
         ]
 
@@ -92,7 +114,7 @@ def instrument_openai(observer: ObservabilityAgent):
         original_method = getattr(target_object, patch["method"])
 
         wrapped_method = sync_wrapper(
-            before_func=before_wrapper(),
+            before_func=before_wrapper(generation_type=patch["type"]),
             after_func=after_wrapper(),
         )(original_method)
 
@@ -104,7 +126,7 @@ def instrument_openai(observer: ObservabilityAgent):
         original_method = getattr(target_object, patch["method"])
 
         wrapped_method = async_wrapper(
-            before_func=before_wrapper(),
+            before_func=before_wrapper(generation_type=patch["type"]),
             after_func=after_wrapper(),
         )(original_method)
 
