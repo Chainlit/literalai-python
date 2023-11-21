@@ -38,6 +38,8 @@ class Step:
             self.thread_id = parent_step.thread_id
         else:
             self.thread_id = thread_id
+        if self.thread_id is None:
+            raise Exception("Step must be initialized with a thread_id.")
         active_steps.append(self)
         active_steps_var.set(active_steps)
 

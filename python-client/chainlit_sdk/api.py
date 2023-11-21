@@ -21,6 +21,8 @@ def serialize_step(event, id):
         f"endTime_{id}": event.get("end"),
         f"type_{id}": step_type(event.get("type")),
         f"metadata_{id}": metadata,
+        f"parentId_{id}": event.get("parent"),
+        f"operatorName_{id}": event.get("name"),
     }
 
 
@@ -42,6 +44,8 @@ def query_variables_builder(steps):
         $input_{id}: String
         $output_{id}:String
         $metadata_{id}: Json
+        $parentId_{id}: String
+        $operatorName_{id}: String
         """
     return generated
 
@@ -59,6 +63,8 @@ def ingest_steps_builder(steps):
         input: $input_{id}
         output: $output_{id}
         metadata: $metadata_{id}
+        parentId: $parentId_{id}
+        operatorName: $operatorName_{id}
       ) {{
         ok
         message

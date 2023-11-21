@@ -25,7 +25,7 @@ text = input(welcome_message)
 with sdk.observer.step(type="message", thread_id=thread_id) as step:
     step.set_parameter("content", text)
     step.set_parameter("role", "user")
-    with sdk.observer.step(type="run", thread_id=thread_id) as step:
+    with sdk.observer.step(type="run") as step:
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -43,7 +43,7 @@ with sdk.observer.step(type="message", thread_id=thread_id) as step:
                 },
             ],
         )
-        with sdk.observer.step(type="message", thread_id=thread_id) as step:
+        with sdk.observer.step(type="message") as step:
             print("")
             print(completion.choices[0].message.content)
             step.set_parameter("content", completion.choices[0].message.content)
