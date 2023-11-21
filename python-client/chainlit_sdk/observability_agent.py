@@ -6,6 +6,8 @@ from typing import Any
 
 from .event_processor import EventProcessor
 from .wrappers import async_wrapper, sync_wrapper
+from functools import wraps
+
 
 active_steps_var = ContextVar("active_steps", default=[])
 
@@ -93,53 +95,45 @@ class ObservabilityAgent:
     def __init__(self, processor: EventProcessor = None):
         self.processor = processor
 
-    def before_wrapper(self, type=None):
-        def before(context, *args, **kwargs):
-            context["step"] = self.create_step(context["original_func"].__name__, type)
+    def step_decorator(self, type=None, thread_id=None):
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                with self.step(name=func.__name__, type=type, thread_id=thread_id):
+                    return func(*args, **kwargs)
 
-        return before
+            return wrapper
 
-    def after_wrapper(self):
-        def after(result, context, *args, **kwargs):
-            context["step"].finalize()
+        return decorator
 
-        return after
+    async def a_step_decorator(self, type=None, thread_id=None):
+        def decorator(func):
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                with self.step(name=func.__name__, type=type, thread_id=thread_id):
+                    return func(*args, **kwargs)
 
-    def run(self, func):
-        return sync_wrapper(
-            before_func=self.before_wrapper(type="run"),
-            after_func=self.after_wrapper(),
-        )(func)
+            return wrapper
 
-    def message(self, func):
-        return sync_wrapper(
-            before_func=self.before_wrapper(type="message"),
-            after_func=self.after_wrapper(),
-        )(func)
+        return decorator
 
-    def llm(self, func):
-        return sync_wrapper(
-            before_func=self.before_wrapper(type="llm"),
-            after_func=self.after_wrapper(),
-        )(func)
+    def run(self, thread_id=None):
+        return self.step_decorator(type="run", thread_id=thread_id)
 
-    def a_run(self, func):
-        return async_wrapper(
-            before_func=self.before_wrapper(type="run"),
-            after_func=self.after_wrapper(),
-        )(func)
+    def message(self, thread_id=None):
+        return self.step_decorator(type="message", thread_id=thread_id)
 
-    def a_message(self, func):
-        return async_wrapper(
-            before_func=self.before_wrapper(type="message"),
-            after_func=self.after_wrapper(),
-        )(func)
+    def llm(self, thread_id=None):
+        return self.step_decorator(type="llm", thread_id=thread_id)
 
-    def a_llm(self, func):
-        return async_wrapper(
-            before_func=self.before_wrapper(type="llm"),
-            after_func=self.after_wrapper(),
-        )(func)
+    def a_run(self, thread_id=None):
+        return self.a_step_decorator(type="run", thread_id=thread_id)
+
+    def a_message(self, thread_id=None):
+        return self.a_step_decorator(type="message", thread_id=thread_id)
+
+    def a_llm(self, thread_id=None):
+        return self.a_step_decorator(type="llm", thread_id=thread_id)
 
     def create_step(self, name="", type=None, thread_id=None):
         if self.processor is None:
