@@ -98,7 +98,6 @@ class API:
     async def send_steps(self, steps):
         query = query_builder(steps)
         variables = variables_builder(steps)
-        print(variables)
 
         async with httpx.AsyncClient() as client:
             try:
