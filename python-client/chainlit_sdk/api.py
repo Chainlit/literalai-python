@@ -1,26 +1,15 @@
 import httpx
 
 
-def step_type(type):
-    if type == "message":
-        return "MESSAGE"
-    if type == "run":
-        return "RUN"
-    if type == "llm":
-        return "LLM"
-    # default is run type
-    return "RUN"
-
-
 def serialize_step(event, id):
     return {
         f"id_{id}": event.get("id"),
         f"threadId_{id}": event.get("thread_id"),
         f"startTime_{id}": event.get("start"),
         f"endTime_{id}": event.get("end"),
-        f"type_{id}": step_type(event.get("type")),
+        f"type_{id}": event.get("type"),
         f"metadata_{id}": event.get("metadata"),
-        f"parentId_{id}": event.get("parent"),
+        f"parentId_{id}": event.get("parent_id"),
         f"operatorName_{id}": event.get("name"),
         f"input_{id}": event.get("input"),
         f"output_{id}": event.get("output"),
