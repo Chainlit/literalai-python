@@ -17,16 +17,16 @@ sdk.instrument_openai()
 thread_id = uuid.uuid4()
 
 welcome_message = "What's your name? "
-with sdk.observer.step(type=StepType.MESSAGE, thread_id=thread_id) as step:
+with sdk.step(type=StepType.MESSAGE, thread_id=thread_id) as step:
     step.output = welcome_message
     step.operatorRole = OperatorRole.SYSTEM
 
 text = input(welcome_message)
 
-with sdk.observer.step(type=StepType.MESSAGE, thread_id=thread_id) as step:
+with sdk.step(type=StepType.MESSAGE, thread_id=thread_id) as step:
     step.output = text
     step.operatorRole = OperatorRole.USER
-    with sdk.observer.step(type=StepType.RUN) as step:
+    with sdk.step(type=StepType.RUN) as step:
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -44,7 +44,7 @@ with sdk.observer.step(type=StepType.MESSAGE, thread_id=thread_id) as step:
                 },
             ],
         )
-        with sdk.observer.step(type=StepType.MESSAGE) as step:
+        with sdk.step(type=StepType.MESSAGE) as step:
             print("")
             print(completion.choices[0].message.content)
             step.output = completion.choices[0].message.content

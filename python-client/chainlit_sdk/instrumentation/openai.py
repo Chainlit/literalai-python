@@ -6,12 +6,11 @@ from ..types import (
     GenerationType,
     StepType,
 )
-from ..observability_agent import ObservabilityAgent
 from ..wrappers import async_wrapper, sync_wrapper
 from packaging import version as packaging_version
 
 
-def instrument_openai(observer: ObservabilityAgent):
+def instrument_openai(observer):
     try:
         version("openai")
     except:
