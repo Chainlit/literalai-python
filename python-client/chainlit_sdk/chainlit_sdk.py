@@ -13,10 +13,9 @@ class Chainlit:
             if not self.api_key:
                 raise Exception("CHAINLIT_API_KEY not provided")
         if not endpoint:
-            # TODO: add default endpoint to the public chainlit endpoint
-            self.endpoint = os.getenv("CHAINLIT_ENDPOINT", "")
-            if not self.endpoint:
-                raise Exception("CHAINLIT_ENDPOINT not defined")
+            self.endpoint = os.getenv(
+                "CHAINLIT_ENDPOINT", "https://cloud.chainlit.io/graphql"
+            )
 
         self.api = API(api_key=self.api_key, endpoint=self.endpoint)
         self.event_processor = EventProcessor(
