@@ -2,8 +2,12 @@ import json
 from importlib import import_module
 from importlib.metadata import version
 
-from chainlit_sdk.observability_agent import ObservabilityAgent
-from chainlit_sdk.wrappers import async_wrapper, sync_wrapper
+from ..types import (
+    GenerationType,
+    StepType,
+)
+from ..observability_agent import ObservabilityAgent
+from ..wrappers import async_wrapper, sync_wrapper
 from packaging import version as packaging_version
 
 
@@ -18,19 +22,19 @@ def instrument_openai(observer: ObservabilityAgent):
         "1.0.0"
     )
 
-    def before_wrapper(generation_type: str = "COMPLETION"):
+    def before_wrapper(generation_type: GenerationType = GenerationType.CHAT):
         def before(context, *args, **kwargs):
             step = observer.create_step(
-                name=context["original_func"].__name__, type="llm"
+                name=context["original_func"].__name__, type=StepType.LLM
             )
             if kwargs.get("messages"):
                 step.input = json.dumps(kwargs.get("messages"))
-                step.generation["messages"] = kwargs.get("messages")
-            step.generation["provider"] = "openai"
-            step.generation["settings"] = {
+                step.generation.messages = kwargs.get("messages")
+            step.generation.provider = "openai"
+            step.generation.settings = {
                 "model": kwargs.get("model"),
             }
-            step.generation["type"] = generation_type
+            step.generation.type = generation_type
             context["step"] = step
 
         return before
@@ -42,7 +46,7 @@ def instrument_openai(observer: ObservabilityAgent):
                 step.output = result.choices[0].text
             else:
                 step.output = result.choices[0].message.content
-            step.generation["tokenCount"] = result.usage.total_tokens
+            step.generation.tokenCount = result.usage.total_tokens
             step.finalize()
 
         return after

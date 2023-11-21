@@ -1,6 +1,8 @@
 import os
 
-from . import API, EventProcessor, ObservabilityAgent
+from .api import API
+from .event_processor import EventProcessor
+from .observability_agent import ObservabilityAgent
 from .instrumentation.openai import instrument_openai
 
 

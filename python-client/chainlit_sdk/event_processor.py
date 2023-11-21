@@ -1,11 +1,9 @@
 import asyncio
-import json
 import queue
 import threading
 from typing import Dict
-import os
 
-from chainlit_sdk.api import API
+from .api import API
 
 
 class EventProcessor:

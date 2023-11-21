@@ -1,89 +1,9 @@
-import time
-import uuid
-from contextvars import ContextVar
-from enum import Enum, unique
 from functools import wraps
-from typing import Dict, Optional
 
+from .types import Step, StepType
+
+from .context import active_steps_var
 from .event_processor import EventProcessor
-
-active_steps_var = ContextVar("active_steps", default=[])
-
-
-@unique
-class StepType(Enum):
-    RUN = "run"
-    MESSAGE = "message"
-    LLM = "llm"
-
-
-@unique
-class OperatorRole(Enum):
-    ASSISTANT = "ASSISTANT"
-    SYSTEM = "SYSTEM"
-    USER = "USER"
-
-
-class Step:
-    id: str = str(uuid.uuid4())
-    name: str = ""
-    operatorRole: Optional[OperatorRole] = None
-    type: StepType = None
-    metadata: Dict = {}
-    parent_id: str = None
-    start: float = time.time()
-    end: float = None
-    input: str = None
-    output: str = None
-    generation: Dict = {}
-
-    def __init__(
-        self,
-        name="",
-        type: StepType = None,
-        thread_id: str = None,
-        processor: EventProcessor = None,
-    ):
-        if processor is None:
-            raise Exception("Step must be initialized with a processor.")
-
-        self.name = name
-        self.type = type
-        self.processor = processor
-
-        active_steps = active_steps_var.get()
-        if active_steps:
-            parent_step = active_steps[-1]
-            self.parent_id = parent_step.id
-            self.thread_id = parent_step.thread_id
-        else:
-            self.thread_id = thread_id
-        if self.thread_id is None:
-            raise Exception("Step must be initialized with a thread_id.")
-        active_steps.append(self)
-        active_steps_var.set(active_steps)
-
-    def finalize(self):
-        self.end = time.time()
-        active_steps = active_steps_var.get()
-        active_steps.pop()
-        self.processor.add_event(self.to_dict())
-        active_steps_var.set(active_steps)
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "metadata": self.metadata,
-            "parent": self.parent,
-            "start": self.start,
-            "end": self.end,
-            "type": self.type,
-            "thread_id": str(self.thread_id),
-            "input": self.input,
-            "output": self.output,
-            "generation": self.generation if self.type == "llm" else None,
-            "operatorRole": self.operatorRole.value if self.operatorRole else None,
-        }
 
 
 class StepContextManager:
@@ -91,7 +11,7 @@ class StepContextManager:
         self.agent = agent
         self.step_name = name
         self.step_type = type
-        self.step = None
+        self.step: Step = None
         self.thread_id = thread_id
 
     def __enter__(self):
