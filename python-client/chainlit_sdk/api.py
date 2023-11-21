@@ -13,19 +13,19 @@ def step_type(type):
 
 
 def serialize_step(event, id):
-    metadata = {}
     return {
         f"id_{id}": event.get("id"),
         f"threadId_{id}": event.get("thread_id"),
         f"startTime_{id}": event.get("start"),
         f"endTime_{id}": event.get("end"),
         f"type_{id}": step_type(event.get("type")),
-        f"metadata_{id}": metadata,
+        f"metadata_{id}": event.get("metadata"),
         f"parentId_{id}": event.get("parent"),
         f"operatorName_{id}": event.get("name"),
         f"input_{id}": event.get("input"),
         f"output_{id}": event.get("output"),
         f"generation_{id}": event.get("generation"),
+        f"operatorRole_{id}": event.get("operatorRole"),
     }
 
 
@@ -50,6 +50,7 @@ def query_variables_builder(steps):
         $parentId_{id}: String
         $operatorName_{id}: String
         $generation_{id}: GenerationPayloadInput
+        $operatorRole_{id}: OperatorRole
         """
     return generated
 
@@ -70,6 +71,7 @@ def ingest_steps_builder(steps):
         parentId: $parentId_{id}
         operatorName: $operatorName_{id}
         generation: $generation_{id}
+        operatorRole: $operatorRole_{id}
       ) {{
         ok
         message
@@ -113,6 +115,7 @@ class API:
 
                 return response.json()
             except Exception as e:
+                print(e)
                 return None
 
     async def get_thread(self, id):

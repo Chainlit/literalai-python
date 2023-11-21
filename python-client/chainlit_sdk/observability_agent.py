@@ -1,8 +1,9 @@
+from enum import Enum, unique
 import json
 import time
 import uuid
 from contextvars import ContextVar
-from typing import Any
+from typing import Any, Optional
 
 from .event_processor import EventProcessor
 from .wrappers import async_wrapper, sync_wrapper
@@ -12,7 +13,16 @@ from functools import wraps
 active_steps_var = ContextVar("active_steps", default=[])
 
 
+@unique
+class OperatorRole(Enum):
+    ASSISTANT = "ASSISTANT"
+    SYSTEM = "SYSTEM"
+    USER = "USER"
+
+
 class Step:
+    operatorRole: Optional[OperatorRole] = None
+
     def __init__(
         self,
         name="",
@@ -25,7 +35,7 @@ class Step:
 
         self.id = uuid.uuid4()
         self.name = name
-        self.params = {}
+        self.metadata = {}
         self.parent = None
         self.start = time.time()
         self.end = None
@@ -48,9 +58,6 @@ class Step:
         active_steps.append(self)
         active_steps_var.set(active_steps)
 
-    def set_parameter(self, key, value):
-        self.params[key] = value
-
     def finalize(self):
         end_time = time.time()
         self.end = end_time
@@ -63,8 +70,7 @@ class Step:
     def to_dict(self):
         return {
             "id": str(self.id) if self.id else None,
-            "name": self.name,
-            "params": self.params,
+            "metadata": self.metadata,
             "parent": str(self.parent) if self.parent else None,
             "start": self.start,
             "end": self.end,
@@ -74,6 +80,7 @@ class Step:
             "input": self.input,
             "output": self.output,
             "generation": self.generation if self.type == "llm" else None,
+            "operatorRole": self.operatorRole.value if self.operatorRole else None,
         }
 
 
@@ -150,9 +157,9 @@ class ObservabilityAgent:
     def step(self, name="", type=None, thread_id=None):
         return StepContextManager(self, name=name, type=type, thread_id=thread_id)
 
-    def set_step_parameter(self, key, value):
+    def get_current_step(self):
         active_steps = active_steps_var.get()
-        if active_steps:
-            active_steps[-1].set_parameter(key, value)
+        if active_steps and len(active_steps) > 0:
+            return active_steps[-1]
         else:
-            raise Exception("No active steps to set parameter on.")
+            return None

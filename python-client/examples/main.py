@@ -3,6 +3,7 @@ import json
 import uuid
 
 from chainlit_sdk import Chainlit
+from chainlit_sdk.observability_agent import OperatorRole
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -17,14 +18,14 @@ thread_id = uuid.uuid4()
 
 welcome_message = "What's your name? "
 with sdk.observer.step(type="message", thread_id=thread_id) as step:
-    step.set_parameter("content", welcome_message)
-    step.set_parameter("role", "assistant")
+    step.output = welcome_message
+    step.operatorRole = OperatorRole.SYSTEM
 
 text = input(welcome_message)
 
 with sdk.observer.step(type="message", thread_id=thread_id) as step:
-    step.set_parameter("content", text)
-    step.set_parameter("role", "user")
+    step.output = text
+    step.operatorRole = OperatorRole.USER
     with sdk.observer.step(type="run") as step:
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -46,8 +47,8 @@ with sdk.observer.step(type="message", thread_id=thread_id) as step:
         with sdk.observer.step(type="message") as step:
             print("")
             print(completion.choices[0].message.content)
-            step.set_parameter("content", completion.choices[0].message.content)
-            step.set_parameter("role", "assistant")
+            step.output = completion.choices[0].message.content
+            step.operatorRole = OperatorRole.ASSISTANT
 
 sdk.wait_until_queue_empty()
 

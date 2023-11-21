@@ -13,7 +13,8 @@ class TestExample(unittest.IsolatedAsyncioTestCase):
 
         @observer.run
         def sync_function():
-            observer.set_step_parameter("key", "value")
+            step = observer.get_current_step()
+            step.output = "result"
             return "result"
 
         result = sync_function()
@@ -24,7 +25,7 @@ class TestExample(unittest.IsolatedAsyncioTestCase):
     async def test_with(self, mock_add_event):
         observer = chainlit_sdk.ObservabilityAgent()
         with observer.step() as step:
-            step.set_parameter("key", "value")
+            step.output = "result"
             pass
 
         mock_add_event.assert_called_once()
