@@ -75,14 +75,14 @@ class StepContextManager:
 
 
 class Step:
-    id: str = str(uuid.uuid4())
+    id: str = None
     name: str = ""
     operatorRole: Optional[OperatorRole] = None
     type: Optional[StepType] = None
     metadata: Dict = {}
     parent_id: Optional[str] = None
-    start: float = time.time()
-    end: Optional[float] = None
+    start: Optional[int] = None
+    end: Optional[int] = None
     input: Optional[str] = None
     output: Optional[str] = None
     generation: Optional[Generation] = None
@@ -97,6 +97,8 @@ class Step:
         if processor is None:
             raise Exception("Step must be initialized with a processor.")
 
+        self.id = str(uuid.uuid4())
+        self.start = int(time.time() * 1e3)
         self.name = name
         self.type = type
         if type == StepType.LLM:
@@ -116,7 +118,7 @@ class Step:
         active_steps_var.set(active_steps)
 
     def finalize(self):
-        self.end = time.time()
+        self.end = int(time.time() * 1e3)
         active_steps = active_steps_var.get()
         active_steps.pop()
         self.processor.add_event(self.to_dict())

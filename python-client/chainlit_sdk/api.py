@@ -2,7 +2,7 @@ import httpx
 
 
 def serialize_step(event, id):
-    return {
+    result = {
         f"id_{id}": event.get("id"),
         f"threadId_{id}": event.get("thread_id"),
         f"startTime_{id}": event.get("start"),
@@ -16,6 +16,14 @@ def serialize_step(event, id):
         f"generation_{id}": event.get("generation"),
         f"operatorRole_{id}": event.get("operatorRole"),
     }
+
+    # Remove the keys that are not set
+    # When they are None, the API cleans any preexisting value
+    for key in list(result):
+        if result[key] is None:
+            del result[key]
+
+    return result
 
 
 def variables_builder(steps):
@@ -89,6 +97,7 @@ class API:
     async def send_steps(self, steps):
         query = query_builder(steps)
         variables = variables_builder(steps)
+        print(variables)
 
         async with httpx.AsyncClient() as client:
             try:
