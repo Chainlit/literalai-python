@@ -15,7 +15,7 @@ class StepType(Enum):
 
 
 @unique
-class OperatorRole(Enum):
+class StepRole(Enum):
     ASSISTANT = "ASSISTANT"
     SYSTEM = "SYSTEM"
     USER = "USER"
@@ -57,7 +57,7 @@ class Generation:
 class Step:
     id: str = None
     name: str = ""
-    operatorRole: Optional[OperatorRole] = None
+    role: Optional[StepRole] = None
     type: Optional[StepType] = None
     metadata: Dict = {}
     parent_id: Optional[str] = None
@@ -118,7 +118,7 @@ class Step:
             "generation": self.generation.to_dict()
             if self.type == StepType.LLM
             else None,
-            "operatorRole": self.operatorRole.value if self.operatorRole else None,
+            "role": self.role.value if self.role else None,
         }
 
 
@@ -129,20 +129,20 @@ class StepContextManager:
         name: str = "",
         type: Optional[StepType] = None,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
         self.agent = agent
         self.step_name = name
         self.step_type = type
         self.step: Optional[Step] = None
         self.thread_id = thread_id
-        self.operatorRole = operatorRole
+        self.role = role
 
     def __enter__(self) -> Step:
         self.step: Step = self.agent.create_step(
             name=self.step_name, type=self.step_type, thread_id=self.thread_id
         )
-        self.step.operatorRole = self.operatorRole
+        self.step.role = self.role
         return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):

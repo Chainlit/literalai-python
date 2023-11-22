@@ -14,7 +14,7 @@ def serialize_step(event, id):
         f"input_{id}": event.get("input"),
         f"output_{id}": event.get("output"),
         f"generation_{id}": event.get("generation"),
-        f"operatorRole_{id}": event.get("operatorRole"),
+        f"operatorRole_{id}": event.get("role"),
     }
 
     # Remove the keys that are not set

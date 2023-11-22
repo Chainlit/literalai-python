@@ -3,7 +3,7 @@ import json
 import uuid
 
 from chainlit_sdk import Chainlit
-from chainlit_sdk.types import OperatorRole, StepType
+from chainlit_sdk.types import StepRole, StepType
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -40,21 +40,17 @@ def get_completion(input):
 
 
 welcome_message = "What's your name? "
-with sdk.step(
-    type=StepType.MESSAGE, thread_id=thread_id, operatorRole=OperatorRole.SYSTEM
-) as step:
+with sdk.step(type=StepType.MESSAGE, thread_id=thread_id, role=StepRole.SYSTEM) as step:
     step.output = welcome_message
 
 text = input(welcome_message)
 
-with sdk.step(
-    type=StepType.MESSAGE, thread_id=thread_id, operatorRole=OperatorRole.USER
-) as step:
+with sdk.step(type=StepType.MESSAGE, thread_id=thread_id, role=StepRole.USER) as step:
     step.output = text
 
     completion = get_completion(text)
 
-    with sdk.step(type=StepType.MESSAGE, operatorRole=OperatorRole.ASSISTANT) as step:
+    with sdk.step(type=StepType.MESSAGE, role=StepRole.ASSISTANT) as step:
         print("")
         print(completion)
         step.output = completion

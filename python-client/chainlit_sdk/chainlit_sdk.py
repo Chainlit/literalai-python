@@ -7,7 +7,7 @@ from .api import API
 from .context import active_steps_var
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
-from .types import OperatorRole, Step, StepType, StepContextManager
+from .types import StepRole, Step, StepType, StepContextManager
 
 
 class Chainlit:
@@ -34,7 +34,7 @@ class Chainlit:
         self,
         type: Optional[StepType] = None,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
         def decorator(func):
             @wraps(func)
@@ -42,8 +42,8 @@ class Chainlit:
                 with self.step(
                     name=func.__name__, type=type, thread_id=thread_id
                 ) as step:
-                    if operatorRole:
-                        step.operatorRole = operatorRole
+                    if role:
+                        step.role = role
 
                     result = func(*args, **kwargs)
 
@@ -63,7 +63,7 @@ class Chainlit:
         self,
         type: Optional[StepType] = None,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
         def decorator(func):
             @wraps(func)
@@ -71,8 +71,8 @@ class Chainlit:
                 with self.step(
                     name=func.__name__, type=type, thread_id=thread_id
                 ) as step:
-                    if operatorRole:
-                        step.operatorRole = operatorRole
+                    if role:
+                        step.role = role
 
                     result = await func(*args, **kwargs)
 
@@ -91,56 +91,48 @@ class Chainlit:
     def run(
         self,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
-        return self.step_decorator(
-            type=StepType.RUN, thread_id=thread_id, operatorRole=operatorRole
-        )
+        return self.step_decorator(type=StepType.RUN, thread_id=thread_id, role=role)
 
     def message(
         self,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
         return self.step_decorator(
-            type=StepType.MESSAGE, thread_id=thread_id, operatorRole=operatorRole
+            type=StepType.MESSAGE, thread_id=thread_id, role=role
         )
 
     def llm(
         self,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
-        return self.step_decorator(
-            type=StepType.LLM, thread_id=thread_id, operatorRole=operatorRole
-        )
+        return self.step_decorator(type=StepType.LLM, thread_id=thread_id, role=role)
 
     def a_run(
         self,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
-        return self.a_step_decorator(
-            type=StepType.RUN, thread_id=thread_id, operatorRole=operatorRole
-        )
+        return self.a_step_decorator(type=StepType.RUN, thread_id=thread_id, role=role)
 
     def a_message(
         self,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
         return self.a_step_decorator(
-            type=StepType.MESSAGE, thread_id=thread_id, operatorRole=operatorRole
+            type=StepType.MESSAGE, thread_id=thread_id, role=role
         )
 
     def a_llm(
         self,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
-        return self.a_step_decorator(
-            type=StepType.LLM, thread_id=thread_id, operatorRole=operatorRole
-        )
+        return self.a_step_decorator(type=StepType.LLM, thread_id=thread_id, role=role)
 
     def create_step(
         self,
@@ -158,10 +150,10 @@ class Chainlit:
         name: str = "",
         type: Optional[StepType] = None,
         thread_id: Optional[str] = None,
-        operatorRole: Optional[OperatorRole] = None,
+        role: Optional[StepRole] = None,
     ):
         return StepContextManager(
-            self, name=name, type=type, thread_id=thread_id, operatorRole=operatorRole
+            self, name=name, type=type, thread_id=thread_id, role=role
         )
 
     def get_current_step(self):
