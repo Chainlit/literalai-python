@@ -1,11 +1,13 @@
+import json
 import os
 from functools import wraps
+from typing import Optional
 
 from .api import API
 from .context import active_steps_var
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
-from .types import Step, StepType, StepContextManager
+from .types import OperatorRole, Step, StepType, StepContextManager
 
 
 class Chainlit:
@@ -28,54 +30,137 @@ class Chainlit:
     def instrument_openai(self):
         instrument_openai(self)
 
-    def step_decorator(self, type=None, thread_id=None):
+    def step_decorator(
+        self,
+        type: Optional[StepType] = None,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
-                with self.step(name=func.__name__, type=type, thread_id=thread_id):
-                    return func(*args, **kwargs)
+                with self.step(
+                    name=func.__name__, type=type, thread_id=thread_id
+                ) as step:
+                    if operatorRole:
+                        step.operatorRole = operatorRole
+
+                    result = func(*args, **kwargs)
+
+                    try:
+                        step.output = json.dumps(result)
+                    except:
+                        pass
+
+                    return result
 
             return wrapper
 
         return decorator
 
-    async def a_step_decorator(self, type=None, thread_id=None):
+    async def a_step_decorator(
+        self,
+        type: Optional[StepType] = None,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **kwargs):
-                with self.step(name=func.__name__, type=type, thread_id=thread_id):
-                    return func(*args, **kwargs)
+                with self.step(
+                    name=func.__name__, type=type, thread_id=thread_id
+                ) as step:
+                    if operatorRole:
+                        step.operatorRole = operatorRole
+
+                    result = await func(*args, **kwargs)
+
+                    try:
+                        step.output = json.dumps(result)
+                    except:
+                        pass
+
+                    return result
 
             return wrapper
 
         return decorator
 
-    def run(self, thread_id=None):
-        return self.step_decorator(type=StepType.RUN, thread_id=thread_id)
+    def run(
+        self,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
+        return self.step_decorator(
+            type=StepType.RUN, thread_id=thread_id, operatorRole=operatorRole
+        )
 
-    def message(self, thread_id=None):
-        return self.step_decorator(type=StepType.MESSAGE, thread_id=thread_id)
+    def message(
+        self,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
+        return self.step_decorator(
+            type=StepType.MESSAGE, thread_id=thread_id, operatorRole=operatorRole
+        )
 
-    def llm(self, thread_id=None):
-        return self.step_decorator(type=StepType.LLM, thread_id=thread_id)
+    def llm(
+        self,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
+        return self.step_decorator(
+            type=StepType.LLM, thread_id=thread_id, operatorRole=operatorRole
+        )
 
-    def a_run(self, thread_id=None):
-        return self.a_step_decorator(type=StepType.RUN, thread_id=thread_id)
+    def a_run(
+        self,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
+        return self.a_step_decorator(
+            type=StepType.RUN, thread_id=thread_id, operatorRole=operatorRole
+        )
 
-    def a_message(self, thread_id=None):
-        return self.a_step_decorator(type=StepType.MESSAGE, thread_id=thread_id)
+    def a_message(
+        self,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
+        return self.a_step_decorator(
+            type=StepType.MESSAGE, thread_id=thread_id, operatorRole=operatorRole
+        )
 
-    def a_llm(self, thread_id=None):
-        return self.a_step_decorator(type=StepType.LLM, thread_id=thread_id)
+    def a_llm(
+        self,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
+        return self.a_step_decorator(
+            type=StepType.LLM, thread_id=thread_id, operatorRole=operatorRole
+        )
 
-    def create_step(self, name="", type=None, thread_id=None):
+    def create_step(
+        self,
+        name: str = "",
+        type: Optional[StepType] = None,
+        thread_id: Optional[str] = None,
+    ):
         step = Step(
             name=name, type=type, thread_id=thread_id, processor=self.event_processor
         )
         return step
 
-    def step(self, name="", type=None, thread_id=None):
-        return StepContextManager(self, name=name, type=type, thread_id=thread_id)
+    def step(
+        self,
+        name: str = "",
+        type: Optional[StepType] = None,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
+        return StepContextManager(
+            self, name=name, type=type, thread_id=thread_id, operatorRole=operatorRole
+        )
 
     def get_current_step(self):
         active_steps = active_steps_var.get()

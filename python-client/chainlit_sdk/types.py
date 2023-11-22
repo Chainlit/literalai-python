@@ -54,26 +54,6 @@ class Generation:
         }
 
 
-class StepContextManager:
-    def __init__(
-        self, agent, name: str = "", type: StepType = None, thread_id: str = None
-    ):
-        self.agent = agent
-        self.step_name = name
-        self.step_type = type
-        self.step: Step = None
-        self.thread_id = thread_id
-
-    def __enter__(self):
-        self.step = self.agent.create_step(
-            name=self.step_name, type=self.step_type, thread_id=self.thread_id
-        )
-        return self.step
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.step.finalize()
-
-
 class Step:
     id: str = None
     name: str = ""
@@ -140,3 +120,30 @@ class Step:
             else None,
             "operatorRole": self.operatorRole.value if self.operatorRole else None,
         }
+
+
+class StepContextManager:
+    def __init__(
+        self,
+        agent,
+        name: str = "",
+        type: Optional[StepType] = None,
+        thread_id: Optional[str] = None,
+        operatorRole: Optional[OperatorRole] = None,
+    ):
+        self.agent = agent
+        self.step_name = name
+        self.step_type = type
+        self.step: Optional[Step] = None
+        self.thread_id = thread_id
+        self.operatorRole = operatorRole
+
+    def __enter__(self) -> Step:
+        self.step: Step = self.agent.create_step(
+            name=self.step_name, type=self.step_type, thread_id=self.thread_id
+        )
+        self.step.operatorRole = self.operatorRole
+        return self.step
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.step.finalize()
