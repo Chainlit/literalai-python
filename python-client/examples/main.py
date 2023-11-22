@@ -14,11 +14,11 @@ client = OpenAI()
 sdk = Chainlit(batch_size=2)
 sdk.instrument_openai()
 
-thread_id = uuid.uuid4()
+thread_id = str(uuid.uuid4())
 
 
-@sdk.run(thread_id=thread_id)
-def get_completion(input):
+@sdk.run()
+def get_completion(welcome_message, text):
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -39,29 +39,33 @@ def get_completion(input):
     return completion.choices[0].message.content
 
 
-welcome_message = "What's your name? "
-with sdk.step(type=StepType.MESSAGE, thread_id=thread_id, role=StepRole.SYSTEM) as step:
-    step.output = welcome_message
+@sdk.thread(thread_id=thread_id)
+def run():
+    welcome_message = "What's your name? "
+    with sdk.step(type=StepType.MESSAGE, role=StepRole.SYSTEM) as step:
+        step.output = welcome_message
 
-text = input(welcome_message)
+    text = input(welcome_message)
 
-with sdk.step(type=StepType.MESSAGE, thread_id=thread_id, role=StepRole.USER) as step:
-    step.output = text
+    with sdk.step(type=StepType.MESSAGE, role=StepRole.USER) as step:
+        step.output = text
 
-    completion = get_completion(text)
+        completion = get_completion(welcome_message=welcome_message, text=text)
 
-    with sdk.step(type=StepType.MESSAGE, role=StepRole.ASSISTANT) as step:
-        print("")
-        print(completion)
-        step.output = completion
+        with sdk.step(type=StepType.MESSAGE, role=StepRole.ASSISTANT) as step:
+            print("")
+            print(completion)
+            step.output = completion
 
+
+run()
 sdk.wait_until_queue_empty()
 
 
 # Get the steps from the API for the demo
 async def main():
     print("\nSearching for the thread", thread_id, "...")
-    steps = await sdk.api.get_thread(id=str(thread_id))
+    steps = await sdk.api.get_thread(id=thread_id)
 
     thread = steps
 

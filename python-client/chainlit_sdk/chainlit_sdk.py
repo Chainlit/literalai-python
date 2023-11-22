@@ -4,7 +4,7 @@ from functools import wraps
 from typing import Optional
 
 from .api import API
-from .context import active_steps_var
+from .context import active_steps_var, active_thread_id_var
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
 from .types import StepRole, Step, StepType, StepContextManager
@@ -83,6 +83,30 @@ class Chainlit:
                         pass
 
                     return result
+
+            return wrapper
+
+        return decorator
+
+    def thread(sef, thread_id: str):
+        active_thread_id_var.set(thread_id)
+
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
+    def a_thread(sef, thread_id: str):
+        active_thread_id_var.set(thread_id)
+
+        def decorator(func):
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                return await func(*args, **kwargs)
 
             return wrapper
 
