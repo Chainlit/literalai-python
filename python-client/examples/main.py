@@ -14,7 +14,7 @@ client = OpenAI()
 sdk = Chainlit(batch_size=2)
 sdk.instrument_openai()
 
-thread_id = str(uuid.uuid4())
+thread_id = None
 
 
 @sdk.run()
@@ -39,8 +39,10 @@ def get_completion(welcome_message, text):
     return completion.choices[0].message.content
 
 
-@sdk.thread(thread_id=thread_id)
+@sdk.thread
 def run():
+    global thread_id
+    thread_id = sdk.get_current_thread_id()
     welcome_message = "What's your name? "
     with sdk.step(type=StepType.MESSAGE, role=StepRole.SYSTEM) as step:
         step.output = welcome_message
