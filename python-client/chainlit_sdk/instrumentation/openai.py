@@ -4,6 +4,8 @@ from importlib.metadata import version
 
 from ..types import (
     GenerationType,
+    Step,
+    StepRole,
     StepType,
 )
 from ..wrappers import async_wrapper, sync_wrapper
@@ -23,9 +25,10 @@ def instrument_openai(observer):
 
     def before_wrapper(generation_type: GenerationType = GenerationType.CHAT):
         def before(context, *args, **kwargs):
-            step = observer.create_step(
+            step: Step = observer.create_step(
                 name=context["original_func"].__name__, type=StepType.LLM
             )
+            step.role = StepRole.ASSISTANT
             if kwargs.get("messages"):
                 step.input = json.dumps(kwargs.get("messages"))
                 step.generation.messages = kwargs.get("messages")

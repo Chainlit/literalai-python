@@ -69,7 +69,7 @@ class Step:
 
     def __init__(
         self,
-        name="",
+        name: str = "",
         type: StepType = None,
         thread_id: str = None,
         processor: EventProcessor = None,
@@ -118,6 +118,7 @@ class Step:
             "generation": self.generation.to_dict()
             if self.type == StepType.LLM
             else None,
+            "name": self.name,
             "role": self.role.value if self.role else None,
         }
 
