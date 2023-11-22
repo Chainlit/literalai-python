@@ -48,7 +48,8 @@ class Chainlit:
                     result = func(*args, **kwargs)
 
                     try:
-                        step.output = json.dumps(result)
+                        if step.output is None:
+                            step.output = json.dumps(result)
                     except:
                         pass
 
@@ -76,7 +77,8 @@ class Chainlit:
                     result = await func(*args, **kwargs)
 
                     try:
-                        step.output = json.dumps(result)
+                        if step.output is None:
+                            step.output = json.dumps(result)
                     except:
                         pass
 
