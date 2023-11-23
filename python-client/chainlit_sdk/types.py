@@ -1,10 +1,12 @@
 import time
 import uuid
 from enum import Enum, unique
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from .context import active_steps_var, active_thread_id_var
-from .event_processor import EventProcessor
+
+if TYPE_CHECKING:
+    from .event_processor import EventProcessor
 
 
 @unique
@@ -107,7 +109,7 @@ class Step:
         name: str = "",
         type: StepType = None,
         thread_id: str = None,
-        processor: EventProcessor = None,
+        processor: "EventProcessor" = None,
     ):
         self.id = str(uuid.uuid4())
         self.start = int(time.time() * 1e3)
@@ -168,7 +170,7 @@ class Step:
         }
 
     @classmethod
-    def create_from_dict(cls, step_dict: Dict) -> "Step":
+    def from_dict(cls, step_dict: Dict) -> "Step":
         name = step_dict.get("name", "")
         step_type = StepType(step_dict.get("type")) if step_dict.get("type") else None
         role = StepRole(step_dict.get("role")) if step_dict.get("role") else None
@@ -239,3 +241,31 @@ class StepContextManager:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.step.finalize()
+
+
+class Thread:
+    id: str = None
+    steps: List[Step] = []
+
+    def __init__(
+        self,
+        id: str,
+        steps: List[Step] = [],
+    ):
+        self.id = id
+        self.steps = steps
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "steps": [step.to_dict() for step in self.steps],
+        }
+
+    @classmethod
+    def from_dict(cls, thread_dict: Dict) -> "Thread":
+        id = thread_dict.get("id")
+        steps = [Step.from_dict(step) for step in thread_dict.get("steps")]
+
+        thread = cls(id=id, steps=steps)
+
+        return thread

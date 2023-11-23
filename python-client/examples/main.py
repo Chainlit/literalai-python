@@ -69,23 +69,20 @@ async def main():
     print("\nSearching for the thread", thread_id, "...")
     thread = await sdk.api.get_thread(id=thread_id)
 
-    print(json.dumps(thread, indent=2))
+    print(json.dumps(thread.to_dict(), indent=2))
 
     # get the LLM step
-    llm_step = [
-        step for step in thread["data"]["thread"]["steps"] if step["type"] == "LLM"
-    ][0]
+    llm_step = [step for step in thread.steps if step.type == StepType.LLM][0]
 
     # load it and attach a feedback
-    step = Step.create_from_dict(llm_step)
-    step.feedback = Feedback(value=1, comment="this is a comment")
+    llm_step.feedback = Feedback(value=1, comment="this is a comment")
 
     # save it
-    await sdk.api.send_steps([step.to_dict()])
+    await sdk.api.send_steps([llm_step])
 
     thread = await sdk.api.get_thread(id=thread_id)
 
-    print(json.dumps(thread, indent=2))
+    print(json.dumps(thread.to_dict(), indent=2))
 
 
 asyncio.run(main())
