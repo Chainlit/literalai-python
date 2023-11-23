@@ -1,4 +1,7 @@
+from typing import Dict, List, Union
+
 import httpx
+from chainlit_sdk.types import Step, Thread
 
 
 def serialize_step(event, id):
@@ -15,6 +18,7 @@ def serialize_step(event, id):
         f"output_{id}": event.get("output"),
         f"generation_{id}": event.get("generation"),
         f"operatorRole_{id}": event.get("role"),
+        f"feedback_{id}": event.get("feedback"),
     }
 
     # Remove the keys that are not set
@@ -26,10 +30,13 @@ def serialize_step(event, id):
     return result
 
 
-def variables_builder(steps):
+def variables_builder(steps: List[Union[Dict, "Step"]]):
     variables = {}
     for i in range(len(steps)):
-        variables.update(serialize_step(steps[i], i))
+        if isinstance(steps[i], Step):
+            variables.update(serialize_step(steps[i].to_dict(), i))
+        else:
+            variables.update(serialize_step(steps[i], i))
     return variables
 
 
@@ -48,6 +55,7 @@ def query_variables_builder(steps):
         $operatorName_{id}: String
         $generation_{id}: GenerationPayloadInput
         $operatorRole_{id}: OperatorRole
+        $feedback_{id}: FeedbackPayloadInput
         """
     return generated
 
@@ -69,6 +77,7 @@ def ingest_steps_builder(steps):
         operatorName: $operatorName_{id}
         generation: $generation_{id}
         operatorRole: $operatorRole_{id}
+        feedback: $feedback_{id}
       ) {{
         ok
         message
@@ -94,7 +103,7 @@ class API:
         if self.endpoint is None:
             raise Exception("CHAINLIT_ENDPOINT not set")
 
-    async def send_steps(self, steps):
+    async def send_steps(self, steps: List[Union[Dict, "Step"]]):
         query = query_builder(steps)
         variables = variables_builder(steps)
 
@@ -160,7 +169,7 @@ class API:
                     timeout=10,
                 )
 
-                return response.json()
+                return Thread.from_dict(response.json()["data"]["thread"])
             except Exception as e:
                 print(e)
                 return None
