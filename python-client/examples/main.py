@@ -3,7 +3,7 @@ import json
 import uuid
 
 from chainlit_sdk import Chainlit
-from chainlit_sdk.types import Step, StepRole, StepType, Feedback
+from chainlit_sdk.types import Attachment, Step, StepRole, StepType, Feedback
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -76,13 +76,25 @@ async def main():
 
     # load it and attach a feedback
     llm_step.feedback = Feedback(value=1, comment="this is a comment")
+    llm_step.attachments = [
+        Attachment(
+            mime="text/html",
+            name="video.html",
+            url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        )
+    ]
 
     # save it
     await sdk.api.send_steps([llm_step])
 
     thread = await sdk.api.get_thread(id=thread_id)
 
-    print(json.dumps(thread.to_dict(), indent=2))
+    print(
+        json.dumps(
+            [step.to_dict() for step in thread.steps if step.type == StepType.LLM],
+            indent=2,
+        )
+    )
 
 
 asyncio.run(main())

@@ -14,6 +14,7 @@ class StepType(Enum):
     RUN = "RUN"
     MESSAGE = "MESSAGE"
     LLM = "LLM"
+    UNDEFINED = "UNDEFINED"
 
 
 @unique
@@ -90,6 +91,51 @@ class Feedback:
         }
 
 
+class Attachment:
+    id: str = None
+    mime: Optional[str] = None
+    name: Optional[str] = None
+    objectKey: Optional[str] = None
+    url: Optional[str] = None
+
+    def __init__(
+        self,
+        id: str = None,
+        mime: Optional[str] = None,
+        name: Optional[str] = None,
+        objectKey: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
+        self.id = id
+        if self.id is None:
+            self.id = str(uuid.uuid4())
+        self.mime = mime
+        self.name = name
+        self.objectKey = objectKey
+        self.url = url
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "mime": self.mime,
+            "name": self.name,
+            "objectKey": self.objectKey,
+            "url": self.url,
+        }
+
+    @classmethod
+    def from_dict(cls, attachment_dict: Dict) -> "Attachment":
+        id = attachment_dict.get("id")
+        mime = attachment_dict.get("mime")
+        name = attachment_dict.get("name")
+        objectKey = attachment_dict.get("objectKey")
+        url = attachment_dict.get("url")
+
+        attachment = cls(id=id, mime=mime, name=name, objectKey=objectKey, url=url)
+
+        return attachment
+
+
 class Step:
     id: str = None
     name: str = ""
@@ -103,6 +149,7 @@ class Step:
     output: Optional[str] = None
     generation: Optional[Generation] = None
     feedback: Optional[Feedback] = None
+    attachments: List[Attachment] = []
 
     def __init__(
         self,
@@ -167,6 +214,7 @@ class Step:
             "name": self.name,
             "role": self.role.value if self.role else None,
             "feedback": self.feedback.to_dict() if self.feedback else None,
+            "attachments": [attachment.to_dict() for attachment in self.attachments],
         }
 
     @classmethod
@@ -212,6 +260,13 @@ class Step:
                 step.feedback = Feedback(
                     value=value, strategy=strategy, comment=comment
                 )
+
+        if "attachments" in step_dict:
+            attachments = step_dict["attachments"]
+            if attachments:
+                step.attachments = [
+                    Attachment.from_dict(attachment) for attachment in attachments
+                ]
 
         return step
 

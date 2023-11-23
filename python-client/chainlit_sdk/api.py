@@ -19,6 +19,7 @@ def serialize_step(event, id):
         f"generation_{id}": event.get("generation"),
         f"operatorRole_{id}": event.get("role"),
         f"feedback_{id}": event.get("feedback"),
+        f"attachments_{id}": event.get("attachments"),
     }
 
     # Remove the keys that are not set
@@ -56,6 +57,7 @@ def query_variables_builder(steps):
         $generation_{id}: GenerationPayloadInput
         $operatorRole_{id}: OperatorRole
         $feedback_{id}: FeedbackPayloadInput
+        $attachments_{id}: [AttachmentPayloadInput!]
         """
     return generated
 
@@ -78,6 +80,7 @@ def ingest_steps_builder(steps):
         generation: $generation_{id}
         operatorRole: $operatorRole_{id}
         feedback: $feedback_{id}
+        attachments: $attachments_{id}
       ) {{
         ok
         message
@@ -150,7 +153,13 @@ class API:
                     }
                     operatorName
                     operatorRole
-
+                    attachments {
+                        id
+                        mime
+                        name
+                        objectKey
+                        url
+                    }
                 }
             }
         }
