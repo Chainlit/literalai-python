@@ -3,7 +3,7 @@ import json
 import uuid
 
 from chainlit_sdk import Chainlit
-from chainlit_sdk.types import StepRole, StepType
+from chainlit_sdk.types import Step, StepRole, StepType, Feedback
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -67,9 +67,23 @@ sdk.wait_until_queue_empty()
 # Get the steps from the API for the demo
 async def main():
     print("\nSearching for the thread", thread_id, "...")
-    steps = await sdk.api.get_thread(id=thread_id)
+    thread = await sdk.api.get_thread(id=thread_id)
 
-    thread = steps
+    print(json.dumps(thread, indent=2))
+
+    # get the LLM step
+    llm_step = [
+        step for step in thread["data"]["thread"]["steps"] if step["type"] == "LLM"
+    ][0]
+
+    # load it and attach a feedback
+    step = Step.create_from_dict(llm_step)
+    step.feedback = Feedback(value=1, comment="this is a comment")
+
+    # save it
+    await sdk.api.send_steps([step.to_dict()])
+
+    thread = await sdk.api.get_thread(id=thread_id)
 
     print(json.dumps(thread, indent=2))
 

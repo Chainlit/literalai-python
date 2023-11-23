@@ -61,13 +61,13 @@ def instrument_openai(observer):
                 "module": "openai",
                 "object": "Completion",
                 "method": "create",
-                "type": "COMPLETION",
+                "type": GenerationType.COMPLETION,
             },
             {
                 "module": "openai",
                 "object": "ChatCompletion",
                 "method": "create",
-                "type": "CHAT",
+                "type": GenerationType.CHAT,
             },
         ]
         async_patches = [
@@ -75,13 +75,13 @@ def instrument_openai(observer):
                 "module": "openai",
                 "object": "Completion",
                 "method": "acreate",
-                "type": "COMPLETION",
+                "type": GenerationType.COMPLETION,
             },
             {
                 "module": "openai",
                 "object": "ChatCompletion",
                 "method": "acreate",
-                "type": "CHAT",
+                "type": GenerationType.CHAT,
             },
         ]
     else:
@@ -90,13 +90,13 @@ def instrument_openai(observer):
                 "module": "openai.resources.chat.completions",
                 "object": "Completions",
                 "method": "create",
-                "type": "CHAT",
+                "type": GenerationType.CHAT,
             },
             {
                 "module": "openai.resources.completions",
                 "object": "Completions",
                 "method": "create",
-                "type": "COMPLETION",
+                "type": GenerationType.COMPLETION,
             },
         ]
         async_patches = [
@@ -104,13 +104,13 @@ def instrument_openai(observer):
                 "module": "openai.resources.chat.completions",
                 "object": "AsyncCompletions",
                 "method": "create",
-                "type": "CHAT",
+                "type": GenerationType.CHAT,
             },
             {
                 "module": "openai.resources.completions",
                 "object": "AsyncCompletions",
                 "method": "create",
-                "type": "COMPLETION",
+                "type": GenerationType.COMPLETION,
             },
         ]
 

@@ -50,7 +50,41 @@ class Generation:
             "settings": self.settings,
             "messages": self.messages,
             "tokenCount": self.tokenCount,
-            "type": self.type,
+            "type": self.type.value if self.type else None,
+        }
+
+
+@unique
+class FeedbackStrategy(Enum):
+    BINARY = "BINARY"
+    STARS = "STARS"
+    BIG_STARS = "BIG_STARS"
+    LIKERT = "LIKERT"
+    CONTINUOUS = "CONTINUOUS"
+    LETTERS = "LETTERS"
+    PERCENTAGE = "PERCENTAGE"
+
+
+class Feedback:
+    value: Optional[float] = None
+    strategy: FeedbackStrategy = FeedbackStrategy.BINARY
+    comment: Optional[str] = None
+
+    def __init__(
+        self,
+        value: Optional[float] = None,
+        strategy: FeedbackStrategy = FeedbackStrategy.BINARY,
+        comment: Optional[str] = None,
+    ):
+        self.value = value
+        self.strategy = strategy
+        self.comment = comment
+
+    def to_dict(self):
+        return {
+            "value": self.value,
+            "strategy": self.strategy.value if self.strategy else None,
+            "comment": self.comment,
         }
 
 
@@ -66,6 +100,7 @@ class Step:
     input: Optional[str] = None
     output: Optional[str] = None
     generation: Optional[Generation] = None
+    feedback: Optional[Feedback] = None
 
     def __init__(
         self,
@@ -74,9 +109,6 @@ class Step:
         thread_id: str = None,
         processor: EventProcessor = None,
     ):
-        if processor is None:
-            raise Exception("Step must be initialized with a processor.")
-
         self.id = str(uuid.uuid4())
         self.start = int(time.time() * 1e3)
         self.name = name
@@ -109,8 +141,12 @@ class Step:
         self.end = int(time.time() * 1e3)
         active_steps = active_steps_var.get()
         active_steps.pop()
-        self.processor.add_event(self.to_dict())
         active_steps_var.set(active_steps)
+        if self.processor is None:
+            raise Exception(
+                "Step must be initialized with a processor to allow finalization."
+            )
+        self.processor.add_event(self.to_dict())
 
     def to_dict(self):
         return {
@@ -128,7 +164,54 @@ class Step:
             else None,
             "name": self.name,
             "role": self.role.value if self.role else None,
+            "feedback": self.feedback.to_dict() if self.feedback else None,
         }
+
+    @classmethod
+    def create_from_dict(cls, step_dict: Dict) -> "Step":
+        name = step_dict.get("name", "")
+        step_type = StepType(step_dict.get("type")) if step_dict.get("type") else None
+        role = StepRole(step_dict.get("role")) if step_dict.get("role") else None
+        thread_id = step_dict.get("thread_id")
+
+        step = cls(name=name, type=step_type, thread_id=thread_id)
+
+        step.id = step_dict.get("id")
+        step.role = role
+        step.input = step_dict.get("input", None)
+        step.output = step_dict.get("output", None)
+        step.metadata = step_dict.get("metadata", {})
+
+        if "generation" in step_dict and step_type == StepType.LLM:
+            generation_dict = step_dict["generation"]
+            generation = Generation()
+            generation.template = generation_dict.get("template")
+            generation.formatted = generation_dict.get("formatted")
+            generation.template_format = generation_dict.get("template_format")
+            generation.provider = generation_dict.get("provider")
+            generation.inputs = generation_dict.get("inputs")
+            generation.completion = generation_dict.get("completion")
+            generation.settings = generation_dict.get("settings")
+            generation.messages = generation_dict.get("messages")
+            generation.tokenCount = generation_dict.get("tokenCount")
+            generation.type = GenerationType(generation_dict.get("type"))
+            step.generation = generation
+
+        if "feedback" in step_dict:
+            feedback_dict = step_dict["feedback"]
+            if feedback_dict:
+                value = feedback_dict.get("value")
+                strategy = (
+                    FeedbackStrategy(feedback_dict.get("strategy"))
+                    if feedback_dict.get("strategy")
+                    else None
+                )
+                comment = feedback_dict.get("comment")
+                step.feedback = Feedback(
+                    value=value, strategy=strategy, comment=comment
+                )
+
+        return step
 
 
 class StepContextManager:

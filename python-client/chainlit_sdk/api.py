@@ -15,6 +15,7 @@ def serialize_step(event, id):
         f"output_{id}": event.get("output"),
         f"generation_{id}": event.get("generation"),
         f"operatorRole_{id}": event.get("role"),
+        f"feedback_{id}": event.get("feedback"),
     }
 
     # Remove the keys that are not set
@@ -48,6 +49,7 @@ def query_variables_builder(steps):
         $operatorName_{id}: String
         $generation_{id}: GenerationPayloadInput
         $operatorRole_{id}: OperatorRole
+        $feedback_{id}: FeedbackPayloadInput
         """
     return generated
 
@@ -69,6 +71,7 @@ def ingest_steps_builder(steps):
         operatorName: $operatorName_{id}
         generation: $generation_{id}
         operatorRole: $operatorRole_{id}
+        feedback: $feedback_{id}
       ) {{
         ok
         message
