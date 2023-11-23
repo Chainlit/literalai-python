@@ -3,7 +3,7 @@ import uuid
 from enum import Enum, unique
 from typing import Any, Dict, Optional
 
-from .context import active_steps_var
+from .context import active_steps_var, active_thread_id_var
 from .event_processor import EventProcessor
 
 
@@ -85,15 +85,23 @@ class Step:
             self.generation = Generation()
         self.processor = processor
 
+        self.thread_id = thread_id
+
+        # Overwrite the thread_id with the context as it's more trustworthy
+        active_thread = active_thread_id_var.get()
+        if active_thread:
+            self.thread_id = active_thread
+
         active_steps = active_steps_var.get()
         if active_steps:
             parent_step = active_steps[-1]
             self.parent_id = parent_step.id
+            # Overwrite the thread_id with the parent step as it's more trustworthy
             self.thread_id = parent_step.thread_id
-        else:
-            self.thread_id = thread_id
+
         if self.thread_id is None:
             raise Exception("Step must be initialized with a thread_id.")
+
         active_steps.append(self)
         active_steps_var.set(active_steps)
 

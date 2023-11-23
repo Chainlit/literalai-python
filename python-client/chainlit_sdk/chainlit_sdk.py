@@ -1,13 +1,14 @@
 import json
 import os
+import uuid
 from functools import wraps
 from typing import Optional
 
 from .api import API
-from .context import active_steps_var
+from .context import active_steps_var, active_thread_id_var
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
-from .types import StepRole, Step, StepType, StepContextManager
+from .types import Step, StepContextManager, StepRole, StepType
 
 
 class Chainlit:
@@ -88,6 +89,37 @@ class Chainlit:
 
         return decorator
 
+    def thread(sef, original_function=None, *, thread_id: Optional[str] = None):
+        if thread_id is None:
+            thread_id = str(uuid.uuid4())
+        active_thread_id_var.set(thread_id)
+
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        # If the decorator is used without parenthesis, return the decorated function
+        if original_function:
+            return decorator(original_function)
+
+        # If the decorator is used with parenthesis, return the decorator
+        return decorator
+
+    def a_thread(sef, thread_id: str):
+        active_thread_id_var.set(thread_id)
+
+        def decorator(func):
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                return await func(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
     def run(
         self,
         thread_id: Optional[str] = None,
@@ -162,6 +194,9 @@ class Chainlit:
             return active_steps[-1]
         else:
             return None
+
+    def get_current_thread_id(self):
+        return active_thread_id_var.get()
 
     def wait_until_queue_empty(self):
         self.event_processor.wait_until_queue_empty()
