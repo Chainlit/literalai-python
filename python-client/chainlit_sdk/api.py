@@ -13,11 +13,10 @@ def serialize_step(event, id):
         f"type_{id}": event.get("type"),
         f"metadata_{id}": event.get("metadata"),
         f"parentId_{id}": event.get("parent_id"),
-        f"operatorName_{id}": event.get("name"),
+        f"name_{id}": event.get("name"),
         f"input_{id}": event.get("input"),
         f"output_{id}": event.get("output"),
         f"generation_{id}": event.get("generation"),
-        f"operatorRole_{id}": event.get("role"),
         f"feedback_{id}": event.get("feedback"),
         f"attachments_{id}": event.get("attachments"),
     }
@@ -53,9 +52,8 @@ def query_variables_builder(steps):
         $output_{id}:String
         $metadata_{id}: Json
         $parentId_{id}: String
-        $operatorName_{id}: String
+        $name_{id}: String
         $generation_{id}: GenerationPayloadInput
-        $operatorRole_{id}: OperatorRole
         $feedback_{id}: FeedbackPayloadInput
         $attachments_{id}: [AttachmentPayloadInput!]
         """
@@ -76,9 +74,8 @@ def ingest_steps_builder(steps):
         output: $output_{id}
         metadata: $metadata_{id}
         parentId: $parentId_{id}
-        operatorName: $operatorName_{id}
+        name: $name_{id}
         generation: $generation_{id}
-        operatorRole: $operatorRole_{id}
         feedback: $feedback_{id}
         attachments: $attachments_{id}
       ) {{
@@ -151,8 +148,7 @@ class API:
                         provider
                         settings
                     }
-                    operatorName
-                    operatorRole
+                    name
                     attachments {
                         id
                         mime

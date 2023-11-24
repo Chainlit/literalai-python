@@ -12,13 +12,16 @@ if TYPE_CHECKING:
 @unique
 class StepType(Enum):
     RUN = "RUN"
-    MESSAGE = "MESSAGE"
+    TOOL = "TOOL"
     LLM = "LLM"
+    EMBEDDING = "EMBEDDING"
+    RETRIEVAL = "RETRIEVAL"
+    RERANK = "RERANK"
     UNDEFINED = "UNDEFINED"
 
 
 @unique
-class StepRole(Enum):
+class MessageRole(Enum):
     ASSISTANT = "ASSISTANT"
     SYSTEM = "SYSTEM"
     USER = "USER"
@@ -139,7 +142,6 @@ class Attachment:
 class Step:
     id: str = None
     name: str = ""
-    role: Optional[StepRole] = None
     type: Optional[StepType] = None
     metadata: Dict = {}
     parent_id: Optional[str] = None
@@ -147,6 +149,7 @@ class Step:
     end: Optional[int] = None
     input: Optional[str] = None
     output: Optional[str] = None
+    
     generation: Optional[Generation] = None
     feedback: Optional[Feedback] = None
     attachments: List[Attachment] = []
@@ -212,7 +215,6 @@ class Step:
             if self.type == StepType.LLM
             else None,
             "name": self.name,
-            "role": self.role.value if self.role else None,
             "feedback": self.feedback.to_dict() if self.feedback else None,
             "attachments": [attachment.to_dict() for attachment in self.attachments],
         }
@@ -221,13 +223,11 @@ class Step:
     def from_dict(cls, step_dict: Dict) -> "Step":
         name = step_dict.get("name", "")
         step_type = StepType(step_dict.get("type")) if step_dict.get("type") else None
-        role = StepRole(step_dict.get("role")) if step_dict.get("role") else None
         thread_id = step_dict.get("thread_id")
 
         step = cls(name=name, type=step_type, thread_id=thread_id)
 
         step.id = step_dict.get("id")
-        step.role = role
         step.input = step_dict.get("input", None)
         step.output = step_dict.get("output", None)
         step.metadata = step_dict.get("metadata", {})
@@ -278,20 +278,18 @@ class StepContextManager:
         name: str = "",
         type: Optional[StepType] = None,
         thread_id: Optional[str] = None,
-        role: Optional[StepRole] = None,
     ):
         self.agent = agent
         self.step_name = name
         self.step_type = type
         self.step: Optional[Step] = None
         self.thread_id = thread_id
-        self.role = role
 
     def __enter__(self) -> Step:
+        # TODO: typing
         self.step: Step = self.agent.create_step(
             name=self.step_name, type=self.step_type, thread_id=self.thread_id
         )
-        self.step.role = self.role
         return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
