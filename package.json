@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky install",
-    "mypy": "mypy python-client"
+    "mypy": "mypy python-client",
+    "formatPython": "black `git ls-files | grep '.py$'` && isort --profile=black ."
   },
   "author": "",
   "license": "ISC",

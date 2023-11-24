@@ -6,12 +6,12 @@ from .context import active_steps_var, active_thread_id_var
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
 from .types import (
-    thread_decorator,
-    ThreadContextManager,
     Step,
     StepContextManager,
-    step_decorator,
     StepType,
+    ThreadContextManager,
+    step_decorator,
+    thread_decorator,
 )
 
 

@@ -1,16 +1,16 @@
-import time
-import uuid
 import inspect
 import json
-from functools import wraps
+import time
+import uuid
 from enum import Enum, unique
-from typing import Any, Dict, List, Optional, Callable, TYPE_CHECKING
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from .context import active_steps_var, active_thread_id_var
 
 if TYPE_CHECKING:
-    from .event_processor import EventProcessor
     from .client import ChainlitClient
+    from .event_processor import EventProcessor
 
 
 @unique

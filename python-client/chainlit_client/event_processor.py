@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 class EventProcessor:
     event_queue: queue.Queue
-    
+
     def __init__(self, api: Optional["API"] = None, batch_size: int = 1):
         self.batch_size = batch_size
         self.api = api

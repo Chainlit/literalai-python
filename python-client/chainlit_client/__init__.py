@@ -1,3 +1,2 @@
-from .client import ChainlitClient
-
 from . import types
+from .client import ChainlitClient
