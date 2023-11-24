@@ -1,14 +1,16 @@
 import asyncio
 import queue
 import threading
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Optional
 
 if TYPE_CHECKING:
     from .api import API
 
 
 class EventProcessor:
-    def __init__(self, api: "API" = None, batch_size: int = 1):
+    event_queue: queue.Queue
+    
+    def __init__(self, api: Optional["API"] = None, batch_size: int = 1):
         self.batch_size = batch_size
         self.api = api
         self.event_queue = queue.Queue()

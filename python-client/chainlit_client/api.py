@@ -33,10 +33,11 @@ def serialize_step(event, id):
 def variables_builder(steps: List[Union[Dict, "Step"]]):
     variables = {}
     for i in range(len(steps)):
-        if isinstance(steps[i], Step):
-            variables.update(serialize_step(steps[i].to_dict(), i))
+        step = steps[i]
+        if isinstance(step, Step):
+            variables.update(serialize_step(step.to_dict(), i))
         else:
-            variables.update(serialize_step(steps[i], i))
+            variables.update(serialize_step(step, i))
     return variables
 
 
