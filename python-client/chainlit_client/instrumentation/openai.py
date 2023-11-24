@@ -8,7 +8,8 @@ if TYPE_CHECKING:
 
 from packaging import version as packaging_version
 
-from ..types import GenerationType, Step, StepType
+from ..step import Step, StepType
+from ..types import GenerationType
 from ..wrappers import async_wrapper, sync_wrapper
 
 

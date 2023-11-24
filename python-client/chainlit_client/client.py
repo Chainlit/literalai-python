@@ -5,14 +5,8 @@ from .api import API
 from .context import active_steps_var, active_thread_id_var
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
-from .types import (
-    Step,
-    StepContextManager,
-    StepType,
-    ThreadContextManager,
-    step_decorator,
-    thread_decorator,
-)
+from .step import Step, StepContextManager, StepType, step_decorator
+from .thread import ThreadContextManager, thread_decorator
 
 
 class ChainlitClient:

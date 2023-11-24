@@ -1,7 +1,8 @@
 from typing import Dict, List, Union
 
 import httpx
-from chainlit_client.types import Step, Thread
+from chainlit_client.step import Step
+from chainlit_client.thread import Thread
 
 
 def serialize_step(event, id):
