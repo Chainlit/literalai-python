@@ -2,8 +2,8 @@ import asyncio
 import json
 import uuid
 
-from chainlit_sdk import Chainlit
-from chainlit_sdk.types import Attachment, Step, StepRole, StepType, Feedback
+from chainlit_client import Chainlit
+from chainlit_client.types import Attachment, Step, StepRole, StepType, Feedback
 from dotenv import load_dotenv
 from openai import OpenAI
 

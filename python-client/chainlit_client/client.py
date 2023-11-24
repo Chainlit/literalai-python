@@ -11,7 +11,7 @@ from .instrumentation.openai import instrument_openai
 from .types import Step, StepContextManager, StepType
 
 
-class Chainlit:
+class ChainlitClient:
     def __init__(self, batch_size: int = 1, api_key: str = None, endpoint: str = None):
         if not api_key:
             self.api_key = os.getenv("CHAINLIT_API_KEY", None)
@@ -30,6 +30,17 @@ class Chainlit:
 
     def instrument_openai(self):
         instrument_openai(self)
+
+    def step(
+        self,
+        name: str = "",
+        type: Optional[StepType] = None,
+        thread_id: Optional[str] = None,
+    ):
+        return StepContextManager(
+            self, name=name, type=type, thread_id=thread_id
+        )
+
 
     def step_decorator(
         self,
@@ -162,16 +173,6 @@ class Chainlit:
             name=name, type=type, thread_id=thread_id, processor=self.event_processor
         )
         return step
-
-    def step(
-        self,
-        name: str = "",
-        type: Optional[StepType] = None,
-        thread_id: Optional[str] = None,
-    ):
-        return StepContextManager(
-            self, name=name, type=type, thread_id=thread_id
-        )
 
     def get_current_step(self):
         active_steps = active_steps_var.get()
