@@ -3,7 +3,7 @@ import json
 import uuid
 
 from chainlit_client import ChainlitClient
-from chainlit_client.types import Attachment, Step, StepType, Feedback
+from chainlit_client.types import Attachment, Feedback, Step, StepType
 from dotenv import load_dotenv
 from openai import OpenAI
 

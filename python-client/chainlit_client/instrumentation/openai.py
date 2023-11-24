@@ -1,27 +1,26 @@
 import json
 from importlib import import_module
 from importlib.metadata import version
-
-from typing import TYPE_CHECKING, TypedDict, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, TypedDict
 
 if TYPE_CHECKING:
     from ..client import ChainlitClient
 
-from ..types import (
-    GenerationType,
-    StepType,
-    Step,
-)
-from ..wrappers import async_wrapper, sync_wrapper
 from packaging import version as packaging_version
+
+from ..types import GenerationType, Step, StepType
+from ..wrappers import async_wrapper, sync_wrapper
+
 
 class BeforeContext(TypedDict):
     original_func: Callable
     step: Optional[Step]
-    
+
+
 class AfterContext(TypedDict):
     original_func: Callable
     step: Step
+
 
 def instrument_openai(client: "ChainlitClient"):
     try:
@@ -43,8 +42,8 @@ def instrument_openai(client: "ChainlitClient"):
                 step.input = json.dumps(kwargs.get("messages"))
                 if step.generation:
                     step.generation.messages = kwargs.get("messages")
-                    
-            if step.generation:        
+
+            if step.generation:
                 step.generation.provider = "openai"
                 step.generation.settings = {
                     "model": kwargs.get("model"),
@@ -61,7 +60,7 @@ def instrument_openai(client: "ChainlitClient"):
                 step.output = result.choices[0].text
             else:
                 step.output = result.choices[0].message.content
-            
+
             if step.generation:
                 step.generation.tokenCount = result.usage.total_tokens
             step.finalize()
