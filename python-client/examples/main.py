@@ -2,8 +2,8 @@ import asyncio
 import json
 import uuid
 
-from chainlit_client import Chainlit
-from chainlit_client.types import Attachment, Step, StepRole, StepType, Feedback
+from chainlit_client import ChainlitClient
+from chainlit_client.types import Attachment, Step, StepType, Feedback
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -11,7 +11,7 @@ load_dotenv()
 
 client = OpenAI()
 
-sdk = Chainlit(batch_size=2)
+sdk = ChainlitClient(batch_size=2)
 sdk.instrument_openai()
 
 thread_id = None
@@ -39,7 +39,7 @@ def get_completion(welcome_message, text):
     return completion.choices[0].message.content
 
 
-@sdk.thread
+@sdk.thread_decorator
 def run():
     global thread_id
     thread_id = sdk.get_current_thread_id()

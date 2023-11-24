@@ -13,7 +13,7 @@ from .types import ThreadContextManager, Step, StepContextManager, StepType
 
 
 class ChainlitClient:
-    def __init__(self, batch_size: int = 1, api_key: str = None, endpoint: str = None):
+    def __init__(self, batch_size: int = 1, api_key: Optional[str] = None, endpoint: Optional[str] = None):
         if not api_key:
             self.api_key = os.getenv("CHAINLIT_API_KEY", None)
             if not self.api_key:

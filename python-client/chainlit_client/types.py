@@ -96,7 +96,7 @@ class Feedback:
 
 
 class Attachment:
-    id: str = None
+    id: Optional[str] = None
     mime: Optional[str] = None
     name: Optional[str] = None
     objectKey: Optional[str] = None
@@ -104,7 +104,7 @@ class Attachment:
 
     def __init__(
         self,
-        id: str = None,
+        id: Optional[str] = None,
         mime: Optional[str] = None,
         name: Optional[str] = None,
         objectKey: Optional[str] = None,
@@ -129,11 +129,11 @@ class Attachment:
 
     @classmethod
     def from_dict(cls, attachment_dict: Dict) -> "Attachment":
-        id = attachment_dict.get("id")
-        mime = attachment_dict.get("mime")
-        name = attachment_dict.get("name")
-        objectKey = attachment_dict.get("objectKey")
-        url = attachment_dict.get("url")
+        id = attachment_dict.get("id", "")
+        mime = attachment_dict.get("mime", "")
+        name = attachment_dict.get("name", "")
+        objectKey = attachment_dict.get("objectKey", "")
+        url = attachment_dict.get("url", "")
 
         attachment = cls(id=id, mime=mime, name=name, objectKey=objectKey, url=url)
 
@@ -141,8 +141,8 @@ class Attachment:
 
 
 class Step:
-    id: str = None
-    name: str = ""
+    id: Optional[str] = None
+    name: Optional[str] = ""
     type: Optional[StepType] = None
     metadata: Dict = {}
     parent_id: Optional[str] = None
@@ -158,9 +158,9 @@ class Step:
     def __init__(
         self,
         name: str = "",
-        type: StepType = None,
-        thread_id: str = None,
-        processor: "EventProcessor" = None,
+        type: Optional[StepType] = None,
+        thread_id: Optional[str] = None,
+        processor: Optional["EventProcessor"] = None,
     ):
         self.id = str(uuid.uuid4())
         self.start = int(time.time() * 1e3)
@@ -258,9 +258,10 @@ class Step:
                     else None
                 )
                 comment = feedback_dict.get("comment")
-                step.feedback = Feedback(
-                    value=value, strategy=strategy, comment=comment
-                )
+                if strategy:
+                    step.feedback = Feedback(
+                        value=value, strategy=strategy, comment=comment
+                    )
 
         if "attachments" in step_dict:
             attachments = step_dict["attachments"]
@@ -283,21 +284,19 @@ class StepContextManager:
         self.client = client
         self.step_name = name
         self.step_type = type
-        self.step: Optional[Step] = None
         self.thread_id = thread_id
 
     def __enter__(self) -> Step:
-        self.step: Step = self.client.create_step(
+        return self.client.create_step(
             name=self.step_name, type=self.step_type, thread_id=self.thread_id
         )
-        return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.step.finalize()
 
 
 class Thread:
-    id: str = None
+    id: Optional[str] = None
     steps: List[Step] = []
 
     def __init__(
@@ -316,8 +315,8 @@ class Thread:
 
     @classmethod
     def from_dict(cls, thread_dict: Dict) -> "Thread":
-        id = thread_dict.get("id")
-        steps = [Step.from_dict(step) for step in thread_dict.get("steps")]
+        id = thread_dict.get("id", "")
+        steps = [Step.from_dict(step) for step in thread_dict.get("steps", [])]
 
         thread = cls(id=id, steps=steps)
 
@@ -335,9 +334,9 @@ class ThreadContextManager:
             self.thread_id = str(uuid.uuid4())
         
         active_thread_id_var.set(thread_id)
-        self.thread: Thread(id=self.thread_id)
+        self.thread = Thread(id=self.thread_id)
 
-    def __enter__(self) -> Step:
+    def __enter__(self) -> str:
         return self.thread_id
 
     def __exit__(self, exc_type, exc_val, exc_tb):

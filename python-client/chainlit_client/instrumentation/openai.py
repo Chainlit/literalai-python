@@ -41,12 +41,15 @@ def instrument_openai(client: "ChainlitClient"):
             )
             if kwargs.get("messages"):
                 step.input = json.dumps(kwargs.get("messages"))
-                step.generation.messages = kwargs.get("messages")
-            step.generation.provider = "openai"
-            step.generation.settings = {
-                "model": kwargs.get("model"),
-            }
-            step.generation.type = generation_type
+                if step.generation:
+                    step.generation.messages = kwargs.get("messages")
+                    
+            if step.generation:        
+                step.generation.provider = "openai"
+                step.generation.settings = {
+                    "model": kwargs.get("model"),
+                }
+                step.generation.type = generation_type
             context["step"] = step
 
         return before
@@ -58,7 +61,9 @@ def instrument_openai(client: "ChainlitClient"):
                 step.output = result.choices[0].text
             else:
                 step.output = result.choices[0].message.content
-            step.generation.tokenCount = result.usage.total_tokens
+            
+            if step.generation:
+                step.generation.tokenCount = result.usage.total_tokens
             step.finalize()
 
         return after
@@ -125,25 +130,29 @@ def instrument_openai(client: "ChainlitClient"):
         ]
 
     for patch in sync_patches:
-        module = import_module(patch["module"])
-        target_object = getattr(module, patch["object"])
-        original_method = getattr(target_object, patch["method"])
+        module = import_module(str(patch["module"]))
+        target_object = getattr(module, str(patch["object"]))
+        original_method = getattr(target_object, str(patch["method"]))
+
+        generation_type = GenerationType(patch["type"])
 
         wrapped_method = sync_wrapper(
-            before_func=before_wrapper(generation_type=patch["type"]),
+            before_func=before_wrapper(generation_type=generation_type),
             after_func=after_wrapper(),
         )(original_method)
 
-        setattr(target_object, patch["method"], wrapped_method)
+        setattr(target_object, str(patch["method"]), wrapped_method)
 
     for patch in async_patches:
-        module = import_module(patch["module"])
-        target_object = getattr(module, patch["object"])
-        original_method = getattr(target_object, patch["method"])
+        module = import_module(str(patch["module"]))
+        target_object = getattr(module, str(patch["object"]))
+        original_method = getattr(target_object, str(patch["method"]))
+
+        generation_type = GenerationType(patch["type"])
 
         wrapped_method = async_wrapper(
-            before_func=before_wrapper(generation_type=patch["type"]),
+            before_func=before_wrapper(generation_type=generation_type),
             after_func=after_wrapper(),
         )(original_method)
 
-        setattr(target_object, patch["method"], wrapped_method)
+        setattr(target_object, str(patch["method"]), wrapped_method)
