@@ -2,16 +2,28 @@ import json
 from importlib import import_module
 from importlib.metadata import version
 
+from typing import TYPE_CHECKING, TypedDict, Callable, Optional
+
+if TYPE_CHECKING:
+    from ..client import ChainlitClient
+
 from ..types import (
     GenerationType,
-    Step,
     StepType,
+    Step,
 )
 from ..wrappers import async_wrapper, sync_wrapper
 from packaging import version as packaging_version
 
+class BeforeContext(TypedDict):
+    original_func: Callable
+    step: Optional[Step]
+    
+class AfterContext(TypedDict):
+    original_func: Callable
+    step: Step
 
-def instrument_openai(observer):
+def instrument_openai(client: "ChainlitClient"):
     try:
         version("openai")
     except:
@@ -23,8 +35,8 @@ def instrument_openai(observer):
     )
 
     def before_wrapper(generation_type: GenerationType = GenerationType.CHAT):
-        def before(context, *args, **kwargs):
-            step: Step = observer.create_step(
+        def before(context: BeforeContext, *args, **kwargs):
+            step = client.create_step(
                 name=context["original_func"].__name__, type=StepType.LLM
             )
             if kwargs.get("messages"):
@@ -40,8 +52,7 @@ def instrument_openai(observer):
         return before
 
     def after_wrapper():
-        # TODO: typing
-        def after(result, context, *args, **kwargs):
+        def after(result, context: AfterContext, *args, **kwargs):
             step = context["step"]
             if is_legacy:
                 step.output = result.choices[0].text

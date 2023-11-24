@@ -7,6 +7,7 @@ from .context import active_steps_var, active_thread_id_var
 
 if TYPE_CHECKING:
     from .event_processor import EventProcessor
+    from .client import ChainlitClient
 
 
 @unique
@@ -274,7 +275,7 @@ class Step:
 class StepContextManager:
     def __init__(
         self,
-        agent,
+        agent: "ChainlitClient",
         name: str = "",
         type: Optional[StepType] = None,
         thread_id: Optional[str] = None,
@@ -286,7 +287,6 @@ class StepContextManager:
         self.thread_id = thread_id
 
     def __enter__(self) -> Step:
-        # TODO: typing
         self.step: Step = self.agent.create_step(
             name=self.step_name, type=self.step_type, thread_id=self.thread_id
         )
