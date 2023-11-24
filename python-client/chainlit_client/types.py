@@ -33,7 +33,7 @@ class GenerationType(Enum):
     CHAT = "CHAT"
     COMPLETION = "COMPLETION"
 
-
+# TODO: Split in two classes: ChatGeneration and CompletionGeneration
 class Generation:
     template: Optional[str] = None
     formatted: Optional[str] = None
@@ -275,19 +275,19 @@ class Step:
 class StepContextManager:
     def __init__(
         self,
-        agent: "ChainlitClient",
+        client: "ChainlitClient",
         name: str = "",
         type: Optional[StepType] = None,
         thread_id: Optional[str] = None,
     ):
-        self.agent = agent
+        self.client = client
         self.step_name = name
         self.step_type = type
         self.step: Optional[Step] = None
         self.thread_id = thread_id
 
     def __enter__(self) -> Step:
-        self.step: Step = self.agent.create_step(
+        self.step: Step = self.client.create_step(
             name=self.step_name, type=self.step_type, thread_id=self.thread_id
         )
         return self.step
@@ -322,3 +322,23 @@ class Thread:
         thread = cls(id=id, steps=steps)
 
         return thread
+
+
+class ThreadContextManager:
+    def __init__(
+        self,
+        client: "ChainlitClient",
+        thread_id: Optional[str] = None,
+    ):
+        self.client = client
+        if thread_id is None:
+            self.thread_id = str(uuid.uuid4())
+        
+        active_thread_id_var.set(thread_id)
+        self.thread: Thread(id=self.thread_id)
+
+    def __enter__(self) -> Step:
+        return self.thread_id
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass

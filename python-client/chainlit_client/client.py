@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+import inspect
 from functools import wraps
 from typing import Optional
 
@@ -8,7 +9,7 @@ from .api import API
 from .context import active_steps_var, active_thread_id_var
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
-from .types import Step, StepContextManager, StepType
+from .types import ThreadContextManager, Step, StepContextManager, StepType
 
 
 class ChainlitClient:
@@ -31,78 +32,55 @@ class ChainlitClient:
     def instrument_openai(self):
         instrument_openai(self)
 
-    def step(
-        self,
-        name: str = "",
-        type: Optional[StepType] = None,
-        thread_id: Optional[str] = None,
-    ):
-        return StepContextManager(
-            self, name=name, type=type, thread_id=thread_id
-        )
-
-
     def step_decorator(
         self,
+        name: Optional[str] = None,
         type: Optional[StepType] = None,
         thread_id: Optional[str] = None,
     ):
         def decorator(func):
-            @wraps(func)
-            def wrapper(*args, **kwargs):
-                with self.step(
-                    name=func.__name__, type=type, thread_id=thread_id
-                ) as step:
-                    result = func(*args, **kwargs)
-
-                    try:
-                        if step.output is None:
-                            step.output = json.dumps(result)
-                    except:
-                        pass
-
-                    return result
-
-            return wrapper
-
+            if inspect.iscoroutinefunction(func):
+                @wraps(func)
+                async def async_wrapper(*args, **kwargs):
+                    with StepContextManager(self, name=name or func.__name__, type=type, thread_id=thread_id) as step:
+                        result = await func(*args, **kwargs)
+                        try:
+                            if step.output is None:
+                                step.output = json.dumps(result)
+                        except:
+                            pass
+                        return result
+                return async_wrapper
+            else:
+                @wraps(func)
+                def sync_wrapper(*args, **kwargs):
+                    with StepContextManager(self, name=name or func.__name__, type=type, thread_id=thread_id) as step:
+                        result = func(*args, **kwargs)
+                        try:
+                            if step.output is None:
+                                step.output = json.dumps(result)
+                        except:
+                            pass
+                        return result
+                return sync_wrapper
         return decorator
 
-    async def a_step_decorator(
-        self,
-        type: Optional[StepType] = None,
-        thread_id: Optional[str] = None,
-    ):
+
+    def thread_decorator(self, original_function=None, *, thread_id: Optional[str] = None):
         def decorator(func):
-            @wraps(func)
-            async def wrapper(*args, **kwargs):
-                with self.step(
-                    name=func.__name__, type=type, thread_id=thread_id
-                ) as step:
-                    result = await func(*args, **kwargs)
-
-                    try:
-                        if step.output is None:
-                            step.output = json.dumps(result)
-                    except:
-                        pass
-
-                    return result
-
-            return wrapper
-
-        return decorator
-
-    def thread(sef, original_function=None, *, thread_id: Optional[str] = None):
-        if thread_id is None:
-            thread_id = str(uuid.uuid4())
-        active_thread_id_var.set(thread_id)
-
-        def decorator(func):
-            @wraps(func)
-            def wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
-
-            return wrapper
+            if inspect.iscoroutinefunction(func):
+                @wraps(func)
+                async def async_wrapper(*args, **kwargs):
+                    with ThreadContextManager(self, thread_id=thread_id) as step:
+                        result = await func(*args, **kwargs)
+                        return result
+                return async_wrapper
+            else:
+                @wraps(func)
+                def sync_wrapper(*args, **kwargs):
+                    with ThreadContextManager(self, thread_id=thread_id) as step:
+                        return func(*args, **kwargs)
+                return sync_wrapper
 
         # If the decorator is used without parenthesis, return the decorated function
         if original_function:
@@ -110,58 +88,18 @@ class ChainlitClient:
 
         # If the decorator is used with parenthesis, return the decorator
         return decorator
-
-    def a_thread(sef, thread_id: str):
-        active_thread_id_var.set(thread_id)
-
-        def decorator(func):
-            @wraps(func)
-            async def wrapper(*args, **kwargs):
-                return await func(*args, **kwargs)
-
-            return wrapper
-
-        return decorator
-
+ 
     def run(
         self,
         thread_id: Optional[str] = None,
     ):
         return self.step_decorator(type=StepType.RUN, thread_id=thread_id)
 
-    def message(
-        self,
-        thread_id: Optional[str] = None,
-    ):
-        return self.step_decorator(
-            type=StepType.MESSAGE, thread_id=thread_id
-        )
-
     def llm(
         self,
         thread_id: Optional[str] = None,
     ):
         return self.step_decorator(type=StepType.LLM, thread_id=thread_id)
-
-    def a_run(
-        self,
-        thread_id: Optional[str] = None,
-    ):
-        return self.a_step_decorator(type=StepType.RUN, thread_id=thread_id)
-
-    def a_message(
-        self,
-        thread_id: Optional[str] = None,
-    ):
-        return self.a_step_decorator(
-            type=StepType.MESSAGE, thread_id=thread_id
-        )
-
-    def a_llm(
-        self,
-        thread_id: Optional[str] = None,
-    ):
-        return self.a_step_decorator(type=StepType.LLM, thread_id=thread_id)
 
     def create_step(
         self,
