@@ -1,7 +1,10 @@
 import time
 import uuid
+import inspect
+import json
+from functools import wraps
 from enum import Enum, unique
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Callable, TYPE_CHECKING
 
 from .context import active_steps_var, active_thread_id_var
 
@@ -32,6 +35,7 @@ class MessageRole(Enum):
 class GenerationType(Enum):
     CHAT = "CHAT"
     COMPLETION = "COMPLETION"
+
 
 # TODO: Split in two classes: ChatGeneration and CompletionGeneration
 class Generation:
@@ -150,7 +154,7 @@ class Step:
     end: Optional[int] = None
     input: Optional[str] = None
     output: Optional[str] = None
-    
+
     generation: Optional[Generation] = None
     feedback: Optional[Feedback] = None
     attachments: List[Attachment] = []
@@ -278,7 +282,7 @@ class StepContextManager:
         self,
         client: "ChainlitClient",
         name: str = "",
-        type: Optional[StepType] = None,
+        type: StepType = StepType.UNDEFINED,
         thread_id: Optional[str] = None,
     ):
         self.client = client
@@ -286,13 +290,77 @@ class StepContextManager:
         self.step_type = type
         self.thread_id = thread_id
 
-    def __enter__(self) -> Step:
-        return self.client.create_step(
+    def __call__(self, func):
+        return step_decorator(
+            self.client,
+            func=func,
+            type=self.step_type,
+            name=self.step_name,
+            thread_id=self.thread_id,
+        )
+
+    async def __aenter__(self):
+        self.step = self.client.create_step(
             name=self.step_name, type=self.step_type, thread_id=self.thread_id
         )
+        return self.step
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.step.finalize()
+
+    def __enter__(self) -> Step:
+        self.step = self.client.create_step(
+            name=self.step_name, type=self.step_type, thread_id=self.thread_id
+        )
+        return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.step.finalize()
+
+
+def step_decorator(
+    client: "ChainlitClient",
+    func: Callable,
+    type: StepType = StepType.UNDEFINED,
+    name: str = "",
+    thread_id: Optional[str] = None,
+):
+    if not name:
+        name = func.__name__
+
+    # Handle async decorator
+    if inspect.iscoroutinefunction(func):
+
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            with StepContextManager(
+                client=client, type=type, name=name, thread_id=thread_id
+            ) as step:
+                result = await func(*args, **kwargs)
+                try:
+                    if step.output is None:
+                        step.output = json.dumps(result)
+                except:
+                    pass
+                return result
+
+        return async_wrapper
+    else:
+        # Handle sync decorator
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            with StepContextManager(
+                client=client, type=type, name=name, thread_id=thread_id
+            ) as step:
+                result = func(*args, **kwargs)
+                try:
+                    if step.output is None:
+                        step.output = json.dumps(result)
+                except:
+                    pass
+                return result
+
+        return sync_wrapper
 
 
 class Thread:
@@ -331,13 +399,44 @@ class ThreadContextManager:
     ):
         self.client = client
         if thread_id is None:
-            self.thread_id = str(uuid.uuid4())
-        
+            thread_id = str(uuid.uuid4())
+        self.thread_id = thread_id
         active_thread_id_var.set(thread_id)
-        self.thread = Thread(id=self.thread_id)
+        self.thread = Thread(id=thread_id)
 
-    def __enter__(self) -> str:
-        return self.thread_id
+    def __call__(self, func):
+        return thread_decorator(self.client, func=func, thread_id=self.thread_id)
+
+    def __enter__(self) -> Thread:
+        return self.thread
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        active_thread_id_var.set(None)
+
+    async def __aenter__(self):
+        return self.thread
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        active_thread_id_var.set(None)
+
+
+def thread_decorator(
+    client: "ChainlitClient", func: Callable, thread_id: Optional[str] = None
+):
+    if inspect.iscoroutinefunction(func):
+
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            with ThreadContextManager(client, thread_id=thread_id):
+                result = await func(*args, **kwargs)
+                return result
+
+        return async_wrapper
+    else:
+
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            with ThreadContextManager(client, thread_id=thread_id):
+                return func(*args, **kwargs)
+
+        return sync_wrapper

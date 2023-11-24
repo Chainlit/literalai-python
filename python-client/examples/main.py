@@ -39,7 +39,7 @@ def get_completion(welcome_message, text):
     return completion.choices[0].message.content
 
 
-@sdk.thread_decorator
+@sdk.thread
 def run():
     global thread_id
     thread_id = sdk.get_current_thread_id()

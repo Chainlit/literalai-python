@@ -122,7 +122,7 @@ class API:
 
                 return response.json()
             except Exception as e:
-                print(e)
+                print(f"Failed to send steps: {e}")
                 return None
 
     async def get_thread(self, id):
@@ -177,5 +177,5 @@ class API:
 
                 return Thread.from_dict(response.json()["data"]["thread"])
             except Exception as e:
-                print(e)
+                print(f"Failed to get thread: {e}")
                 return None

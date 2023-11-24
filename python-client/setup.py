@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="chainlit_sdk",
+    name="chainlit_client",
     version="0.1.0",
     description="An SDK for observability in Python applications",
     author="",
