@@ -2,7 +2,6 @@ import asyncio
 import json
 
 from chainlit_client import ChainlitClient
-from chainlit_client.step import StepType
 from chainlit_client.types import Attachment, Feedback
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -17,7 +16,7 @@ sdk.instrument_openai()
 thread_id = None
 
 
-@sdk.run()
+@sdk.step(type="RUN")
 def get_completion(welcome_message, text):
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -39,31 +38,6 @@ def get_completion(welcome_message, text):
     return completion.choices[0].message.content
 
 
-@sdk.thread
-def run():
-    global thread_id
-    thread_id = sdk.get_current_thread_id()
-    welcome_message = "What's your name? "
-    with sdk.step(type=StepType.MESSAGE, role=StepRole.SYSTEM) as step:
-        step.output = welcome_message
-
-    text = input(welcome_message)
-
-    with sdk.step(type=StepType.MESSAGE, role=StepRole.USER) as step:
-        step.output = text
-
-        completion = get_completion(welcome_message=welcome_message, text=text)
-
-        with sdk.step(type=StepType.MESSAGE, role=StepRole.ASSISTANT) as step:
-            print("")
-            print(completion)
-            step.output = completion
-
-
-run()
-sdk.wait_until_queue_empty()
-
-
 # Get the steps from the API for the demo
 async def main():
     print("\nSearching for the thread", thread_id, "...")
@@ -72,7 +46,7 @@ async def main():
     print(json.dumps(thread.to_dict(), indent=2))
 
     # get the LLM step
-    llm_step = [step for step in thread.steps if step.type == StepType.LLM][0]
+    llm_step = [step for step in thread.steps if step.type == "LLM"][0]
 
     # load it and attach a feedback
     llm_step.feedback = Feedback(value=1, comment="this is a comment")
@@ -91,7 +65,7 @@ async def main():
 
     print(
         json.dumps(
-            [step.to_dict() for step in thread.steps if step.type == StepType.LLM],
+            [step.to_dict() for step in thread.steps if step.type == "LLM"],
             indent=2,
         )
     )

@@ -2,27 +2,19 @@ import inspect
 import json
 import time
 import uuid
-from enum import Enum, unique
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
 
 if TYPE_CHECKING:
     from .client import ChainlitClient
     from .event_processor import EventProcessor
 
 from .context import active_steps_var, active_thread_id_var
-from .types import Attachment, Feedback, FeedbackStrategy, Generation, GenerationType
+from .types import Attachment, BaseGeneration, Feedback, FeedbackStrategy
 
-
-@unique
-class StepType(Enum):
-    RUN = "RUN"
-    TOOL = "TOOL"
-    LLM = "LLM"
-    EMBEDDING = "EMBEDDING"
-    RETRIEVAL = "RETRIEVAL"
-    RERANK = "RERANK"
-    UNDEFINED = "UNDEFINED"
+StepType = Literal[
+    "RUN", "TOOL", "LLM", "EMBEDDING", "RETRIEVAL", "RERANK", "UNDEFINED"
+]
 
 
 class Step:
@@ -36,7 +28,7 @@ class Step:
     input: Optional[str] = None
     output: Optional[str] = None
 
-    generation: Optional[Generation] = None
+    generation: Optional[BaseGeneration] = None
     feedback: Optional[Feedback] = None
     attachments: List[Attachment] = []
 
@@ -44,26 +36,28 @@ class Step:
         self,
         name: str = "",
         type: Optional[StepType] = None,
+        id: Optional[str] = None,
         thread_id: Optional[str] = None,
+        parent_id: Optional[str] = None,
         processor: Optional["EventProcessor"] = None,
     ):
-        self.id = str(uuid.uuid4())
+        self.id = id or str(uuid.uuid4())
         self.start = int(time.time() * 1e3)
         self.name = name
         self.type = type
-        if type == StepType.LLM:
-            self.generation = Generation()
+
         self.processor = processor
 
         self.thread_id = thread_id
+        self.parent_id = parent_id
 
         # Overwrite the thread_id with the context as it's more trustworthy
         active_thread = active_thread_id_var.get()
-        if active_thread:
+        if active_thread and not thread_id:
             self.thread_id = active_thread
 
         active_steps = active_steps_var.get()
-        if active_steps:
+        if active_steps and not parent_id:
             parent_step = active_steps[-1]
             self.parent_id = parent_step.id
             # Overwrite the thread_id with the parent step as it's more trustworthy
@@ -93,12 +87,12 @@ class Step:
             "parent_id": self.parent_id,
             "start": self.start,
             "end": self.end,
-            "type": self.type.value if self.type else None,
-            "thread_id": str(self.thread_id),
+            "type": self.type,
+            "thread_id": self.thread_id,
             "input": self.input,
             "output": self.output,
             "generation": self.generation.to_dict()
-            if self.type == StepType.LLM
+            if self.generation and self.type == "LLM"
             else None,
             "name": self.name,
             "feedback": self.feedback.to_dict() if self.feedback else None,
@@ -108,7 +102,7 @@ class Step:
     @classmethod
     def from_dict(cls, step_dict: Dict) -> "Step":
         name = step_dict.get("name", "")
-        step_type = StepType(step_dict.get("type")) if step_dict.get("type") else None
+        step_type = step_dict.get("type", "UNDEFINED")  # type: StepType
         thread_id = step_dict.get("thread_id")
 
         step = cls(name=name, type=step_type, thread_id=thread_id)
@@ -118,20 +112,9 @@ class Step:
         step.output = step_dict.get("output", None)
         step.metadata = step_dict.get("metadata", {})
 
-        if "generation" in step_dict and step_type == StepType.LLM:
+        if "generation" in step_dict and step_type == "LLM":
             generation_dict = step_dict["generation"]
-            generation = Generation()
-            generation.template = generation_dict.get("template")
-            generation.formatted = generation_dict.get("formatted")
-            generation.template_format = generation_dict.get("template_format")
-            generation.provider = generation_dict.get("provider")
-            generation.inputs = generation_dict.get("inputs")
-            generation.completion = generation_dict.get("completion")
-            generation.settings = generation_dict.get("settings")
-            generation.messages = generation_dict.get("messages")
-            generation.tokenCount = generation_dict.get("tokenCount")
-            generation.type = GenerationType(generation_dict.get("type"))
-            step.generation = generation
+            step.generation = BaseGeneration.from_dict(generation_dict)
 
         if "feedback" in step_dict:
             feedback_dict = step_dict["feedback"]
@@ -163,12 +146,16 @@ class StepContextManager:
         self,
         client: "ChainlitClient",
         name: str = "",
-        type: StepType = StepType.UNDEFINED,
+        type: StepType = "UNDEFINED",
+        id: Optional[str] = None,
+        parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
     ):
         self.client = client
         self.step_name = name
         self.step_type = type
+        self.id = id
+        self.parent_id = parent_id
         self.thread_id = thread_id
 
     def __call__(self, func):
@@ -182,7 +169,11 @@ class StepContextManager:
 
     async def __aenter__(self):
         self.step = self.client.create_step(
-            name=self.step_name, type=self.step_type, thread_id=self.thread_id
+            name=self.step_name,
+            type=self.step_type,
+            id=self.id,
+            parent_id=self.parent_id,
+            thread_id=self.thread_id,
         )
         return self.step
 
@@ -191,7 +182,11 @@ class StepContextManager:
 
     def __enter__(self) -> Step:
         self.step = self.client.create_step(
-            name=self.step_name, type=self.step_type, thread_id=self.thread_id
+            name=self.step_name,
+            type=self.step_type,
+            id=self.id,
+            parent_id=self.parent_id,
+            thread_id=self.thread_id,
         )
         return self.step
 
@@ -202,8 +197,10 @@ class StepContextManager:
 def step_decorator(
     client: "ChainlitClient",
     func: Callable,
-    type: StepType = StepType.UNDEFINED,
+    type: StepType = "UNDEFINED",
     name: str = "",
+    id: Optional[str] = None,
+    parent_id: Optional[str] = None,
     thread_id: Optional[str] = None,
 ):
     if not name:
@@ -215,7 +212,12 @@ def step_decorator(
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
             with StepContextManager(
-                client=client, type=type, name=name, thread_id=thread_id
+                client=client,
+                type=type,
+                name=name,
+                id=id,
+                parent_id=parent_id,
+                thread_id=thread_id,
             ) as step:
                 try:
                     step.input = json.dumps({"args": args, "kwargs": kwargs})
@@ -235,7 +237,12 @@ def step_decorator(
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
             with StepContextManager(
-                client=client, type=type, name=name, thread_id=thread_id
+                client=client,
+                type=type,
+                name=name,
+                id=id,
+                parent_id=parent_id,
+                thread_id=thread_id,
             ) as step:
                 try:
                     step.input = json.dumps({"args": args, "kwargs": kwargs})
