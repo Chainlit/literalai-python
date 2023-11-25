@@ -217,6 +217,10 @@ def step_decorator(
             with StepContextManager(
                 client=client, type=type, name=name, thread_id=thread_id
             ) as step:
+                try:
+                    step.input = json.dumps({"args": args, "kwargs": kwargs})
+                except:
+                    pass
                 result = await func(*args, **kwargs)
                 try:
                     if step.output is None:
@@ -233,6 +237,10 @@ def step_decorator(
             with StepContextManager(
                 client=client, type=type, name=name, thread_id=thread_id
             ) as step:
+                try:
+                    step.input = json.dumps({"args": args, "kwargs": kwargs})
+                except:
+                    pass
                 result = func(*args, **kwargs)
                 try:
                     if step.output is None:
