@@ -8,8 +8,8 @@ if TYPE_CHECKING:
 
 from packaging import version as packaging_version
 
-from ..step import Step, StepType
-from ..types import GenerationType
+from ..step import Step
+from ..types import ChatGeneration, CompletionGeneration, GenerationType
 from ..wrappers import async_wrapper, sync_wrapper
 
 
@@ -37,19 +37,22 @@ def instrument_openai(client: "ChainlitClient"):
     def before_wrapper(generation_type: GenerationType = GenerationType.CHAT):
         def before(context: BeforeContext, *args, **kwargs):
             step = client.create_step(
-                name=context["original_func"].__name__, type=StepType.LLM
+                name=context["original_func"].__name__, type="LLM"
             )
+
+            # TODO: Support AzureOpenAI
+
+            # TODO: Capture all settings
+            settings = {
+                "model": kwargs.get("model"),
+            }
+
+            # TODO: Handle CompletionGeneration
+            step.generation = ChatGeneration(provider="openai", settings=settings)
             if kwargs.get("messages"):
                 step.input = json.dumps(kwargs.get("messages"))
-                if step.generation:
-                    step.generation.messages = kwargs.get("messages")
+                step.generation.messages = kwargs.get("messages")
 
-            if step.generation:
-                step.generation.provider = "openai"
-                step.generation.settings = {
-                    "model": kwargs.get("model"),
-                }
-                step.generation.type = generation_type
             context["step"] = step
 
         return before
@@ -63,7 +66,7 @@ def instrument_openai(client: "ChainlitClient"):
                 step.output = result.choices[0].message.content
 
             if step.generation:
-                step.generation.tokenCount = result.usage.total_tokens
+                step.generation.token_count = result.usage.total_tokens
             step.finalize()
 
         return after

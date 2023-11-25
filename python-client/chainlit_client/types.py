@@ -1,14 +1,10 @@
 import uuid
 from enum import Enum, unique
-from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
+from pydantic.dataclasses import Field, dataclass
 
-@unique
-class MessageRole(Enum):
-    ASSISTANT = "ASSISTANT"
-    SYSTEM = "SYSTEM"
-    USER = "USER"
+MessageRole = Literal["ASSISTANT", "SYSTEM", "USER", "TOOL"]
 
 
 @unique
@@ -17,32 +13,127 @@ class GenerationType(Enum):
     COMPLETION = "COMPLETION"
 
 
-# TODO: Split in two classes: ChatGeneration and CompletionGeneration
-class Generation:
+@dataclass
+class GenerationMessage:
     template: Optional[str] = None
     formatted: Optional[str] = None
-    template_format: Optional[str] = None
-    provider: Optional[str] = None
-    inputs: Optional[Dict] = None
-    completion: Optional[str] = None
-    settings: Optional[Dict] = None
-    messages: Optional[Any] = None
-    tokenCount: Optional[int] = None
-    type: Optional[GenerationType] = None
+    # This is used for Langchain's MessagesPlaceholder
+    placeholder_size: Optional[int] = None
+    # This is used for OpenAI's function message
+    name: Optional[str] = None
+    role: Optional[MessageRole] = None
+
+    def to_openai(self):
+        msg_dict = {"role": self.role, "content": self.formatted}
+        if self.role == "function":
+            msg_dict["name"] = self.name or ""
+        return msg_dict
+
+    def to_string(self):
+        return f"{self.role}: {self.formatted}"
 
     def to_dict(self):
         return {
             "template": self.template,
             "formatted": self.formatted,
-            "template_format": self.template_format,
+            "placeholder_size": self.placeholder_size,
+            "name": self.name,
+            "role": self.role if self.role else None,
+        }
+
+    @classmethod
+    def from_dict(self, message_dict: Dict):
+        return GenerationMessage(
+            template=message_dict.get("template"),
+            formatted=message_dict.get("formatted"),
+            placeholder_size=message_dict.get("placeholder_size"),
+            name=message_dict.get("name"),
+            role=message_dict.get("role", "ASSISTANT"),
+        )
+
+
+@dataclass
+class BaseGeneration:
+    provider: Optional[str] = None
+    inputs: Optional[Dict] = None
+    template_format: str = "f-string"
+    completion: Optional[str] = None
+    settings: Optional[Dict] = None
+    token_count: Optional[int] = None
+
+    @classmethod
+    def from_dict(self, generation_dict: Dict) -> "BaseGeneration":
+        type = GenerationType(generation_dict.get("type"))
+        if type == GenerationType.CHAT:
+            return ChatGeneration.from_dict(generation_dict)
+        elif type == GenerationType.COMPLETION:
+            return CompletionGeneration.from_dict(generation_dict)
+        else:
+            raise ValueError(f"Unknown generation type: {type}")
+
+
+@dataclass
+class CompletionGeneration(BaseGeneration):
+    template: Optional[str] = None
+    formatted: Optional[str] = None
+    type = GenerationType.COMPLETION
+
+    def to_dict(self):
+        return {
+            "template": self.template,
+            "formatted": self.formatted,
+            "templateFormat": self.template_format,
             "provider": self.provider,
             "inputs": self.inputs,
             "completion": self.completion,
             "settings": self.settings,
-            "messages": self.messages,
-            "tokenCount": self.tokenCount,
-            "type": self.type.value if self.type else None,
+            "tokenCount": self.token_count,
+            "type": self.type.value,
         }
+
+    @classmethod
+    def from_dict(self, generation_dict: Dict) -> "CompletionGeneration":
+        return CompletionGeneration(
+            template=generation_dict.get("template"),
+            formatted=generation_dict.get("formatted"),
+            template_format=generation_dict.get("templateFormat", "f-string"),
+            provider=generation_dict.get("provider"),
+            completion=generation_dict.get("completion"),
+            settings=generation_dict.get("settings"),
+            token_count=generation_dict.get("tokenCount"),
+        )
+
+
+@dataclass
+class ChatGeneration(BaseGeneration):
+    messages: Optional[Any] = None
+    type = GenerationType.CHAT
+
+    def to_dict(self):
+        return {
+            "messages": self.messages,
+            "templateFormat": self.template_format,
+            "provider": self.provider,
+            "inputs": self.inputs,
+            "completion": self.completion,
+            "settings": self.settings,
+            "tokenCount": self.token_count,
+            "type": self.type.value,
+        }
+
+    @classmethod
+    def from_dict(self, generation_dict: Dict) -> "ChatGeneration":
+        return ChatGeneration(
+            messages=[
+                GenerationMessage.from_dict(m)
+                for m in generation_dict.get("messages", [])
+            ],
+            template_format=generation_dict.get("templateFormat", "f-string"),
+            provider=generation_dict.get("provider"),
+            completion=generation_dict.get("completion"),
+            settings=generation_dict.get("settings"),
+            token_count=generation_dict.get("tokenCount"),
+        )
 
 
 @unique
@@ -56,20 +147,11 @@ class FeedbackStrategy(Enum):
     PERCENTAGE = "PERCENTAGE"
 
 
+@dataclass
 class Feedback:
     value: Optional[float] = None
     strategy: FeedbackStrategy = FeedbackStrategy.BINARY
     comment: Optional[str] = None
-
-    def __init__(
-        self,
-        value: Optional[float] = None,
-        strategy: FeedbackStrategy = FeedbackStrategy.BINARY,
-        comment: Optional[str] = None,
-    ):
-        self.value = value
-        self.strategy = strategy
-        self.comment = comment
 
     def to_dict(self):
         return {
@@ -79,28 +161,13 @@ class Feedback:
         }
 
 
+@dataclass
 class Attachment:
-    id: Optional[str] = None
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     mime: Optional[str] = None
     name: Optional[str] = None
     objectKey: Optional[str] = None
     url: Optional[str] = None
-
-    def __init__(
-        self,
-        id: Optional[str] = None,
-        mime: Optional[str] = None,
-        name: Optional[str] = None,
-        objectKey: Optional[str] = None,
-        url: Optional[str] = None,
-    ):
-        self.id = id
-        if self.id is None:
-            self.id = str(uuid.uuid4())
-        self.mime = mime
-        self.name = name
-        self.objectKey = objectKey
-        self.url = url
 
     def to_dict(self):
         return {

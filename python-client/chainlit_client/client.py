@@ -45,21 +45,9 @@ class ChainlitClient:
         original_function=None,
         *,
         name: str = "",
-        type: StepType = StepType.UNDEFINED,
-        thread_id: Optional[str] = None,
-    ):
-        if original_function:
-            return step_decorator(
-                self, func=original_function, name=name, type=type, thread_id=thread_id
-            )
-        else:
-            return StepContextManager(self, type=StepType.RUN, thread_id=thread_id)
-
-    def run(
-        self,
-        original_function=None,
-        *,
-        name: str = "",
+        type: StepType = "UNDEFINED",
+        id: Optional[str] = None,
+        parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
     ):
         if original_function:
@@ -67,108 +55,31 @@ class ChainlitClient:
                 self,
                 func=original_function,
                 name=name,
-                type=StepType.RUN,
+                type=type,
+                id=id,
+                parent_id=parent_id,
                 thread_id=thread_id,
             )
         else:
-            return StepContextManager(self, type=StepType.RUN, thread_id=thread_id)
-
-    def llm(
-        self,
-        original_function=None,
-        *,
-        name: str = "",
-        thread_id: Optional[str] = None,
-    ):
-        if original_function:
-            return step_decorator(
-                self,
-                func=original_function,
-                name=name,
-                type=StepType.LLM,
-                thread_id=thread_id,
+            return StepContextManager(
+                self, type=type, id=id, parent_id=parent_id, thread_id=thread_id
             )
-        else:
-            return StepContextManager(self, type=StepType.RUN, thread_id=thread_id)
-
-    def retrieval(
-        self,
-        original_function=None,
-        *,
-        name: str = "",
-        thread_id: Optional[str] = None,
-    ):
-        if original_function:
-            return step_decorator(
-                self,
-                func=original_function,
-                type=StepType.RETRIEVAL,
-                thread_id=thread_id,
-            )
-        else:
-            return StepContextManager(self, type=StepType.RUN, thread_id=thread_id)
-
-    def rerank(
-        self,
-        original_function=None,
-        *,
-        name: str = "",
-        thread_id: Optional[str] = None,
-    ):
-        if original_function:
-            return step_decorator(
-                self,
-                func=original_function,
-                name=name,
-                type=StepType.RERANK,
-                thread_id=thread_id,
-            )
-        else:
-            return StepContextManager(self, type=StepType.RUN, thread_id=thread_id)
-
-    def embedding(
-        self,
-        original_function=None,
-        *,
-        name: str = "",
-        thread_id: Optional[str] = None,
-    ):
-        if original_function:
-            return step_decorator(
-                self,
-                func=original_function,
-                type=StepType.EMBEDDING,
-                thread_id=thread_id,
-            )
-        else:
-            return StepContextManager(self, type=StepType.RUN, thread_id=thread_id)
-
-    def tool(
-        self,
-        original_function=None,
-        *,
-        name: str = "",
-        thread_id: Optional[str] = None,
-    ):
-        if original_function:
-            return step_decorator(
-                self,
-                func=original_function,
-                name=name,
-                type=StepType.TOOL,
-                thread_id=thread_id,
-            )
-        else:
-            return StepContextManager(self, type=StepType.RUN, thread_id=thread_id)
 
     def create_step(
         self,
         name: str = "",
         type: Optional[StepType] = None,
+        id: Optional[str] = None,
+        parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
     ):
         step = Step(
-            name=name, type=type, thread_id=thread_id, processor=self.event_processor
+            name=name,
+            type=type,
+            id=id,
+            parent_id=parent_id,
+            thread_id=thread_id,
+            processor=self.event_processor,
         )
         return step
 
