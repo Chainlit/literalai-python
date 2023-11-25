@@ -1,4 +1,5 @@
-from typing import Dict, List, Union
+import uuid
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 from chainlit_client.step import Step
@@ -105,6 +106,13 @@ class API:
         if self.endpoint is None:
             raise Exception("CHAINLIT_ENDPOINT not set")
 
+    @property
+    def headers(self):
+        return {
+            "Content-Type": "application/json",
+            "x-api-key": self.api_key,
+        }
+
     async def send_steps(self, steps: List[Union[Dict, "Step"]]):
         query = query_builder(steps)
         variables = variables_builder(steps)
@@ -114,10 +122,7 @@ class API:
                 response = await client.post(
                     self.endpoint,
                     json={"query": query, "variables": variables},
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-api-key": self.api_key,
-                    },
+                    headers=self.headers,
                     timeout=10,
                 )
 
@@ -169,10 +174,7 @@ class API:
                 response = await client.post(
                     self.endpoint,
                     json={"query": query, "variables": variables},
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-api-key": self.api_key,
-                    },
+                    headers=self.headers,
                     timeout=10,
                 )
 
@@ -180,3 +182,52 @@ class API:
             except Exception as e:
                 print(f"Failed to get thread: {e}")
                 return None
+
+    async def upload_file(
+        self, content: Union[bytes, str], mime: str, thread_id: Optional[str]
+    ) -> Dict:
+        id = str(uuid.uuid4())
+        body = {"fileName": id, "contentType": mime}
+
+        if thread_id:
+            body["threadId"] = thread_id
+
+        path = "/api/upload/file"
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.endpoint}{path}",
+                json=body,
+                headers=self.headers,
+            )
+            if response.status_code != 200:
+                reason = response.text
+                print(f"Failed to sign upload url: {reason}")
+                return {"object_key": None, "url": None}
+            json_res = response.json()
+
+        upload_details = json_res["post"]
+        object_key = upload_details["fields"]["key"]
+        signed_url = json_res["signedUrl"]
+
+        # Prepare form data
+        form_data = {}  # type: Dict[str, Tuple[Union[str, None], Any]]
+        for field_name, field_value in upload_details["fields"].items():
+            form_data[field_name] = (None, field_value)
+
+        # Add file to the form_data
+        # Note: The content_type parameter is not needed here, as the correct MIME type should be set in the 'Content-Type' field from upload_details
+        form_data["file"] = (id, content)
+
+        async with httpx.AsyncClient() as client:
+            upload_response = await client.post(
+                upload_details["url"],
+                files=form_data,
+            )
+            try:
+                upload_response.raise_for_status()
+                url = f'{upload_details["url"]}/{object_key}'
+                return {"object_key": object_key, "url": signed_url}
+            except Exception as e:
+                print(f"Failed to upload file: {str(e)}")
+                return {"object_key": None, "url": None}
