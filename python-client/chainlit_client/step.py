@@ -52,22 +52,22 @@ class Step:
         self.parent_id = parent_id
 
         # Overwrite the thread_id with the context as it's more trustworthy
-        active_thread = active_thread_id_var.get()
-        if active_thread and not thread_id:
-            self.thread_id = active_thread
 
-        active_steps = active_steps_var.get()
-        if active_steps and not parent_id:
-            parent_step = active_steps[-1]
-            self.parent_id = parent_step.id
-            # Overwrite the thread_id with the parent step as it's more trustworthy
-            self.thread_id = parent_step.thread_id
+        if not thread_id:
+            if active_thread := active_thread_id_var.get():
+                self.thread_id = active_thread
 
-        if self.thread_id is None:
+        if not self.thread_id:
             raise Exception("Step must be initialized with a thread_id.")
 
-        active_steps.append(self)
-        active_steps_var.set(active_steps)
+        if not parent_id:
+            if active_steps := active_steps_var.get():
+                parent_step = active_steps[-1]
+                self.parent_id = parent_step.id
+                # Overwrite the thread_id with the parent step as it's more trustworthy
+                self.thread_id = parent_step.thread_id
+                active_steps.append(self)
+                active_steps_var.set(active_steps)
 
     def finalize(self):
         self.end = int(time.time() * 1e3)
