@@ -184,13 +184,10 @@ class API:
                 return None
 
     async def upload_file(
-        self, content: Union[bytes, str], mime: str, thread_id: Optional[str]
+        self, content: Union[bytes, str], mime: str, thread_id: str
     ) -> Dict:
         id = str(uuid.uuid4())
-        body = {"fileName": id, "contentType": mime}
-
-        if thread_id:
-            body["threadId"] = thread_id
+        body = {"fileName": id, "contentType": mime, "threadId": thread_id}
 
         path = "/api/upload/file"
 
