@@ -1,6 +1,6 @@
 import uuid
 from enum import Enum, unique
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal, Optional, List
 
 from pydantic.dataclasses import Field, dataclass
 
@@ -60,6 +60,7 @@ class BaseGeneration:
     completion: Optional[str] = None
     settings: Optional[Dict] = None
     token_count: Optional[int] = None
+    functions: Optional[List[Dict]] = None
 
     @classmethod
     def from_dict(self, generation_dict: Dict) -> "BaseGeneration":
@@ -70,6 +71,9 @@ class BaseGeneration:
             return CompletionGeneration.from_dict(generation_dict)
         else:
             raise ValueError(f"Unknown generation type: {type}")
+
+    def to_dict(self):
+        raise NotImplementedError()
 
 
 @dataclass
