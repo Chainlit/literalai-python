@@ -85,6 +85,25 @@ class ChainlitClient:
             processor=self.event_processor,
         )
 
+    def message(
+        self,
+        name: str = "",
+        id: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        step_id: Optional[str] = None,
+        message: Optional[str] = None,
+        role: Optional[EventRole] = None,
+    ):
+        return Event(
+            name=name,
+            id=id,
+            thread_id=thread_id,
+            step_id=step_id,
+            message=message,
+            role=role,
+            processor=self.event_processor,
+        )
+
     def create_step(
         self,
         name: str = "",

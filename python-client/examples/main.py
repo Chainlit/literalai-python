@@ -44,15 +44,15 @@ def run():
     thread_id = sdk.get_current_thread_id()
 
     welcome_message = "What's your name? "
-    sdk.event(message=welcome_message, role="SYSTEM")
+    sdk.message(message=welcome_message, role="SYSTEM")
     text = input(welcome_message)
-    sdk.event(message=text, role="USER")
+    sdk.message(message=text, role="USER")
 
     completion = get_completion(welcome_message=welcome_message, text=text)
 
     print("")
     print(completion)
-    sdk.event(message=completion, role="ASSISTANT")
+    sdk.message(message=completion, role="ASSISTANT")
 
 
 run()

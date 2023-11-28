@@ -8,6 +8,10 @@ from pydantic.dataclasses import Field, dataclass
 MessageType = Literal["USER_MESSAGE", "ASSISTANT_MESSAGE", "SYSTEM_MESSAGE"]
 
 GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system"]
+MessageRole = Literal["ASSISTANT", "SYSTEM", "USER", "TOOL"]
+FeedbackStrategy = Literal[
+    "BINARY", "STARS", "BIG_STARS", "LIKERT", "CONTINUOUS", "LETTERS", "PERCENTAGE"
+]
 
 
 @unique
@@ -143,38 +147,30 @@ class ChatGeneration(BaseGeneration):
         )
 
 
-@unique
-class FeedbackStrategy(Enum):
-    BINARY = "BINARY"
-    STARS = "STARS"
-    BIG_STARS = "BIG_STARS"
-    LIKERT = "LIKERT"
-    CONTINUOUS = "CONTINUOUS"
-    LETTERS = "LETTERS"
-    PERCENTAGE = "PERCENTAGE"
-
-
 @dataclass
 class Feedback:
     value: Optional[float] = None
-    strategy: FeedbackStrategy = FeedbackStrategy.BINARY
+    strategy: FeedbackStrategy = "BINARY"
     comment: Optional[str] = None
 
     def to_dict(self):
         return {
             "value": self.value,
-            "strategy": self.strategy.value if self.strategy else None,
+            "strategy": self.strategy,
             "comment": self.comment,
         }
 
 
 @dataclass
 class Attachment:
+    step_id: str
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     mime: Optional[str] = None
     name: Optional[str] = None
     objectKey: Optional[str] = None
     url: Optional[str] = None
+    display: Optional[str] = None
+    type: Optional[str] = None
 
     def to_dict(self):
         return {
@@ -183,6 +179,9 @@ class Attachment:
             "name": self.name,
             "objectKey": self.objectKey,
             "url": self.url,
+            "display": self.display,
+            "step_id": self.step_id,
+            "type": self.type,
         }
 
     @classmethod
@@ -192,7 +191,55 @@ class Attachment:
         name = attachment_dict.get("name", "")
         objectKey = attachment_dict.get("objectKey", "")
         url = attachment_dict.get("url", "")
+        display = attachment_dict.get("display", "")
+        step_id = attachment_dict.get("step_id", "")
+        type = attachment_dict.get("type", "")
 
-        attachment = cls(id=id, mime=mime, name=name, objectKey=objectKey, url=url)
+        attachment = cls(
+            id=id,
+            mime=mime,
+            name=name,
+            objectKey=objectKey,
+            url=url,
+            display=display,
+            step_id=step_id,
+            type=type,
+        )
 
         return attachment
+
+
+@dataclass
+class User:
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    username: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    image: Optional[str] = None
+    provider: Optional[str] = None
+    tags: Optional[List[str]] = Field(default_factory=lambda: [])
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "image": self.image,
+            "provider": self.provider,
+            "tags": self.tags,
+        }
+
+    @classmethod
+    def from_dict(cls, user_dict: Dict) -> "User":
+        id = user_dict.get("id", "")
+        username = user_dict.get("username", "")
+        image = user_dict.get("image", "")
+        provider = user_dict.get("provider", "")
+        tags = user_dict.get("tags", [])
+
+        user = cls(
+            id=id,
+            username=username,
+            image=image,
+            provider=provider,
+            tags=tags,
+        )
+
+        return user

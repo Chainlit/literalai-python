@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from .event_processor import EventProcessor
 
 from .context import active_steps_var, active_thread_id_var
-from .types import Attachment, BaseGeneration, Feedback, FeedbackStrategy
+from .types import Attachment, BaseGeneration, Feedback
 
 StepType = Literal[
     "RUN", "TOOL", "LLM", "EMBEDDING", "RETRIEVAL", "RERANK", "UNDEFINED"
@@ -124,11 +124,7 @@ class Step:
             feedback_dict = step_dict["feedback"]
             if feedback_dict:
                 value = feedback_dict.get("value")
-                strategy = (
-                    FeedbackStrategy(feedback_dict.get("strategy"))
-                    if feedback_dict.get("strategy")
-                    else None
-                )
+                strategy = feedback_dict.get("strategy")
                 comment = feedback_dict.get("comment")
                 if strategy:
                     step.feedback = Feedback(
