@@ -21,7 +21,7 @@ async def to_thread(func, /, *args, **kwargs):
 class EventProcessor:
     event_queue: queue.Queue
 
-    def __init__(self, api: Optional["API"] = None, batch_size: int = 1):
+    def __init__(self, api: "API" = None, batch_size: int = 1):
         self.batch_size = batch_size
         self.api = api
         self.event_queue = queue.Queue()
