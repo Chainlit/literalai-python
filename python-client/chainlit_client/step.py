@@ -66,14 +66,13 @@ class Step:
                 self.parent_id = parent_step.id
                 # Overwrite the thread_id with the parent step as it's more trustworthy
                 self.thread_id = parent_step.thread_id
-                active_steps.append(self)
-                active_steps_var.set(active_steps)
+
+        active_steps.append(self)
 
     def finalize(self):
         self.end = int(time.time() * 1e3)
         active_steps = active_steps_var.get()
         active_steps.pop()
-        active_steps_var.set(active_steps)
         if self.processor is None:
             raise Exception(
                 "Step must be initialized with a processor to allow finalization."
@@ -211,7 +210,7 @@ def step_decorator(
 
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-            with StepContextManager(
+            async with StepContextManager(
                 client=client,
                 type=type,
                 name=name,
