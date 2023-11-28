@@ -2,7 +2,7 @@ import asyncio
 import json
 
 from chainlit_client import ChainlitClient
-from chainlit_client.types import Attachment, Feedback
+from chainlit_client.types import Attachment
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -76,21 +76,12 @@ async def main():
         print("Error: No LLM step found")
         return
 
-    # load it and attach a feedback
+    # attach a feedback
     await sdk.api.set_human_feedback(
         thread_id=thread_id, step_id=llm_step.id, value=1, comment="this is a comment"
     )
-    llm_step.attachments = [
-        Attachment(
-            mime="text/html",
-            name="video.html",
-            url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        )
-    ]
 
-    # save it
-    await sdk.api.send_steps([llm_step])
-
+    # get the updated steps
     thread = await sdk.api.get_thread(id=thread_id)
 
     print(
