@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import httpx
 from chainlit_client.step import Step
 from chainlit_client.thread import Thread
-from chainlit_client.types import Feedback, FeedbackStrategy
+from chainlit_client.types import Attachment, Feedback, FeedbackStrategy, User
 
 
 def serialize_step(event, id):
@@ -148,8 +148,23 @@ class API:
     async def update_user(self):
         raise NotImplementedError()
 
-    async def get_user(self):
-        raise NotImplementedError()
+    async def get_user(self, username: str):
+        query = """
+        query GetUser($username: String!) {
+            getAppUser(username: $username) {
+                id
+                image
+                provider
+                tags
+                username
+            }
+        }
+    """
+        variables = {"username": username}
+
+        result = await self.make_api_call("get user", query, variables)
+        print(result)
+        return User.from_dict(result["data"])
 
     async def delete_user(self):
         raise NotImplementedError()
@@ -267,13 +282,7 @@ class API:
         comment: Optional[str] = None,
         feedback_strategy: Optional[FeedbackStrategy] = None,
     ):
-        thread = await self.get_thread(id=thread_id)
-
-        step = None
-        for s in thread.steps:
-            if s.id == step_id:
-                step = s
-                break
+        step = await self.get_step(thread_id=thread_id, step_id=step_id)
 
         if step is None:
             raise Exception(f"Step {step_id} not found in thread {thread_id}")
@@ -308,8 +317,64 @@ class API:
 
     # Attachment API
 
-    async def create_attachment(self):
-        raise NotImplementedError()
+    async def create_attachment(
+        self,
+        attachment: "Attachment",
+        thread_id: str,
+        content: Optional[Union[bytes, str]] = None,
+    ):
+        if not content and not attachment.url:
+            raise Exception("Either content or url must be provided")
+
+        if content:
+            uploaded = await self.upload_file(content, attachment.mime, thread_id)
+
+            if uploaded["object_key"] is None or uploaded["url"] is None:
+                raise Exception("Failed to upload file")
+
+            attachment.objectKey = uploaded["object_key"]
+            attachment.url = uploaded["url"]
+
+        query = """
+        mutation CreateElement(
+            $thread_id: ID!,
+            $display: String!,
+            $forIds: [String!]!,
+            $language: String,
+            $mime: String,
+            $name: String!,
+            $object_key: String,
+            $size: String,
+            $type: String!,
+            $url: String
+        ) {
+            createElement(
+                conversationId: $thread_id,
+                display: $display,
+                forIds: $forIds,
+                language: $language,
+                mime: $mime,
+                name: $name,
+                objectKey: $object_key,
+                size: $size,
+                type: $type,
+                url: $url
+            ) {
+                id
+            }
+        }
+        """
+
+        variables = attachment.to_dict()
+        variables.update(
+            {
+                "thread_id": thread_id,
+                "forIds": [attachment.step_id],
+            }
+        )
+        print(variables)
+
+        return await self.make_api_call("create attachment", query, variables)
 
     async def update_attachment(self):
         raise NotImplementedError()
@@ -317,19 +382,27 @@ class API:
     async def get_attachment(self):
         raise NotImplementedError()
 
-    async def delete_attachment(self):
+    async def upload_attachment(self):
         raise NotImplementedError()
 
     # Step API
 
-    async def create_step(self):
-        raise NotImplementedError()
+    async def create_step(self, step: Union[Dict, "Step"]):
+        return await self.send_steps([step])
 
-    async def update_step(self):
-        raise NotImplementedError()
+    async def update_step(self, step: Union[Dict, "Step"]):
+        return await self.send_steps([step])
 
-    async def get_step(self):
-        raise NotImplementedError()
+    async def get_step(self, thread_id: str, step_id: str):
+        thread = await self.get_thread(id=thread_id)
+
+        step = None
+        for s in thread.steps:
+            if s.id == step_id:
+                step = s
+                break
+
+        return step
 
     async def delete_step(self):
         raise NotImplementedError()
