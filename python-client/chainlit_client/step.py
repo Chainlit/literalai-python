@@ -1,6 +1,6 @@
 import inspect
 import json
-import time
+import datetime
 import uuid
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
@@ -23,8 +23,8 @@ class Step:
     type: Optional[StepType] = None
     metadata: Dict = {}
     parent_id: Optional[str] = None
-    start: Optional[int] = None
-    end: Optional[int] = None
+    start: Optional[str] = None
+    end: Optional[str] = None
     input: Optional[str] = None
     output: Optional[str] = None
 
@@ -42,35 +42,38 @@ class Step:
         processor: Optional["EventProcessor"] = None,
     ):
         self.id = id or str(uuid.uuid4())
-        self.start = int(time.time() * 1e3)
+        self.start = datetime.datetime.utcnow().isoformat()
         self.name = name
         self.type = type
 
         self.processor = processor
 
+        # priority for thread_id: thread_id > parent_step.thread_id > active_thread
         self.thread_id = thread_id
+
+        # priority for parent_id: parent_id > parent_step.id
         self.parent_id = parent_id
 
-        # Overwrite the thread_id with the context as it's more trustworthy
+        active_steps = active_steps_var.get()
+        if active_steps:
+            parent_step = active_steps[-1]
+            if not parent_id:
+                self.parent_id = parent_step.id
+            if not thread_id:
+                self.thread_id = parent_step.thread_id
 
-        if not thread_id:
+        if not self.thread_id:
             if active_thread := active_thread_id_var.get():
                 self.thread_id = active_thread
 
         if not self.thread_id:
             raise Exception("Step must be initialized with a thread_id.")
 
-        if not parent_id:
-            if active_steps := active_steps_var.get():
-                parent_step = active_steps[-1]
-                self.parent_id = parent_step.id
-                # Overwrite the thread_id with the parent step as it's more trustworthy
-                self.thread_id = parent_step.thread_id
-                active_steps.append(self)
-                active_steps_var.set(active_steps)
+        active_steps.append(self)
+        active_steps_var.set(active_steps)
 
     def finalize(self):
-        self.end = int(time.time() * 1e3)
+        self.end = datetime.datetime.utcnow().isoformat()
         active_steps = active_steps_var.get()
         active_steps.pop()
         active_steps_var.set(active_steps)
@@ -103,7 +106,7 @@ class Step:
     def from_dict(cls, step_dict: Dict) -> "Step":
         name = step_dict.get("name", "")
         step_type = step_dict.get("type", "UNDEFINED")  # type: StepType
-        thread_id = step_dict.get("thread_id")
+        thread_id = step_dict.get("thread_id") or step_dict.get("threadId")
 
         step = cls(name=name, type=step_type, thread_id=thread_id)
 
@@ -114,7 +117,8 @@ class Step:
 
         if "generation" in step_dict and step_type == "LLM":
             generation_dict = step_dict["generation"]
-            step.generation = BaseGeneration.from_dict(generation_dict)
+            if generation_dict:
+                step.generation = BaseGeneration.from_dict(generation_dict)
 
         if "feedback" in step_dict:
             feedback_dict = step_dict["feedback"]

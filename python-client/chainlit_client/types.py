@@ -1,6 +1,7 @@
 import uuid
 from enum import Enum, unique
-from typing import Dict, Literal, Optional, List
+from typing import Any, Dict, Literal, Optional, List
+from .event import Event
 
 from pydantic.dataclasses import Field, dataclass
 
@@ -90,7 +91,7 @@ class CompletionGeneration(BaseGeneration):
         return {
             "template": self.template,
             "formatted": self.formatted,
-            "templateFormat": self.template_format,
+            "template_format": self.template_format,
             "provider": self.provider,
             "inputs": self.inputs,
             "completion": self.completion,
@@ -104,7 +105,7 @@ class CompletionGeneration(BaseGeneration):
         return CompletionGeneration(
             template=generation_dict.get("template"),
             formatted=generation_dict.get("formatted"),
-            template_format=generation_dict.get("templateFormat", "f-string"),
+            template_format=generation_dict.get("template_format", "f-string"),
             provider=generation_dict.get("provider"),
             completion=generation_dict.get("completion"),
             settings=generation_dict.get("settings"),

@@ -38,8 +38,32 @@ def get_completion(welcome_message, text):
     return completion.choices[0].message.content
 
 
+@sdk.thread
+def run():
+    global thread_id
+    thread_id = sdk.get_current_thread_id()
+
+    welcome_message = "What's your name? "
+    sdk.event(message=welcome_message, role="SYSTEM")
+    text = input(welcome_message)
+    sdk.event(message=text, role="USER")
+
+    completion = get_completion(welcome_message=welcome_message, text=text)
+
+    print("")
+    print(completion)
+    sdk.event(message=completion, role="ASSISTANT")
+
+
+run()
+sdk.wait_until_queue_empty()
+
+
 # Get the steps from the API for the demo
 async def main():
+    threads = await sdk.api.list_threads()
+    print(threads["data"]["threads"]["totalCount"], "threads")
+
     print("\nSearching for the thread", thread_id, "...")
     thread = await sdk.api.get_thread(id=thread_id)
 
@@ -48,8 +72,14 @@ async def main():
     # get the LLM step
     llm_step = [step for step in thread.steps if step.type == "LLM"][0]
 
+    if not llm_step:
+        print("Error: No LLM step found")
+        return
+
     # load it and attach a feedback
-    llm_step.feedback = Feedback(value=1, comment="this is a comment")
+    await sdk.api.set_human_feedback(
+        thread_id=thread_id, step_id=llm_step.id, value=1, comment="this is a comment"
+    )
     llm_step.attachments = [
         Attachment(
             mime="text/html",
