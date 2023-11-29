@@ -51,7 +51,7 @@ def instrument_openai(client: "ChainlitClient"):
             step.generation = ChatGeneration(provider="openai", settings=settings)
             if kwargs.get("messages"):
                 step.input = json.dumps(kwargs.get("messages"))
-                step.generation.messages = kwargs.get("messages")
+                step.generation.messages = kwargs.get("messages", [])
 
             context["step"] = step
 

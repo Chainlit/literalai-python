@@ -22,6 +22,7 @@ class GenerationMessage:
     # This is used for OpenAI's function message
     name: Optional[str] = None
     role: Optional[MessageRole] = None
+    template_format: str = "f-string"
 
     def to_openai(self):
         msg_dict = {"role": self.role, "content": self.formatted}
@@ -39,6 +40,7 @@ class GenerationMessage:
             "placeholder_size": self.placeholder_size,
             "name": self.name,
             "role": self.role if self.role else None,
+            "templateFormat": self.template_format,
         }
 
     @classmethod
@@ -56,7 +58,6 @@ class GenerationMessage:
 class BaseGeneration:
     provider: Optional[str] = None
     inputs: Optional[Dict] = None
-    template_format: str = "f-string"
     completion: Optional[str] = None
     settings: Optional[Dict] = None
     token_count: Optional[int] = None
@@ -80,6 +81,7 @@ class BaseGeneration:
 class CompletionGeneration(BaseGeneration):
     template: Optional[str] = None
     formatted: Optional[str] = None
+    template_format: str = "f-string"
     type = GenerationType.COMPLETION
 
     def to_dict(self):
@@ -110,7 +112,7 @@ class CompletionGeneration(BaseGeneration):
 
 @dataclass
 class ChatGeneration(BaseGeneration):
-    messages: Optional[Any] = None
+    messages: List[GenerationMessage] = Field(default_factory=list)
     type = GenerationType.CHAT
 
     def to_dict(self):
@@ -132,7 +134,6 @@ class ChatGeneration(BaseGeneration):
                 GenerationMessage.from_dict(m)
                 for m in generation_dict.get("messages", [])
             ],
-            template_format=generation_dict.get("templateFormat", "f-string"),
             provider=generation_dict.get("provider"),
             completion=generation_dict.get("completion"),
             settings=generation_dict.get("settings"),
