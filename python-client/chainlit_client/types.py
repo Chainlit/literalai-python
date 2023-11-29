@@ -117,8 +117,7 @@ class ChatGeneration(BaseGeneration):
 
     def to_dict(self):
         return {
-            "messages": self.messages,
-            "templateFormat": self.template_format,
+            "messages": [m.to_dict() for m in self.messages],
             "provider": self.provider,
             "inputs": self.inputs,
             "completion": self.completion,
