@@ -7,6 +7,17 @@ if TYPE_CHECKING:
     from .api import API
 
 
+# to_thread is a backport of asyncio.to_thread from Python 3.9
+async def to_thread(func, /, *args, **kwargs):
+    import contextvars
+    import functools
+
+    loop = asyncio.get_running_loop()
+    ctx = contextvars.copy_context()
+    func_call = functools.partial(ctx.run, func, *args, **kwargs)
+    return await loop.run_in_executor(None, func_call)
+
+
 class EventProcessor:
     event_queue: queue.Queue
 
@@ -24,7 +35,7 @@ class EventProcessor:
         self.event_queue.put(event)
 
     async def a_add_events(self, event: Dict):
-        await asyncio.to_thread(self.event_queue.put, event)
+        await to_thread(self.event_queue.put, event)
 
     def _process_events(self):
         loop = asyncio.new_event_loop()
