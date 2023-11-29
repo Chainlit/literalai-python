@@ -4,7 +4,7 @@ from typing import Any, Dict, Literal, Optional, List
 
 from pydantic.dataclasses import Field, dataclass
 
-MessageRole = Literal["ASSISTANT", "SYSTEM", "USER", "TOOL"]
+MessageRole = Literal["user", "assistant", "tool", "system"]
 
 
 @unique
