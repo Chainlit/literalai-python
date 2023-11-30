@@ -4,7 +4,36 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import httpx
 from chainlit_client.step import Step
 from chainlit_client.thread import Thread
-from chainlit_client.types import Attachment, Feedback, FeedbackStrategy, User
+from chainlit_client.types import Attachment, Feedback, FeedbackStrategy, Participant
+
+step_fields = """
+        id
+        threadId
+        parentId
+        startTime
+        endTime
+        type
+        input
+        output
+        metadata
+        feedback {
+            value
+            comment
+        }
+        tags
+        generation {
+            type
+            provider
+            settings
+        }
+        name
+        attachments {
+            id
+            mime
+            name
+            objectKey
+            url
+        }"""
 
 
 def serialize_step(event, id):
@@ -142,32 +171,56 @@ class API:
 
     # User API
 
-    async def create_user(self):
-        raise NotImplementedError()
-
-    async def update_user(self):
-        raise NotImplementedError()
-
-    async def get_user(self, username: str):
+    async def create_participant(
+        self, identifier: str, metadata: Optional[Dict] = None
+    ):
         query = """
-        query GetUser($username: String!) {
-            getAppUser(username: $username) {
+        mutation CreateParticipant($identifier: String!, $metadata: Json) {
+            createParticipant(identifier: $identifier, metadata: $metadata) {
                 id
-                image
-                provider
-                tags
-                username
             }
         }
-    """
-        variables = {"username": username}
+        """
 
-        result = await self.make_api_call("get user", query, variables)
-        print(result)
-        return User.from_dict(result["data"])
+        variables = {"identifier": identifier, "metadata": metadata}
 
-    async def delete_user(self):
-        raise NotImplementedError()
+        return await self.make_api_call("create participant", query, variables)
+
+    async def update_participant(
+        self, identifier: str, metadata: Optional[Dict] = None
+    ):
+        query = """
+        mutation UpdateParticipant(
+            $id: String!,
+            $metadata: Json,
+        ) {
+            updateParticipant(
+                id: $id,
+                metadata: $metadata
+            ) {
+                id
+            }
+        }
+"""
+        variables = {"metadata": metadata}
+
+        return await self.make_api_call("update participant", query, variables)
+
+    async def get_participant(self, thread_id: str):
+        return NotImplementedError()
+
+    async def delete_participant(self, id: str):
+        query = """
+        mutation DeleteParticipant($id: ID!) {
+            deleteParticipant(id: $id) {
+                id
+            }
+        }
+        """
+
+        variables = {"id": id}
+
+        return await self.make_api_call("delete participant", query, variables)
 
     # Thread API
 
@@ -220,72 +273,142 @@ class API:
 
         return await self.make_api_call("list threads", query, variables)
 
-    async def create_thread(self):
-        raise NotImplementedError()
+    async def create_thread(
+        self,
+        metadata: Optional[Dict] = None,
+        participant_id: Optional[str] = None,
+        environment: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+    ):
+        query = """
+        mutation CreateThread(
+            $metadata: Json,
+            $participantId: String,
+            $environment: String,
+            $tags: [String!],
+            $startTime: DateTime,
+            $endTime: DateTime,
+        ) {
+            createThread(
+                metadata: $metadata
+                participantId: $participantId
+                environment: $environment
+                tags: $tags
+                startTime: $startTime
+                endTime: $endTime
+            ) {
+                id
+            }
+        }
+"""
+        variables = {
+            "metadata": metadata,
+            "participantId": participant_id,
+            "environment": environment,
+            "tags": tags,
+            "startTime": start_time,
+            "endTime": end_time,
+        }
 
-    async def update_thread(self):
-        raise NotImplementedError()
+        thread = await self.make_api_call("create thread", query, variables)
+
+        return Thread.from_dict(thread["data"]["createThread"])
+
+    async def update_thread(
+        self,
+        metadata: Optional[Dict] = None,
+        participant_id: Optional[str] = None,
+        environment: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+    ):
+        query = """
+        mutation UpdateThread(
+            $id: ID!,
+            $metadata: Json,
+            $participantId: String,
+            $environment: String,
+            $tags: [String!],
+            $startTime: DateTime,
+            $endTime: DateTime,
+        ) {
+            updateThread(
+                metadata: $metadata
+                participantId: $participantId
+                environment: $environment
+                tags: $tags
+                startTime: $startTime
+                endTime: $endTime
+            ) {
+                id
+            }
+        }
+"""
+        variables = {
+            "metadata": metadata,
+            "participantId": participant_id,
+            "environment": environment,
+            "tags": tags,
+            "startTime": start_time,
+            "endTime": end_time,
+        }
+
+        # remove None values to prevent the API from removing existing values
+        variables = {k: v for k, v in variables.items() if v is not None}
+
+        thread = await self.make_api_call("update thread", query, variables)
+
+        return Thread.from_dict(thread["data"]["updateThread"])
 
     async def get_thread(self, id):
-        query = """
-        query GetSteps($id: String!) {
+        query = (
+            """
+        query GetThread($id: String!) {
             thread(id: $id) {
                 id
-                steps {
-                    id
-                    threadId
-                    parentId
-                    startTime
-                    endTime
-                    type
-                    input
-                    output
-                    metadata
-                    feedback {
-                        value
-                        comment
-                    }
-                    tags
-                    generation {
-                        type
-                        provider
-                        settings
-                    }
-                    name
-                    attachments {
-                        id
-                        mime
-                        name
-                        objectKey
-                        url
-                    }
-                }
+                steps {"""
+            + step_fields
+            + """}
             }
         }
     """
+        )
+
         variables = {"id": id}
 
         result = await self.make_api_call("get thread", query, variables)
 
         return Thread.from_dict(result["data"]["thread"])
 
-    async def delete_thread(self):
-        raise NotImplementedError()
+    async def delete_thread(self, thread_id: str):
+        query = """
+        mutation DeleteThread($thread_id: ID!) {
+            deleteThread(id: $thread_id) {
+                id
+            }
+        }
+        """
+
+        variables = {"thread_id": thread_id}
+
+        return await self.make_api_call("delete thread", query, variables)
 
     # Feedback API
 
-    async def set_human_feedback(
+    async def set_feedback(
         self,
-        thread_id: str,
         step_id: str,
         value: Optional[int] = None,
         comment: Optional[str] = None,
         feedback_strategy: Optional[FeedbackStrategy] = None,
     ):
-        step = await self.get_step(thread_id=thread_id, step_id=step_id)
+        step = await self.get_step(step_id=step_id)
 
         if step is None:
-            raise Exception(f"Step {step_id} not found in thread {thread_id}")
+            raise Exception(f"Step {step_id} not found")
 
         if step.feedback is None:
             step.feedback = Feedback()
@@ -393,16 +516,22 @@ class API:
     async def update_step(self, step: Union[Dict, "Step"]):
         return await self.send_steps([step])
 
-    async def get_step(self, thread_id: str, step_id: str):
-        thread = await self.get_thread(id=thread_id)
+    async def get_step(self, step_id: str):
+        query = (
+            """
+        query GetStep($id: String!) {
+            step(id: $id) {"""
+            + step_fields
+            + """
+            }
+        }
+    """
+        )
+        variables = {"id": step_id}
 
-        step = None
-        for s in thread.steps:
-            if s.id == step_id:
-                step = s
-                break
+        result = await self.make_api_call("get step", query, variables)
 
-        return step
+        return Step.from_dict(result["data"]["step"])
 
     async def delete_step(self):
         raise NotImplementedError()

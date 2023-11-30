@@ -210,36 +210,24 @@ class Attachment:
 
 
 @dataclass
-class User:
-    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
-    username: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
-    image: Optional[str] = None
-    provider: Optional[str] = None
-    tags: Optional[List[str]] = Field(default_factory=lambda: [])
+class Participant:
+    identifier: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    metadata: Dict = Field(default_factory=lambda: {})
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "username": self.username,
-            "image": self.image,
-            "provider": self.provider,
-            "tags": self.tags,
+            "identifier": self.identifier,
+            "metadata": self.metadata,
         }
 
     @classmethod
-    def from_dict(cls, user_dict: Dict) -> "User":
-        id = user_dict.get("id", "")
-        username = user_dict.get("username", "")
-        image = user_dict.get("image", "")
-        provider = user_dict.get("provider", "")
-        tags = user_dict.get("tags", [])
+    def from_dict(cls, user_dict: Dict) -> "Participant":
+        identifier = user_dict.get("identifier", "")
+        metadata = user_dict.get("metadata", {})
 
-        user = cls(
-            id=id,
-            username=username,
-            image=image,
-            provider=provider,
-            tags=tags,
+        participant = cls(
+            identifier=identifier,
+            metadata=metadata,
         )
 
-        return user
+        return participant
