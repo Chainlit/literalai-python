@@ -1,10 +1,12 @@
 import uuid
 from enum import Enum, unique
-from typing import Any, Dict, Literal, Optional, List
+from typing import Dict, Literal, Optional, List
 
 from pydantic.dataclasses import Field, dataclass
 
-MessageRole = Literal["user", "assistant", "tool", "function", "system"]
+MessageType = Literal["USER_MESSAGE", "ASSISTANT_MESSAGE", "SYSTEM_MESSAGE"]
+
+GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system"]
 
 
 @unique
@@ -21,7 +23,7 @@ class GenerationMessage:
     placeholder_size: Optional[int] = None
     # This is used for OpenAI's function message
     name: Optional[str] = None
-    role: Optional[MessageRole] = None
+    role: Optional[GenerationMessageRole] = None
     template_format: str = "f-string"
 
     def to_openai(self):
