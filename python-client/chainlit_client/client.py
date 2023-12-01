@@ -3,7 +3,6 @@ from typing import Optional
 
 from .api import API
 from .context import active_steps_var, active_thread_id_var
-from .event import Event, EventRole
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
 from .step import Step, StepContextManager, StepType, step_decorator
@@ -66,25 +65,6 @@ class ChainlitClient:
                 self, type=type, id=id, parent_id=parent_id, thread_id=thread_id
             )
 
-    def event(
-        self,
-        name: str = "",
-        id: Optional[str] = None,
-        thread_id: Optional[str] = None,
-        step_id: Optional[str] = None,
-        message: Optional[str] = None,
-        role: Optional[EventRole] = None,
-    ):
-        return Event(
-            name=name,
-            id=id,
-            thread_id=thread_id,
-            step_id=step_id,
-            message=message,
-            role=role,
-            processor=self.event_processor,
-        )
-
     def message(
         self,
         name: str = "",
@@ -92,17 +72,21 @@ class ChainlitClient:
         thread_id: Optional[str] = None,
         step_id: Optional[str] = None,
         message: Optional[str] = None,
-        role: Optional[EventRole] = None,
+        role: Optional[str] = None,
     ):
-        return Event(
+        # TODO: change to the message class
+        step = Step(
             name=name,
             id=id,
             thread_id=thread_id,
             step_id=step_id,
-            message=message,
+            output=message,
             role=role,
             processor=self.event_processor,
         )
+        step.output = message
+
+        return step
 
     def create_step(
         self,

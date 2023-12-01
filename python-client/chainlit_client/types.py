@@ -1,7 +1,6 @@
 import uuid
 from enum import Enum, unique
 from typing import Any, Dict, Literal, Optional, List
-from .event import Event
 
 from pydantic.dataclasses import Field, dataclass
 
@@ -210,7 +209,8 @@ class Attachment:
 
 
 @dataclass
-class Participant:
+class User:
+    id: Optional[str] = None
     identifier: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     metadata: Dict = Field(default_factory=lambda: {})
 
@@ -221,13 +221,15 @@ class Participant:
         }
 
     @classmethod
-    def from_dict(cls, user_dict: Dict) -> "Participant":
+    def from_dict(cls, user_dict: Dict) -> "User":
+        id = user_dict.get("id", "")
         identifier = user_dict.get("identifier", "")
         metadata = user_dict.get("metadata", {})
 
-        participant = cls(
+        user = cls(
+            id=id,
             identifier=identifier,
             metadata=metadata,
         )
 
-        return participant
+        return user
