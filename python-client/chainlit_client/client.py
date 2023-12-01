@@ -1,12 +1,14 @@
 import os
-from typing import Optional
+from typing import Dict, List, Optional
 
 from .api import API
 from .context import active_steps_var, active_thread_id_var
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
+from .message import Message, MessageType
 from .step import Step, StepContextManager, StepType, step_decorator
 from .thread import ThreadContextManager, thread_decorator
+from .types import Attachment
 
 
 class ChainlitClient:
@@ -67,24 +69,25 @@ class ChainlitClient:
 
     def message(
         self,
-        name: str = "",
+        content: str = "",
         id: Optional[str] = None,
+        type: Optional[MessageType] = None,
+        name: Optional[str] = None,
         thread_id: Optional[str] = None,
-        step_id: Optional[str] = None,
-        message: Optional[str] = None,
-        role: Optional[str] = None,
+        attachments: List[Attachment] = [],
+        metadata: Dict = {},
     ):
-        # TODO: change to the message class
-        step = Step(
+        step = Message(
             name=name,
             id=id,
             thread_id=thread_id,
-            step_id=step_id,
-            output=message,
-            role=role,
+            type=type,
+            content=content,
+            attachments=attachments,
+            metadata=metadata,
             processor=self.event_processor,
         )
-        step.output = message
+        step.finalize()
 
         return step
 

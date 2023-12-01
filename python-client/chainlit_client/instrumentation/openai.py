@@ -9,7 +9,12 @@ if TYPE_CHECKING:
 from packaging import version as packaging_version
 
 from ..step import Step
-from ..types import ChatGeneration, CompletionGeneration, GenerationType
+from ..types import (
+    ChatGeneration,
+    CompletionGeneration,
+    GenerationMessage,
+    GenerationType,
+)
 from ..wrappers import async_wrapper, sync_wrapper
 
 
@@ -51,7 +56,13 @@ def instrument_openai(client: "ChainlitClient"):
             step.generation = ChatGeneration(provider="openai", settings=settings)
             if kwargs.get("messages"):
                 step.input = json.dumps(kwargs.get("messages"))
-                step.generation.messages = kwargs.get("messages", [])
+                step.generation.messages = [
+                    GenerationMessage(
+                        role=m.get("role", "user"),
+                        content=m.get("content", ""),
+                    )
+                    for m in kwargs.get("messages", [])
+                ]
 
             context["step"] = step
 
