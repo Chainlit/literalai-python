@@ -4,8 +4,6 @@ from typing import Any, Dict, Literal, Optional, List
 
 from pydantic.dataclasses import Field, dataclass
 
-MessageType = Literal["USER_MESSAGE", "ASSISTANT_MESSAGE", "SYSTEM_MESSAGE"]
-
 GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system"]
 MessageRole = Literal["ASSISTANT", "SYSTEM", "USER", "TOOL"]
 FeedbackStrategy = Literal[

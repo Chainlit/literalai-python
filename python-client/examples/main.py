@@ -44,15 +44,15 @@ def run():
     thread_id = sdk.get_current_thread_id()
 
     welcome_message = "What's your name? "
-    sdk.message(message=welcome_message, role="SYSTEM")
+    sdk.message(content=welcome_message, type="SYSTEM_MESSAGE")
     text = input(welcome_message)
-    sdk.message(message=text, role="USER")
+    sdk.message(content=text, type="USER_MESSAGE")
 
     completion = get_completion(welcome_message=welcome_message, text=text)
 
     print("")
     print(completion)
-    sdk.message(message=completion, role="ASSISTANT")
+    sdk.message(content=completion, type="ASSISTANT_MESSAGE")
 
 
 run()
@@ -77,8 +77,8 @@ async def main():
         return
 
     # attach a feedback
-    await sdk.api.set_human_feedback(
-        thread_id=thread_id, step_id=llm_step.id, value=1, comment="this is a comment"
+    await sdk.api.set_feedback(
+        step_id=llm_step.id, value=1, comment="this is a comment"
     )
 
     # get the updated steps
