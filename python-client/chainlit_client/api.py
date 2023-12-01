@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import httpx
 from chainlit_client.step import Step
 from chainlit_client.thread import Thread
-from chainlit_client.types import Attachment, Feedback, FeedbackStrategy, Participant
+from chainlit_client.types import Attachment, Feedback, FeedbackStrategy, User
 
 step_fields = """
         id
@@ -166,61 +166,74 @@ class API:
 
                 return response.json()
             except Exception as e:
-                print(f"Failed to ${description}: {e}")
+                print(f"Failed to {description}: {e}")
                 return None
 
     # User API
 
-    async def create_participant(
-        self, identifier: str, metadata: Optional[Dict] = None
-    ):
+    async def create_user(self, identifier: str, metadata: Optional[Dict] = None):
         query = """
-        mutation CreateParticipant($identifier: String!, $metadata: Json) {
+        mutation CreateUser($identifier: String!, $metadata: Json) {
             createParticipant(identifier: $identifier, metadata: $metadata) {
                 id
+                identifier
+                metadata
             }
         }
         """
 
         variables = {"identifier": identifier, "metadata": metadata}
 
-        return await self.make_api_call("create participant", query, variables)
+        user = await self.make_api_call("create user", query, variables)
 
-    async def update_participant(
-        self, identifier: str, metadata: Optional[Dict] = None
+        return User.from_dict(user["data"]["createParticipant"])
+
+    async def update_user(
+        self, id: str, identifier: Optional[str] = None, metadata: Optional[Dict] = None
     ):
         query = """
-        mutation UpdateParticipant(
+        mutation UpdateUser(
             $id: String!,
+            $identifier: String,
             $metadata: Json,
         ) {
             updateParticipant(
                 id: $id,
+                identifier: $identifier,
                 metadata: $metadata
             ) {
                 id
+                identifier
+                metadata
             }
         }
 """
-        variables = {"metadata": metadata}
+        variables = {"id": id, "identifier": identifier, "metadata": metadata}
 
-        return await self.make_api_call("update participant", query, variables)
+        # remove None values to prevent the API from removing existing values
+        variables = {k: v for k, v in variables.items() if v is not None}
 
-    async def get_participant(self, thread_id: str):
+        user = await self.make_api_call("update user", query, variables)
+
+        return User.from_dict(user["data"]["updateParticipant"])
+
+    async def get_user(self, id: str):
         return NotImplementedError()
 
-    async def delete_participant(self, id: str):
+    async def delete_user(self, id: str):
         query = """
-        mutation DeleteParticipant($id: ID!) {
+        mutation DeleteUser($id: String!) {
             deleteParticipant(id: $id) {
                 id
+                identifier
+                metadata
             }
         }
         """
 
         variables = {"id": id}
 
-        return await self.make_api_call("delete participant", query, variables)
+        return await self.make_api_call("delete user", query, variables)
 
     # Thread API
 
@@ -318,6 +331,7 @@ class API:
 
     async def update_thread(
         self,
+        id: str,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
         environment: Optional[str] = None,
@@ -327,7 +341,7 @@ class API:
     ):
         query = """
         mutation UpdateThread(
-            $id: ID!,
+            $id: String!,
             $metadata: Json,
             $participantId: String,
             $environment: String,
@@ -336,6 +350,7 @@ class API:
             $endTime: DateTime,
         ) {
             updateThread(
+                id: $id
                 metadata: $metadata
                 participantId: $participantId
                 environment: $environment
@@ -348,6 +363,7 @@ class API:
         }
 """
         variables = {
+            "id": id,
             "metadata": metadata,
             "participantId": participant_id,
             "environment": environment,
@@ -383,16 +399,16 @@ class API:
 
         return Thread.from_dict(result["data"]["thread"])
 
-    async def delete_thread(self, thread_id: str):
+    async def delete_thread(self, id: str):
         query = """
-        mutation DeleteThread($thread_id: ID!) {
+        mutation DeleteThread($thread_id: String!) {
             deleteThread(id: $thread_id) {
                 id
             }
         }
         """
 
-        variables = {"thread_id": thread_id}
+        variables = {"thread_id": id}
 
         return await self.make_api_call("delete thread", query, variables)
 
@@ -423,20 +439,6 @@ class API:
             step.feedback.strategy = feedback_strategy
 
         return await self.send_steps([step])
-
-    # Event API
-
-    async def create_event(self):
-        raise NotImplementedError()
-
-    async def update_event(self):
-        raise NotImplementedError()
-
-    async def get_event(self):
-        raise NotImplementedError()
-
-    async def delete_event(self):
-        raise NotImplementedError()
 
     # Attachment API
 
