@@ -214,6 +214,7 @@ class User:
 
     def to_dict(self):
         return {
+            "id": self.id,
             "identifier": self.identifier,
             "metadata": self.metadata,
         }

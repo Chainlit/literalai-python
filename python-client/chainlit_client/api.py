@@ -235,8 +235,29 @@ class API:
 
         return User.from_dict(user["data"]["updateParticipant"])
 
-    async def get_user(self, id: str):
-        return NotImplementedError()
+    async def get_user(
+        self, id: Optional[str] = None, identifier: Optional[str] = None
+    ):
+        if id is None and identifier is None:
+            raise Exception("Either id or identifier must be provided")
+
+        if id is not None and identifier is not None:
+            raise Exception("Only one of id or identifier must be provided")
+
+        query = """
+        query GetUser($id: String, $identifier: String) {
+            participant(id: $id, identifier: $identifier) {
+                id
+                identifier
+                metadata
+            }
+        }"""
+
+        variables = {"id": id, "identifier": identifier}
+
+        result = await self.make_api_call("get user", query, variables)
+
+        return User.from_dict(result["data"]["participant"])
 
     async def delete_user(self, id: str):
         query = """
