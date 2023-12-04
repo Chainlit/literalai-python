@@ -11,24 +11,28 @@ if TYPE_CHECKING:
 
 
 class Thread:
-    id: Optional[str] = None
-    metadata: Dict = {}
-    steps: List[Step] = []
+    id: str
+    metadata: Dict
+    tags: List[str]
+    steps: List[Step]
 
     def __init__(
         self,
         id: str,
-        steps: List[Step] = [],
-        metadata: Dict = {},
+        steps: Optional[List[Step]] = [],
+        metadata: Optional[Dict] = {},
+        tags: Optional[List[str]] = [],
     ):
         self.id = id
         self.steps = steps
         self.metadata = metadata
+        self.tags = tags
 
     def to_dict(self):
         return {
             "id": self.id,
             "metadata": self.metadata,
+            "tags": self.tags,
             "steps": [step.to_dict() for step in self.steps],
         }
 
@@ -36,9 +40,10 @@ class Thread:
     def from_dict(cls, thread_dict: Dict) -> "Thread":
         id = thread_dict.get("id", "")
         metadata = thread_dict.get("metadata", {})
+        tags = thread_dict.get("tags", [])
         steps = [Step.from_dict(step) for step in thread_dict.get("steps", [])]
 
-        thread = cls(id=id, steps=steps, metadata=metadata)
+        thread = cls(id=id, steps=steps, metadata=metadata, tags=tags)
 
         return thread
 

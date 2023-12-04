@@ -11,7 +11,7 @@ sdk = ChainlitClient(batch_size=2)
 
 
 async def main():
-    thread = await sdk.api.create_thread(metadata={"key": "value"})
+    thread = await sdk.api.create_thread(metadata={"key": "value"}, tags=["hello"])
 
     id = thread.id
     print(id, thread.to_dict())
@@ -19,6 +19,7 @@ async def main():
     thread = await sdk.api.update_thread(
         id=id,
         metadata={"test": "test"},
+        tags=["hello:world"],
     )
 
     print(thread.to_dict())

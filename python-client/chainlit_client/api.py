@@ -36,6 +36,18 @@ step_fields = """
             url
         }"""
 
+thread_fields = (
+    """
+        id
+        metadata
+        tags
+        steps {
+"""
+    + step_fields
+    + """
+        }"""
+)
+
 
 def serialize_step(event, id):
     result = {
@@ -296,7 +308,8 @@ class API:
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
     ):
-        query = """
+        query = (
+            """
         mutation CreateThread(
             $metadata: Json,
             $participantId: String,
@@ -313,10 +326,13 @@ class API:
                 startTime: $startTime
                 endTime: $endTime
             ) {
-                id
+"""
+            + thread_fields
+            + """
             }
         }
 """
+        )
         variables = {
             "metadata": metadata,
             "participantId": participant_id,
@@ -340,7 +356,8 @@ class API:
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
     ):
-        query = """
+        query = (
+            """
         mutation UpdateThread(
             $id: String!,
             $metadata: Json,
@@ -359,10 +376,13 @@ class API:
                 startTime: $startTime
                 endTime: $endTime
             ) {
-                id
+"""
+            + thread_fields
+            + """
             }
         }
 """
+        )
         variables = {
             "id": id,
             "metadata": metadata,
@@ -385,10 +405,9 @@ class API:
             """
         query GetThread($id: String!) {
             thread(id: $id) {
-                id
-                steps {"""
-            + step_fields
-            + """}
+"""
+            + thread_fields
+            + """
             }
         }
     """
