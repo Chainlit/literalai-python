@@ -3,10 +3,12 @@ import uuid
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional
 
+
 from .context import active_thread_id_var
 from .step import Step
 
 if TYPE_CHECKING:
+    from .types import User
     from .client import ChainlitClient
 
 
@@ -15,6 +17,7 @@ class Thread:
     metadata: Dict
     tags: List[str]
     steps: List[Step]
+    user: Optional["User"]
 
     def __init__(
         self,
@@ -22,11 +25,13 @@ class Thread:
         steps: Optional[List[Step]] = [],
         metadata: Optional[Dict] = {},
         tags: Optional[List[str]] = [],
+        user: Optional["User"] = None,
     ):
         self.id = id
         self.steps = steps
         self.metadata = metadata
         self.tags = tags
+        self.user = user
 
     def to_dict(self):
         return {
@@ -34,6 +39,7 @@ class Thread:
             "metadata": self.metadata,
             "tags": self.tags,
             "steps": [step.to_dict() for step in self.steps],
+            "participant": self.user.to_dict() if self.user else None,
         }
 
     @classmethod
@@ -42,8 +48,12 @@ class Thread:
         metadata = thread_dict.get("metadata", {})
         tags = thread_dict.get("tags", [])
         steps = [Step.from_dict(step) for step in thread_dict.get("steps", [])]
+        user = thread_dict.get("participant", None)
 
-        thread = cls(id=id, steps=steps, metadata=metadata, tags=tags)
+        if user:
+            user = User.from_dict(user)
+
+        thread = cls(id=id, steps=steps, metadata=metadata, tags=tags, user=user)
 
         return thread
 

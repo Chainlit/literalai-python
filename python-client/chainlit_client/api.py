@@ -41,6 +41,11 @@ thread_fields = (
         id
         metadata
         tags
+        participant {
+            id
+            identifier
+            metadata
+        }
         steps {
 """
     + step_fields
