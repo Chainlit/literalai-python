@@ -1,3 +1,4 @@
+import mimetypes
 import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -447,9 +448,28 @@ class API:
         attachment: "Attachment",
         thread_id: str,
         content: Optional[Union[bytes, str]] = None,
+        path: Optional[str] = None,
     ):
-        if not content and not attachment.url:
-            raise Exception("Either content or url must be provided")
+        if not content and not attachment.url and not path:
+            raise Exception("Either content, path or attachment url must be provided")
+
+        if content and path:
+            raise Exception("Only one of content and path must be provided")
+
+        if (content and attachment.url) or (path and attachment.url):
+            raise Exception(
+                "Only one of content, path and attachment url must be provided"
+            )
+
+        if path:
+            # TODO: if attachment.mime is text, we could read as text?
+            with open(path, "rb") as f:
+                content = f.read()
+            if not attachment.name:
+                attachment.name = path.split("/")[-1]
+            if not attachment.mime:
+                mime, _ = mimetypes.guess_type(path)
+                attachment.mime = mime or "application/octet-stream"
 
         if content:
             uploaded = await self.upload_file(content, attachment.mime, thread_id)
@@ -507,7 +527,7 @@ class API:
     async def get_attachment(self):
         raise NotImplementedError()
 
-    async def upload_attachment(self):
+    async def delete_attachment(self):
         raise NotImplementedError()
 
     # Step API
