@@ -491,7 +491,6 @@ class API:
     async def create_attachment(
         self,
         attachment: "Attachment",
-        thread_id: str,
         content: Optional[Union[bytes, str]] = None,
         path: Optional[str] = None,
     ):
@@ -517,7 +516,9 @@ class API:
                 attachment.mime = mime or "application/octet-stream"
 
         if content:
-            uploaded = await self.upload_file(content, attachment.mime, thread_id)
+            uploaded = await self.upload_file(
+                content, attachment.mime, attachment.thread_id
+            )
 
             if uploaded["object_key"] is None or uploaded["url"] is None:
                 raise Exception("Failed to upload file")
@@ -526,54 +527,132 @@ class API:
             attachment.url = uploaded["url"]
 
         query = """
-        mutation CreateElement(
-            $thread_id: ID!,
-            $display: String!,
-            $forIds: [String!]!,
-            $language: String,
+        mutation CreateAttachment(
+            $metadata: Json,
             $mime: String,
             $name: String!,
-            $object_key: String,
-            $size: String,
-            $type: String!,
-            $url: String
+            $objectKey: String,
+            $stepId: String!,
+            $threadId: String!,
+            $url: String,
         ) {
-            createElement(
-                conversationId: $thread_id,
-                display: $display,
-                forIds: $forIds,
-                language: $language,
+            createAttachment(
+                metadata: $metadata,
                 mime: $mime,
                 name: $name,
-                objectKey: $object_key,
-                size: $size,
-                type: $type,
-                url: $url
+                objectKey: $objectKey,
+                stepId: $stepId,
+                threadId: $threadId,
+                url: $url,
             ) {
+                id
+                threadId
+                stepId
+                metadata
+                mime
+                name
+                objectKey
+                url
+            }
+        }
+        
+        """
+
+        variables = attachment.to_dict()
+
+        result = await self.make_api_call("create attachment", query, variables)
+
+        return Attachment.from_dict(result["data"]["createAttachment"])
+
+    async def update_attachment(
+        self,
+        id: str,
+        metadata: Optional[Dict] = None,
+        name: Optional[str] = None,
+        mime: Optional[str] = None,
+        objectKey: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
+        query = """
+        mutation UpdateAttachment(
+            $id: String!,
+            $metadata: Json,
+            $mime: String,
+            $name: String,
+            $objectKey: String,
+            $projectId: String,
+            $url: String,
+        ) {
+            updateAttachment(
+                id: $id,
+                metadata: $metadata,
+                mime: $mime,
+                name: $name,
+                objectKey: $objectKey,
+                projectId: $projectId,
+                url: $url,
+            ) {
+                id
+                threadId
+                stepId
+                metadata
+                mime
+                name
+                objectKey
+                url
+            }
+        }
+        """
+
+        variables = {
+            "id": id,
+            "metadata": metadata,
+            "mime": mime,
+            "name": name,
+            "objectKey": objectKey,
+            "url": url,
+        }
+
+        result = await self.make_api_call("update attachment", query, variables)
+
+        return Attachment.from_dict(result["data"]["updateAttachment"])
+
+    async def get_attachment(self, id: str):
+        query = """
+        query GetAttachment($id: String!) {
+            attachment(id: $id) {
+                id
+                threadId
+                stepId
+                metadata
+                mime
+                name
+                objectKey
+                url
+            }
+        }
+        """
+
+        variables = {"id": id}
+
+        result = await self.make_api_call("get attachment", query, variables)
+
+        return Attachment.from_dict(result["data"]["attachment"])
+
+    async def delete_attachment(self, id: str):
+        query = """
+        mutation DeleteAttachment($id: String!) {
+            deleteAttachment(id: $id) {
                 id
             }
         }
         """
 
-        variables = attachment.to_dict()
-        variables.update(
-            {
-                "thread_id": thread_id,
-                "forIds": [attachment.step_id],
-            }
-        )
-        print(variables)
+        variables = {"id": id}
 
-        return await self.make_api_call("create attachment", query, variables)
+        result = await self.make_api_call("delete attachment", query, variables)
 
-    async def update_attachment(self):
-        raise NotImplementedError()
-
-    async def get_attachment(self):
-        raise NotImplementedError()
-
-    async def delete_attachment(self):
-        raise NotImplementedError()
+        return result["data"]["deleteAttachment"]
 
     # Step API
 
@@ -600,8 +679,20 @@ class API:
 
         return Step.from_dict(result["data"]["step"])
 
-    async def delete_step(self):
-        raise NotImplementedError()
+    async def delete_step(self, id: str):
+        query = """
+        mutation DeleteStep($id: String!) {
+            deleteStep(id: $id) {
+                id
+            }
+        }
+        """
+
+        variables = {"id": id}
+
+        result = await self.make_api_call("delete step", query, variables)
+
+        return result["data"]["deleteStep"]
 
     async def send_steps(self, steps: List[Union[Dict, "Step"]]):
         query = query_builder(steps)

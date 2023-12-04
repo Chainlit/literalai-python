@@ -160,47 +160,47 @@ class Feedback:
 
 @dataclass
 class Attachment:
+    thread_id: str
     step_id: str
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    metadata: Optional[Dict] = Field(default_factory=lambda: {})
     mime: Optional[str] = None
     name: Optional[str] = None
     objectKey: Optional[str] = None
     url: Optional[str] = None
-    display: Optional[str] = None
-    type: Optional[str] = None
 
     def to_dict(self):
         return {
             "id": self.id,
+            "threadId": self.thread_id,
+            "stepId": self.step_id,
+            "metadata": self.metadata,
             "mime": self.mime,
             "name": self.name,
             "objectKey": self.objectKey,
             "url": self.url,
-            "display": self.display,
-            "step_id": self.step_id,
-            "type": self.type,
         }
 
     @classmethod
     def from_dict(cls, attachment_dict: Dict) -> "Attachment":
         id = attachment_dict.get("id", "")
+        thread_id = attachment_dict.get("threadId", "")
+        step_id = attachment_dict.get("stepId", "")
+        metadata = attachment_dict.get("metadata", {})
         mime = attachment_dict.get("mime", "")
         name = attachment_dict.get("name", "")
         objectKey = attachment_dict.get("objectKey", "")
         url = attachment_dict.get("url", "")
-        display = attachment_dict.get("display", "")
-        step_id = attachment_dict.get("step_id", "")
-        type = attachment_dict.get("type", "")
 
         attachment = cls(
             id=id,
+            thread_id=thread_id,
             mime=mime,
             name=name,
             objectKey=objectKey,
             url=url,
-            display=display,
             step_id=step_id,
-            type=type,
+            metadata=metadata,
         )
 
         return attachment
