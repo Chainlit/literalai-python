@@ -238,7 +238,7 @@ class API:
 
     async def get_user(
         self, id: Optional[str] = None, identifier: Optional[str] = None
-    ) -> User:
+    ) -> Optional[User]:
         if id is None and identifier is None:
             raise Exception("Either id or identifier must be provided")
 
@@ -258,7 +258,9 @@ class API:
 
         result = await self.make_api_call("get user", query, variables)
 
-        return User.from_dict(result["data"]["participant"])
+        user = result["data"]["participant"]
+
+        return User.from_dict(user) if user else None
 
     async def delete_user(self, id: str) -> str:
         query = """
@@ -331,7 +333,7 @@ class API:
         response["data"] = list(map(lambda x: x["node"], response["edges"]))
         del response["edges"]
 
-        return PaginatedResponse[Thread].from_dict(response)
+        return PaginatedResponse[Thread].from_dict(response, Thread)
 
     async def create_thread(
         self,
@@ -434,7 +436,7 @@ class API:
 
         return Thread.from_dict(thread["data"]["updateThread"])
 
-    async def get_thread(self, id: str) -> Thread:
+    async def get_thread(self, id: str) -> Optional[Thread]:
         query = (
             """
         query GetThread($id: String!) {
@@ -451,7 +453,9 @@ class API:
 
         result = await self.make_api_call("get thread", query, variables)
 
-        return Thread.from_dict(result["data"]["thread"])
+        thread = result["data"]["thread"]
+
+        return Thread.from_dict(thread) if thread else None
 
     async def delete_thread(self, id: str) -> str:
         query = """
@@ -685,7 +689,7 @@ class API:
 
         return Attachment.from_dict(result["data"]["updateAttachment"])
 
-    async def get_attachment(self, id: str):
+    async def get_attachment(self, id: str) -> Optional[Attachment]:
         query = """
         query GetAttachment($id: String!) {
             attachment(id: $id) {
@@ -705,7 +709,9 @@ class API:
 
         result = await self.make_api_call("get attachment", query, variables)
 
-        return Attachment.from_dict(result["data"]["attachment"])
+        attachment = result["data"]["attachment"]
+
+        return Attachment.from_dict(attachment) if attachment else None
 
     async def delete_attachment(self, id: str):
         query = """
@@ -874,7 +880,7 @@ class API:
 
         return Step.from_dict(result["data"]["updateStep"])
 
-    async def get_step(self, id: str) -> Step:
+    async def get_step(self, id: str) -> Optional[Step]:
         query = (
             """
         query GetStep($id: String!) {
@@ -889,7 +895,9 @@ class API:
 
         result = await self.make_api_call("get step", query, variables)
 
-        return Step.from_dict(result["data"]["step"])
+        step = result["data"]["step"]
+
+        return Step.from_dict(step) if step else None
 
     async def delete_step(self, id: str) -> str:
         query = """

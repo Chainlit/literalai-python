@@ -17,6 +17,7 @@ class Thread:
     tags: Optional[List[str]]
     steps: Optional[List[Step]]
     user: Optional["User"]
+    created_at: Optional[str]  # read-only, set by server
 
     def __init__(
         self,
@@ -39,6 +40,7 @@ class Thread:
             "tags": self.tags,
             "steps": [step.to_dict() for step in self.steps],
             "participant": self.user.to_dict() if self.user else None,
+            "createdAt": self.created_at,
         }
 
     @classmethod
@@ -48,11 +50,14 @@ class Thread:
         tags = thread_dict.get("tags", [])
         steps = [Step.from_dict(step) for step in thread_dict.get("steps", [])]
         user = thread_dict.get("participant", None)
+        created_at = thread_dict.get("createdAt", None)
 
         if user:
             user = User.from_dict(user)
 
         thread = cls(id=id, steps=steps, metadata=metadata, tags=tags, user=user)
+
+        thread.created_at = created_at
 
         return thread
 

@@ -1,6 +1,6 @@
 import uuid
 from enum import Enum, unique
-from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar
+from typing import Dict, Generic, List, Literal, Optional, Protocol, TypeVar
 
 from pydantic.dataclasses import Field, dataclass
 
@@ -28,7 +28,13 @@ class PageInfo:
         return cls(hasNextPage=hasNextPage, endCursor=endCursor)
 
 
-T = TypeVar("T")
+T = TypeVar("T", covariant=True)
+
+
+class HasFromDict(Protocol[T]):
+    @classmethod
+    def from_dict(cls, obj_dict: Dict) -> T:
+        raise NotImplementedError()
 
 
 @dataclass
@@ -43,10 +49,13 @@ class PaginatedResponse(Generic[T]):
         }
 
     @classmethod
-    def from_dict(cls, paginated_response_dict: Dict) -> "PaginatedResponse":
+    def from_dict(
+        cls, paginated_response_dict: Dict, the_class: HasFromDict[T]
+    ) -> "PaginatedResponse[T]":
         pageInfo = PageInfo.from_dict(paginated_response_dict.get("pageInfo", {}))
-        data = paginated_response_dict.get("data", [])  # Fixme: deserialize data
-        # data = [T.from_dict(d) for d in paginated_response_dict.get("data", [])]
+
+        data = [the_class.from_dict(d) for d in paginated_response_dict.get("data", [])]
+
         return cls(pageInfo=pageInfo, data=data)
 
 
