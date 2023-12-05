@@ -449,7 +449,7 @@ class API:
 
         return Thread.from_dict(thread["data"]["updateThread"])
 
-    async def get_thread(self, id) -> Thread:
+    async def get_thread(self, id: str) -> Thread:
         query = (
             """
         query GetThread($id: String!) {
@@ -743,12 +743,12 @@ class API:
         self,
         thread_id: str,
         type: Optional[StepType],
-        startTime: Optional[str],
-        endTime: Optional[str],
+        start_time: Optional[str],
+        end_time: Optional[str],
         input: Optional[str],
         output: Optional[str],
         metadata: Optional[Dict],
-        parentId: Optional[str],
+        parent_id: Optional[str],
         name: Optional[str],
         tags: Optional[List[str]],
         generation: Optional[BaseGeneration],
@@ -798,12 +798,12 @@ class API:
         variables = {
             "threadId": thread_id,
             "type": type,
-            "startTime": startTime,
-            "endTime": endTime,
+            "startTime": start_time,
+            "endTime": end_time,
             "input": input,
             "output": output,
             "metadata": metadata,
-            "parentId": parentId,
+            "parentId": parent_id,
             "name": name,
             "tags": tags,
             "generation": generation,
@@ -819,12 +819,12 @@ class API:
         self,
         id: str,
         type: Optional[StepType],
-        startTime: Optional[str],
-        endTime: Optional[str],
+        start_time: Optional[str],
+        end_time: Optional[str],
         input: Optional[str],
         output: Optional[str],
         metadata: Optional[Dict],
-        parentId: Optional[str],
+        parent_id: Optional[str],
         name: Optional[str],
         tags: Optional[List[str]],
         generation: Optional[BaseGeneration],
@@ -872,12 +872,12 @@ class API:
         variables = {
             "id": id,
             "type": type,
-            "startTime": startTime,
-            "endTime": endTime,
+            "startTime": start_time,
+            "endTime": end_time,
             "input": input,
             "output": output,
             "metadata": metadata,
-            "parentId": parentId,
+            "parentId": parent_id,
             "name": name,
             "tags": tags,
             "generation": generation,
