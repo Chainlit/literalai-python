@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 
-from .step import Step, StepType
+from .step import Step, StepType, StepDict
 from .thread import Thread
 from .types import (
     Attachment,
@@ -21,6 +21,7 @@ step_fields = """
         parentId
         startTime
         endTime
+        createdAt
         type
         input
         output
@@ -73,7 +74,7 @@ def serialize_step(event, id):
     return result
 
 
-def variables_builder(steps: List[Union[Dict, "Step"]]):
+def variables_builder(steps: List[Union[StepDict, "Step"]]):
     variables = {}
     for i in range(len(steps)):
         step = steps[i]
@@ -488,7 +489,6 @@ class API:
     async def create_feedback(
         self,
         step_id: str,
-        thread_id: str,
         value: int,
         comment: Optional[str],
         strategy: Optional[FeedbackStrategy],
@@ -498,14 +498,12 @@ class API:
             $comment: String,
             $stepId: String!,
             $strategy: FeedbackStrategy,
-            $threadId: String!,
             $value: Int!,
         ) {
             createFeedback(
                 comment: $comment,
                 stepId: $stepId,
                 strategy: $strategy,
-                threadId: $threadId,
                 value: $value,
             ) {
                 id
@@ -522,7 +520,6 @@ class API:
             "comment": comment,
             "stepId": step_id,
             "strategy": strategy,
-            "threadId": thread_id,
             "value": value,
         }
 
@@ -827,7 +824,7 @@ class API:
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        generation: Optional[BaseGeneration] = None,
+        generation: Optional[Dict] = None,
         feedback: Optional[Feedback] = None,
         attachments: Optional[List[Attachment]] = None,
     ) -> Step:
@@ -923,7 +920,7 @@ class API:
 
         return result["data"]["deleteStep"]["id"]
 
-    async def send_steps(self, steps: List[Union[Dict, "Step"]]) -> Dict:
+    async def send_steps(self, steps: List[Union[StepDict, "Step"]]) -> Dict:
         query = query_builder(steps)
         variables = variables_builder(steps)
 

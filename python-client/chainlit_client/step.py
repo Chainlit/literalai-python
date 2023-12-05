@@ -40,6 +40,7 @@ class StepDict(TypedDict, total=False):
     metadata: Optional[Dict]
     tags: Optional[List[str]]
     parentId: Optional[str]
+    createdAt: Optional[str]
     startTime: Optional[str]
     endTime: Optional[str]
     generation: Optional[Dict]
@@ -55,6 +56,7 @@ class Step:
     parent_id: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
+    created_at: Optional[str] = None
     input: Optional[str] = None
     output: Optional[str] = None
     tags: Optional[List[str]] = None
@@ -151,6 +153,7 @@ class Step:
         step.parent_id = step_dict.get("parentId", None)
         step.start_time = step_dict.get("startTime", None)
         step.end_time = step_dict.get("endTime", None)
+        step.created_at = step_dict.get("createdAt", None)
 
         if "generation" in step_dict and step_type == "LLM":
             generation_dict = step_dict["generation"]

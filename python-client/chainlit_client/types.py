@@ -45,7 +45,7 @@ class PaginatedResponse(Generic[T]):
     def to_dict(self):
         return {
             "pageInfo": self.pageInfo.to_dict(),
-            "data": [d.to_dict() for d in self.data],
+            "data": self.data,
         }
 
     @classmethod
@@ -140,7 +140,7 @@ class CompletionGeneration(BaseGeneration):
         return {
             "template": self.template,
             "formatted": self.formatted,
-            "template_format": self.template_format,
+            "templateFormat": self.template_format,
             "provider": self.provider,
             "inputs": self.inputs,
             "completion": self.completion,
@@ -154,7 +154,7 @@ class CompletionGeneration(BaseGeneration):
         return CompletionGeneration(
             template=generation_dict.get("template"),
             formatted=generation_dict.get("formatted"),
-            template_format=generation_dict.get("template_format", "f-string"),
+            template_format=generation_dict.get("templateFormat", "f-string"),
             provider=generation_dict.get("provider"),
             completion=generation_dict.get("completion"),
             settings=generation_dict.get("settings"),
