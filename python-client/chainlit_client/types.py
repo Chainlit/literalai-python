@@ -5,7 +5,6 @@ from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar
 from pydantic.dataclasses import Field, dataclass
 
 GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system"]
-MessageRole = Literal["ASSISTANT", "SYSTEM", "USER", "TOOL"]
 FeedbackStrategy = Literal[
     "BINARY", "STARS", "BIG_STARS", "LIKERT", "CONTINUOUS", "LETTERS", "PERCENTAGE"
 ]
