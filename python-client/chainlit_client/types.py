@@ -274,6 +274,7 @@ class Attachment:
 @dataclass
 class User:
     id: Optional[str] = None
+    created_at: Optional[str] = None
     identifier: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     metadata: Dict = Field(default_factory=lambda: {})
 
@@ -282,6 +283,7 @@ class User:
             "id": self.id,
             "identifier": self.identifier,
             "metadata": self.metadata,
+            "createdAt": self.created_at,
         }
 
     @classmethod
@@ -289,11 +291,10 @@ class User:
         id = user_dict.get("id", "")
         identifier = user_dict.get("identifier", "")
         metadata = user_dict.get("metadata", {})
+        created_at = user_dict.get("createdAt", "")
 
         user = cls(
-            id=id,
-            identifier=identifier,
-            metadata=metadata,
+            id=id, identifier=identifier, metadata=metadata, created_at=created_at
         )
 
         return user
