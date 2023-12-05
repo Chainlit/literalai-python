@@ -231,7 +231,7 @@ class Attachment:
     metadata: Optional[Dict] = Field(default_factory=lambda: {})
     mime: Optional[str] = None
     name: Optional[str] = None
-    objectKey: Optional[str] = None
+    object_key: Optional[str] = None
     url: Optional[str] = None
 
     def to_dict(self):
@@ -242,7 +242,7 @@ class Attachment:
             "metadata": self.metadata,
             "mime": self.mime,
             "name": self.name,
-            "objectKey": self.objectKey,
+            "objectKey": self.object_key,
             "url": self.url,
         }
 
@@ -254,7 +254,7 @@ class Attachment:
         metadata = attachment_dict.get("metadata", {})
         mime = attachment_dict.get("mime", "")
         name = attachment_dict.get("name", "")
-        objectKey = attachment_dict.get("objectKey", "")
+        object_key = attachment_dict.get("objectKey", "")
         url = attachment_dict.get("url", "")
 
         attachment = cls(
@@ -262,7 +262,7 @@ class Attachment:
             thread_id=thread_id,
             mime=mime,
             name=name,
-            objectKey=objectKey,
+            object_key=object_key,
             url=url,
             step_id=step_id,
             metadata=metadata,

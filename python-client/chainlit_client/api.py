@@ -606,7 +606,7 @@ class API:
             if uploaded["object_key"] is None or uploaded["url"] is None:
                 raise Exception("Failed to upload file")
 
-            attachment.objectKey = uploaded["object_key"]
+            attachment.object_key = uploaded["object_key"]
             attachment.url = uploaded["url"]
 
         query = """
