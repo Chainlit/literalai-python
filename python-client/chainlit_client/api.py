@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 
-from .step import Step, StepType, StepDict
+from .step import Step, StepDict, StepType
 from .thread import Thread
 from .types import (
     Attachment,
