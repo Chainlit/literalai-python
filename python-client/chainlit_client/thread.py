@@ -3,13 +3,12 @@ import uuid
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional
 
-
 from .context import active_thread_id_var
 from .step import Step
 
 if TYPE_CHECKING:
-    from .types import User
     from .client import ChainlitClient
+    from .types import User
 
 
 class Thread:

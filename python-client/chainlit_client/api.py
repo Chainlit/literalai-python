@@ -3,6 +3,7 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
+
 from .step import Step
 from .thread import Thread
 from .types import Attachment, Feedback, FeedbackStrategy, PaginatedResponse, User

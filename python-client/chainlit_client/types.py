@@ -1,6 +1,6 @@
 import uuid
 from enum import Enum, unique
-from typing import Any, Dict, Generic, Literal, Optional, List, TypeVar
+from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar
 
 from pydantic.dataclasses import Field, dataclass
 

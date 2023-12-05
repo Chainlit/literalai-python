@@ -1,4 +1,4 @@
-from .types import *
+from .client import ChainlitClient
 from .step import *
 from .thread import *
-from .client import ChainlitClient
+from .types import *
