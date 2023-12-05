@@ -196,6 +196,20 @@ class Feedback:
             "comment": self.comment,
         }
 
+    @classmethod
+    def from_dict(cls, feedback_dict: Dict) -> "Feedback":
+        value = feedback_dict.get("value", None)
+        strategy = feedback_dict.get("strategy", "BINARY")
+        comment = feedback_dict.get("comment", None)
+
+        feedback = cls(
+            value=value,
+            strategy=strategy,
+            comment=comment,
+        )
+
+        return feedback
+
 
 @dataclass
 class Attachment:

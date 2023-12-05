@@ -14,7 +14,7 @@ sdk = ChainlitClient(batch_size=2)
 async def main():
     thread = await sdk.api.create_thread()
     step = sdk.create_step(name="test", thread_id=thread.id)
-    await sdk.api.create_step(step)
+    await sdk.api.send_steps([step])
 
     try:
         attachment = await sdk.api.create_attachment(

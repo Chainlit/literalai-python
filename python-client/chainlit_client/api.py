@@ -4,9 +4,16 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 
-from .step import Step
+from .step import Step, StepType
 from .thread import Thread
-from .types import Attachment, Feedback, FeedbackStrategy, PaginatedResponse, User
+from .types import (
+    Attachment,
+    BaseGeneration,
+    Feedback,
+    FeedbackStrategy,
+    PaginatedResponse,
+    User,
+)
 
 step_fields = """
         id
@@ -162,7 +169,13 @@ class API:
             "x-api-key": self.api_key,
         }
 
-    async def make_api_call(self, description, query, variables):
+    async def make_api_call(
+        self, description: str, query: str, variables: Dict[str, Any]
+    ) -> Dict:
+        def raise_error(error):
+            print(f"Failed to {description}: {error}")
+            raise error
+
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
@@ -175,22 +188,24 @@ class API:
                 json = response.json()
 
                 if response.status_code != 200:
-                    reason = response.text
-                    print(f"Failed to {description}: {reason}")
-                    return None
+                    raise_error(response.text)
 
                 if json.get("errors"):
-                    print(f"Failed to {description}: {json['errors']}")
-                    return None
+                    raise_error(json["errors"])
 
                 return response.json()
-            except Exception as e:
-                print(f"Failed to {description}: {e}")
-                return None
+            except Exception as error:
+                raise_error(error)
+
+        # This should not be reached, exceptions should be thrown beforehands
+        # Added because of mypy
+        raise Exception("Unkown error")
 
     # User API
 
-    async def create_user(self, identifier: str, metadata: Optional[Dict] = None):
+    async def create_user(
+        self, identifier: str, metadata: Optional[Dict] = None
+    ) -> User:
         query = """
         mutation CreateUser($identifier: String!, $metadata: Json) {
             createParticipant(identifier: $identifier, metadata: $metadata) {
@@ -209,7 +224,7 @@ class API:
 
     async def update_user(
         self, id: str, identifier: Optional[str] = None, metadata: Optional[Dict] = None
-    ):
+    ) -> User:
         query = """
         mutation UpdateUser(
             $id: String!,
@@ -238,7 +253,7 @@ class API:
 
     async def get_user(
         self, id: Optional[str] = None, identifier: Optional[str] = None
-    ):
+    ) -> User:
         if id is None and identifier is None:
             raise Exception("Either id or identifier must be provided")
 
@@ -260,24 +275,24 @@ class API:
 
         return User.from_dict(result["data"]["participant"])
 
-    async def delete_user(self, id: str):
+    async def delete_user(self, id: str) -> str:
         query = """
         mutation DeleteUser($id: String!) {
             deleteParticipant(id: $id) {
                 id
-                identifier
-                metadata
             }
         }
         """
 
         variables = {"id": id}
 
-        return await self.make_api_call("delete user", query, variables)
+        result = await self.make_api_call("delete user", query, variables)
+
+        return result["data"]["deleteParticipant"]["id"]
 
     # Thread API
 
-    async def list_threads(self, first: int = 10, skip: int = 0):
+    async def list_threads(self, first: int = 10, skip: int = 0) -> PaginatedResponse:
         query = """
         query GetThreads(
             $after: ID,
@@ -341,7 +356,7 @@ class API:
         tags: Optional[List[str]] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
-    ):
+    ) -> Thread:
         query = (
             """
         mutation CreateThread(
@@ -389,7 +404,7 @@ class API:
         tags: Optional[List[str]] = None,
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
-    ):
+    ) -> Thread:
         query = (
             """
         mutation UpdateThread(
@@ -434,7 +449,7 @@ class API:
 
         return Thread.from_dict(thread["data"]["updateThread"])
 
-    async def get_thread(self, id):
+    async def get_thread(self, id) -> Thread:
         query = (
             """
         query GetThread($id: String!) {
@@ -453,7 +468,7 @@ class API:
 
         return Thread.from_dict(result["data"]["thread"])
 
-    async def delete_thread(self, id: str):
+    async def delete_thread(self, id: str) -> str:
         query = """
         mutation DeleteThread($thread_id: String!) {
             deleteThread(id: $thread_id) {
@@ -464,7 +479,9 @@ class API:
 
         variables = {"thread_id": id}
 
-        return await self.make_api_call("delete thread", query, variables)
+        result = await self.make_api_call("delete thread", query, variables)
+
+        return result["data"]["deleteThread"]["id"]
 
     # Feedback API
 
@@ -475,7 +492,7 @@ class API:
         comment: Optional[str] = None,
         feedback_strategy: Optional[FeedbackStrategy] = None,
     ):
-        step = await self.get_step(step_id=step_id)
+        step = await self.get_step(id=step_id)
 
         if step is None:
             raise Exception(f"Step {step_id} not found")
@@ -664,13 +681,157 @@ class API:
 
     # Step API
 
-    async def create_step(self, step: Union[Dict, "Step"]):
-        return await self.send_steps([step])
+    async def create_step(
+        self,
+        thread_id: str,
+        type: Optional[StepType],
+        startTime: Optional[str],
+        endTime: Optional[str],
+        input: Optional[str],
+        output: Optional[str],
+        metadata: Optional[Dict],
+        parentId: Optional[str],
+        name: Optional[str],
+        tags: Optional[List[str]],
+        generation: Optional[BaseGeneration],
+        feedback: Optional[Feedback],
+        attachments: Optional[List[Attachment]],
+    ) -> Step:
+        query = (
+            """
+        mutation CreateStep(
+            $id: String!,
+            $threadId: String!,
+            $type: StepType,
+            $startTime: DateTime,
+            $endTime: DateTime,
+            $input: String,
+            $output: String,
+            $metadata: Json,
+            $parentId: String,
+            $name: String,
+            $generation: GenerationPayloadInput,
+            $feedback: FeedbackPayloadInput,
+            $attachments: [AttachmentPayloadInput!],
+        ) {
+            createStep(
+                id: $id,
+                threadId: $threadId,
+                type: $type,
+                startTime: $startTime,
+                endTime: $endTime,
+                input: $input,
+                output: $output,
+                metadata: $metadata,
+                parentId: $parentId,
+                name: $name,
+                generation: $generation,
+                feedback: $feedback,
+                attachments: $attachments,
+            ) {
+"""
+            + step_fields
+            + """
+            }
+        }
+        """
+        )
 
-    async def update_step(self, step: Union[Dict, "Step"]):
-        return await self.send_steps([step])
+        variables = {
+            "threadId": thread_id,
+            "type": type,
+            "startTime": startTime,
+            "endTime": endTime,
+            "input": input,
+            "output": output,
+            "metadata": metadata,
+            "parentId": parentId,
+            "name": name,
+            "tags": tags,
+            "generation": generation,
+            "feedback": feedback,
+            "attachments": attachments,
+        }
 
-    async def get_step(self, step_id: str):
+        result = await self.make_api_call("create step", query, variables)
+
+        return Step.from_dict(result["data"]["createStep"])
+
+    async def update_step(
+        self,
+        id: str,
+        type: Optional[StepType],
+        startTime: Optional[str],
+        endTime: Optional[str],
+        input: Optional[str],
+        output: Optional[str],
+        metadata: Optional[Dict],
+        parentId: Optional[str],
+        name: Optional[str],
+        tags: Optional[List[str]],
+        generation: Optional[BaseGeneration],
+        feedback: Optional[Feedback],
+        attachments: Optional[List[Attachment]],
+    ) -> Step:
+        query = (
+            """
+        mutation UpdateStep(
+            $id: String!,
+            $type: StepType,
+            $startTime: DateTime,
+            $endTime: DateTime,
+            $input: String,
+            $output: String,
+            $metadata: Json,
+            $parentId: String,
+            $name: String,
+            $generation: GenerationPayloadInput,
+            $feedback: FeedbackPayloadInput,
+            $attachments: [AttachmentPayloadInput!],
+        ) {
+            updateStep(
+                id: $id,
+                type: $type,
+                startTime: $startTime,
+                endTime: $endTime,
+                input: $input,
+                output: $output,
+                metadata: $metadata,
+                parentId: $parentId,
+                name: $name,
+                generation: $generation,
+                feedback: $feedback,
+                attachments: $attachments,
+            ) {    
+"""
+            + step_fields
+            + """
+            }
+        }
+        """
+        )
+
+        variables = {
+            "id": id,
+            "type": type,
+            "startTime": startTime,
+            "endTime": endTime,
+            "input": input,
+            "output": output,
+            "metadata": metadata,
+            "parentId": parentId,
+            "name": name,
+            "tags": tags,
+            "generation": generation,
+            "feedback": feedback,
+            "attachments": attachments,
+        }
+
+        result = await self.make_api_call("update step", query, variables)
+
+        return Step.from_dict(result["data"]["updateStep"])
+
+    async def get_step(self, id: str) -> Step:
         query = (
             """
         query GetStep($id: String!) {
@@ -681,13 +842,13 @@ class API:
         }
     """
         )
-        variables = {"id": step_id}
+        variables = {"id": id}
 
         result = await self.make_api_call("get step", query, variables)
 
         return Step.from_dict(result["data"]["step"])
 
-    async def delete_step(self, id: str):
+    async def delete_step(self, id: str) -> str:
         query = """
         mutation DeleteStep($id: String!) {
             deleteStep(id: $id) {
@@ -700,9 +861,9 @@ class API:
 
         result = await self.make_api_call("delete step", query, variables)
 
-        return result["data"]["deleteStep"]
+        return result["data"]["deleteStep"]["id"]
 
-    async def send_steps(self, steps: List[Union[Dict, "Step"]]):
+    async def send_steps(self, steps: List[Union[Dict, "Step"]]) -> Dict:
         query = query_builder(steps)
         variables = variables_builder(steps)
 

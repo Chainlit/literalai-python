@@ -27,6 +27,8 @@ class Step:
     end: Optional[str] = None
     input: Optional[str] = None
     output: Optional[str] = None
+    tags: Optional[List[str]] = None
+    thread_id: Optional[str] = None
 
     generation: Optional[BaseGeneration] = None
     feedback: Optional[Feedback] = None
@@ -98,6 +100,7 @@ class Step:
             if self.generation and self.type == "LLM"
             else None,
             "name": self.name,
+            "tags": self.tags,
             "feedback": self.feedback.to_dict() if self.feedback else None,
             "attachments": [attachment.to_dict() for attachment in self.attachments],
         }
@@ -114,6 +117,10 @@ class Step:
         step.input = step_dict.get("input", None)
         step.output = step_dict.get("output", None)
         step.metadata = step_dict.get("metadata", {})
+        step.tags = step_dict.get("tags", [])
+        step.parent_id = step_dict.get("parent_id", None)
+        step.start = step_dict.get("start", None)
+        step.end = step_dict.get("end", None)
 
         if "generation" in step_dict and step_type == "LLM":
             generation_dict = step_dict["generation"]
@@ -123,13 +130,7 @@ class Step:
         if "feedback" in step_dict:
             feedback_dict = step_dict["feedback"]
             if feedback_dict:
-                value = feedback_dict.get("value")
-                strategy = feedback_dict.get("strategy")
-                comment = feedback_dict.get("comment")
-                if strategy:
-                    step.feedback = Feedback(
-                        value=value, strategy=strategy, comment=comment
-                    )
+                step.feedback = Feedback.from_dict(feedback_dict)
 
         if "attachments" in step_dict:
             attachments = step_dict["attachments"]
