@@ -1,6 +1,6 @@
 import uuid
 from enum import Enum, unique
-from typing import Dict, Generic, List, Literal, Optional, Protocol, TypeVar
+from typing import Dict, Generic, List, Literal, Optional, Protocol, TypedDict, TypeVar
 
 from pydantic.dataclasses import Field, dataclass
 
@@ -192,6 +192,26 @@ class ChatGeneration(BaseGeneration):
         )
 
 
+class FeedbackDict(TypedDict, total=False):
+    id: Optional[str]
+    threadId: Optional[str]
+    stepId: Optional[str]
+    value: Optional[float]
+    strategy: FeedbackStrategy
+    comment: Optional[str]
+
+
+class AttachmentDict(TypedDict, total=False):
+    id: Optional[str]
+    threadId: str
+    stepId: str
+    metadata: Optional[Dict]
+    mime: Optional[str]
+    name: Optional[str]
+    objectKey: Optional[str]
+    url: Optional[str]
+
+
 @dataclass
 class Feedback:
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -212,7 +232,7 @@ class Feedback:
         }
 
     @classmethod
-    def from_dict(cls, feedback_dict: Dict) -> "Feedback":
+    def from_dict(cls, feedback_dict: FeedbackDict) -> "Feedback":
         id = feedback_dict.get("id", "")
         thread_id = feedback_dict.get("threadId", "")
         step_id = feedback_dict.get("stepId", "")
@@ -256,7 +276,7 @@ class Attachment:
         }
 
     @classmethod
-    def from_dict(cls, attachment_dict: Dict) -> "Attachment":
+    def from_dict(cls, attachment_dict: AttachmentDict) -> "Attachment":
         id = attachment_dict.get("id", "")
         thread_id = attachment_dict.get("threadId", "")
         step_id = attachment_dict.get("stepId", "")

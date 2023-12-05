@@ -251,6 +251,7 @@ class API:
                 id
                 identifier
                 metadata
+                createdAt
             }
         }"""
 
@@ -743,18 +744,18 @@ class API:
     async def create_step(
         self,
         thread_id: str,
-        type: Optional[StepType],
-        start_time: Optional[str],
-        end_time: Optional[str],
-        input: Optional[str],
-        output: Optional[str],
-        metadata: Optional[Dict],
-        parent_id: Optional[str],
-        name: Optional[str],
-        tags: Optional[List[str]],
-        generation: Optional[BaseGeneration],
-        feedback: Optional[Feedback],
-        attachments: Optional[List[Attachment]],
+        type: Optional[StepType] = "UNDEFINED",
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        input: Optional[str] = None,
+        output: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+        parent_id: Optional[str] = None,
+        name: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        generation: Optional[BaseGeneration] = None,
+        feedback: Optional[Feedback] = None,
+        attachments: Optional[List[Attachment]] = None,
     ) -> Step:
         query = (
             """
@@ -817,18 +818,18 @@ class API:
     async def update_step(
         self,
         id: str,
-        type: Optional[StepType],
-        start_time: Optional[str],
-        end_time: Optional[str],
-        input: Optional[str],
-        output: Optional[str],
-        metadata: Optional[Dict],
-        parent_id: Optional[str],
-        name: Optional[str],
-        tags: Optional[List[str]],
-        generation: Optional[BaseGeneration],
-        feedback: Optional[Feedback],
-        attachments: Optional[List[Attachment]],
+        type: Optional[StepType] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        input: Optional[str] = None,
+        output: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+        parent_id: Optional[str] = None,
+        name: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        generation: Optional[BaseGeneration] = None,
+        feedback: Optional[Feedback] = None,
+        attachments: Optional[List[Attachment]] = None,
     ) -> Step:
         query = (
             """

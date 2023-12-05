@@ -3,14 +3,23 @@ import inspect
 import json
 import uuid
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    TypedDict,
+    Union,
+)
 
 if TYPE_CHECKING:
     from .client import ChainlitClient
     from .event_processor import EventProcessor
 
 from .context import active_steps_var, active_thread_id_var
-from .types import Attachment, BaseGeneration, Feedback
+from .types import Attachment, AttachmentDict, BaseGeneration, Feedback, FeedbackDict
 
 TrueStepType = Literal[
     "RUN", "TOOL", "LLM", "EMBEDDING", "RETRIEVAL", "RERANK", "UNDEFINED"
@@ -21,11 +30,28 @@ MessageStepType = Literal["USER_MESSAGE", "ASSISTANT_MESSAGE", "SYSTEM_MESSAGE"]
 StepType = Union[TrueStepType, MessageStepType]
 
 
+class StepDict(TypedDict, total=False):
+    id: Optional[str]
+    name: Optional[str]
+    type: Optional[StepType]
+    threadId: Optional[str]
+    input: Optional[str]
+    output: Optional[str]
+    metadata: Optional[Dict]
+    tags: Optional[List[str]]
+    parentId: Optional[str]
+    startTime: Optional[str]
+    endTime: Optional[str]
+    generation: Optional[Dict]
+    feedback: Optional[FeedbackDict]
+    attachments: Optional[List[AttachmentDict]]
+
+
 class Step:
     id: Optional[str] = None
     name: Optional[str] = ""
     type: Optional[StepType] = None
-    metadata: Dict = {}
+    metadata: Optional[Dict] = None
     parent_id: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
@@ -110,9 +136,9 @@ class Step:
         }
 
     @classmethod
-    def from_dict(cls, step_dict: Dict) -> "Step":
-        name = step_dict.get("name", "")
-        step_type = step_dict.get("type", "UNDEFINED")  # type: StepType
+    def from_dict(cls, step_dict: StepDict) -> "Step":
+        name = step_dict.get("name") or ""
+        step_type = step_dict.get("type", "UNDEFINED")
         thread_id = step_dict.get("threadId")
 
         step = cls(name=name, type=step_type, thread_id=thread_id)
