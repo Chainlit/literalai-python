@@ -185,12 +185,18 @@ class ChatGeneration(BaseGeneration):
 
 @dataclass
 class Feedback:
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    thread_id: Optional[str] = None
+    step_id: Optional[str] = None
     value: Optional[float] = None
     strategy: FeedbackStrategy = "BINARY"
     comment: Optional[str] = None
 
     def to_dict(self):
         return {
+            "id": self.id,
+            "threadId": self.thread_id,
+            "stepId": self.step_id,
             "value": self.value,
             "strategy": self.strategy,
             "comment": self.comment,
@@ -198,11 +204,17 @@ class Feedback:
 
     @classmethod
     def from_dict(cls, feedback_dict: Dict) -> "Feedback":
+        id = feedback_dict.get("id", "")
+        thread_id = feedback_dict.get("threadId", "")
+        step_id = feedback_dict.get("stepId", "")
         value = feedback_dict.get("value", None)
         strategy = feedback_dict.get("strategy", "BINARY")
         comment = feedback_dict.get("comment", None)
 
         feedback = cls(
+            id=id,
+            thread_id=thread_id,
+            step_id=step_id,
             value=value,
             strategy=strategy,
             comment=comment,

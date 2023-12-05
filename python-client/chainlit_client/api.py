@@ -485,31 +485,89 @@ class API:
 
     # Feedback API
 
-    async def set_feedback(
+    async def create_feedback(
         self,
         step_id: str,
-        value: Optional[int] = None,
-        comment: Optional[str] = None,
-        feedback_strategy: Optional[FeedbackStrategy] = None,
-    ):
-        step = await self.get_step(id=step_id)
+        thread_id: str,
+        value: int,
+        comment: Optional[str],
+        strategy: Optional[FeedbackStrategy],
+    ) -> "Feedback":
+        query = """
+        mutation CreateFeedback(
+            $comment: String,
+            $stepId: String!,
+            $strategy: FeedbackStrategy,
+            $threadId: String!,
+            $value: Int!,
+        ) {
+            createFeedback(
+                comment: $comment,
+                stepId: $stepId,
+                strategy: $strategy,
+                threadId: $threadId,
+                value: $value,
+            ) {
+                id
+                threadId
+                stepId
+                value
+                comment
+                strategy
+            }
+        }
+        """
 
-        if step is None:
-            raise Exception(f"Step {step_id} not found")
+        variables = {
+            "comment": comment,
+            "stepId": step_id,
+            "strategy": strategy,
+            "threadId": thread_id,
+            "value": value,
+        }
 
-        if step.feedback is None:
-            step.feedback = Feedback()
+        result = await self.make_api_call("create feedback", query, variables)
 
-        if value is not None:
-            step.feedback.value = value
+        return Feedback.from_dict(result["data"]["createFeedback"])
 
-        if comment is not None:
-            step.feedback.comment = comment
+    async def update_feedback(
+        self,
+        id: str,
+        value: int,
+        comment: Optional[str],
+        strategy: Optional["FeedbackStrategy"],
+    ) -> "Feedback":
+        query = """
+        mutation UpdateFeedback(
+            $id: String!,
+            $comment: String,
+            $value: Int,
+            $strategy: FeedbackStrategy,
+        ) {
+            updateFeedback(
+                id: $id,
+                comment: $comment,
+                value: $value,
+                strategy: $strategy,
+            ) {
+                id
+                threadId
+                stepId
+                value
+                comment
+                strategy
+            }
+        }
+        """
 
-        if feedback_strategy is not None:
-            step.feedback.strategy = feedback_strategy
+        variables = {"id": id, "comment": comment, "value": value, "strategy": strategy}
 
-        return await self.send_steps([step])
+        # remove None values to prevent the API from removing existing values
+        variables = {k: v for k, v in variables.items() if v is not None}
+
+        result = await self.make_api_call("update feedback", query, variables)
+
+        return Feedback.from_dict(result["data"]["updateFeedback"])
 
     # Attachment API
 
