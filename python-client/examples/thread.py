@@ -35,8 +35,14 @@ async def main():
     except Exception as e:
         print(e)
 
-    threads = await sdk.api.list_threads(10)
-    print(threads)
+    after = None
+    max_calls = 5
+    while len((result := await sdk.api.list_threads(first=2, after=after)).data) > 0:
+        print(result.to_dict())
+        after = result.pageInfo.endCursor
+        max_calls -= 1
+        if max_calls == 0:
+            break
 
 
 asyncio.run(main())

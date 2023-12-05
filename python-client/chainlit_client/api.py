@@ -279,7 +279,12 @@ class API:
 
     # Thread API
 
-    async def list_threads(self, first: int = 10, skip: int = 0) -> PaginatedResponse:
+    async def list_threads(
+        self,
+        first: Optional[int] = None,
+        after: Optional[str] = None,
+        filters: Optional[str] = None,
+    ) -> PaginatedResponse:
         query = """
         query GetThreads(
             $after: ID,
@@ -324,7 +329,12 @@ class API:
             }
         }
     """
-        variables = {"first": first, "skip": skip}
+        variables: Dict[str, Any] = {}
+
+        if first:
+            variables["first"] = first
+        if after:
+            variables["after"] = after
 
         result = await self.make_api_call("list threads", query, variables)
 
@@ -749,7 +759,6 @@ class API:
         query = (
             """
         mutation CreateStep(
-            $id: String!,
             $threadId: String!,
             $type: StepType,
             $startTime: DateTime,
@@ -764,7 +773,6 @@ class API:
             $attachments: [AttachmentPayloadInput!],
         ) {
             createStep(
-                id: $id,
                 threadId: $threadId,
                 type: $type,
                 startTime: $startTime,
