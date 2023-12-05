@@ -23,8 +23,8 @@ class Step:
     type: Optional[StepType] = None
     metadata: Dict = {}
     parent_id: Optional[str] = None
-    start: Optional[str] = None
-    end: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
     input: Optional[str] = None
     output: Optional[str] = None
     tags: Optional[List[str]] = None
@@ -44,7 +44,7 @@ class Step:
         processor: Optional["EventProcessor"] = None,
     ):
         self.id = id or str(uuid.uuid4())
-        self.start = datetime.datetime.utcnow().isoformat()
+        self.start_time = datetime.datetime.utcnow().isoformat()
         self.name = name
         self.type = type
 
@@ -75,7 +75,7 @@ class Step:
         active_steps_var.set(active_steps)
 
     def finalize(self):
-        self.end = datetime.datetime.utcnow().isoformat()
+        self.end_time = datetime.datetime.utcnow().isoformat()
         active_steps = active_steps_var.get()
         active_steps.pop()
         active_steps_var.set(active_steps)
@@ -89,11 +89,11 @@ class Step:
         return {
             "id": self.id,
             "metadata": self.metadata,
-            "parent_id": self.parent_id,
-            "start": self.start,
-            "end": self.end,
+            "parentId": self.parent_id,
+            "startTime": self.start_time,
+            "endTime": self.end_time,
             "type": self.type,
-            "thread_id": self.thread_id,
+            "threadId": self.thread_id,
             "input": self.input,
             "output": self.output,
             "generation": self.generation.to_dict()
@@ -109,7 +109,7 @@ class Step:
     def from_dict(cls, step_dict: Dict) -> "Step":
         name = step_dict.get("name", "")
         step_type = step_dict.get("type", "UNDEFINED")  # type: StepType
-        thread_id = step_dict.get("thread_id") or step_dict.get("threadId")
+        thread_id = step_dict.get("threadId")
 
         step = cls(name=name, type=step_type, thread_id=thread_id)
 
@@ -118,9 +118,9 @@ class Step:
         step.output = step_dict.get("output", None)
         step.metadata = step_dict.get("metadata", {})
         step.tags = step_dict.get("tags", [])
-        step.parent_id = step_dict.get("parent_id", None)
-        step.start = step_dict.get("start", None)
-        step.end = step_dict.get("end", None)
+        step.parent_id = step_dict.get("parentId", None)
+        step.start_time = step_dict.get("startTime", None)
+        step.end_time = step_dict.get("endTime", None)
 
         if "generation" in step_dict and step_type == "LLM":
             generation_dict = step_dict["generation"]

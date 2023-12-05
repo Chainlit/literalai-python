@@ -63,27 +63,12 @@ thread_fields = (
 
 
 def serialize_step(event, id):
-    result = {
-        f"id_{id}": event.get("id"),
-        f"threadId_{id}": event.get("thread_id"),
-        f"startTime_{id}": event.get("start"),
-        f"endTime_{id}": event.get("end"),
-        f"type_{id}": event.get("type"),
-        f"metadata_{id}": event.get("metadata"),
-        f"parentId_{id}": event.get("parent_id"),
-        f"name_{id}": event.get("name"),
-        f"input_{id}": event.get("input"),
-        f"output_{id}": event.get("output"),
-        f"generation_{id}": event.get("generation"),
-        f"feedback_{id}": event.get("feedback"),
-        f"attachments_{id}": event.get("attachments"),
-    }
+    result = {}
 
-    # Remove the keys that are not set
-    # When they are None, the API cleans any preexisting value
-    for key in list(result):
-        if result[key] is None:
-            del result[key]
+    for key, value in event.items():
+        # Only keep the keys that are not None to avoid overriding existing values
+        if value is not None:
+            result[f"{key}_{id}"] = value
 
     return result
 
