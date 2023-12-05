@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 class Thread:
     id: str
-    metadata: Dict
-    tags: List[str]
-    steps: List[Step]
+    metadata: Optional[Dict]
+    tags: Optional[List[str]]
+    steps: Optional[List[Step]]
     user: Optional["User"]
 
     def __init__(

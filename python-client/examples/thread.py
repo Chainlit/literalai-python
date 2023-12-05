@@ -35,5 +35,8 @@ async def main():
     except Exception as e:
         print(e)
 
+    threads = await sdk.api.list_threads(10)
+    print(threads)
+
 
 asyncio.run(main())

@@ -1,6 +1,6 @@
 import uuid
 from enum import Enum, unique
-from typing import Any, Dict, Literal, Optional, List
+from typing import Any, Dict, Generic, Literal, Optional, List, TypeVar
 
 from pydantic.dataclasses import Field, dataclass
 
@@ -9,6 +9,46 @@ MessageRole = Literal["ASSISTANT", "SYSTEM", "USER", "TOOL"]
 FeedbackStrategy = Literal[
     "BINARY", "STARS", "BIG_STARS", "LIKERT", "CONTINUOUS", "LETTERS", "PERCENTAGE"
 ]
+
+
+@dataclass
+class PageInfo:
+    hasNextPage: bool
+    endCursor: Optional[str]
+
+    def to_dict(self):
+        return {
+            "hasNextPage": self.hasNextPage,
+            "endCursor": self.endCursor,
+        }
+
+    @classmethod
+    def from_dict(cls, page_info_dict: Dict) -> "PageInfo":
+        hasNextPage = page_info_dict.get("hasNextPage", False)
+        endCursor = page_info_dict.get("endCursor", None)
+        return cls(hasNextPage=hasNextPage, endCursor=endCursor)
+
+
+T = TypeVar("T")
+
+
+@dataclass
+class PaginatedResponse(Generic[T]):
+    pageInfo: PageInfo
+    data: List[T]
+
+    def to_dict(self):
+        return {
+            "pageInfo": self.pageInfo.to_dict(),
+            "data": [d.to_dict() for d in self.data],
+        }
+
+    @classmethod
+    def from_dict(cls, paginated_response_dict: Dict) -> "PaginatedResponse":
+        pageInfo = PageInfo.from_dict(paginated_response_dict.get("pageInfo", {}))
+        data = paginated_response_dict.get("data", [])  # Fixme: deserialize data
+        # data = [T.from_dict(d) for d in paginated_response_dict.get("data", [])]
+        return cls(pageInfo=pageInfo, data=data)
 
 
 @unique

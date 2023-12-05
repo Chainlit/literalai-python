@@ -3,9 +3,9 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
-from chainlit_client.step import Step
-from chainlit_client.thread import Thread
-from chainlit_client.types import Attachment, Feedback, FeedbackStrategy, User
+from .step import Step
+from .thread import Thread
+from .types import Attachment, Feedback, FeedbackStrategy, PaginatedResponse, User
 
 step_fields = """
         id
@@ -323,7 +323,14 @@ class API:
     """
         variables = {"first": first, "skip": skip}
 
-        return await self.make_api_call("list threads", query, variables)
+        result = await self.make_api_call("list threads", query, variables)
+
+        response = result["data"]["threads"]
+
+        response["data"] = list(map(lambda x: x["node"], response["edges"]))
+        del response["edges"]
+
+        return PaginatedResponse[Thread].from_dict(response)
 
     async def create_thread(
         self,
@@ -517,7 +524,7 @@ class API:
 
         if content:
             uploaded = await self.upload_file(
-                content, attachment.mime, attachment.thread_id
+                content=content, thread_id=attachment.thread_id, mime=attachment.mime
             )
 
             if uploaded["object_key"] is None or uploaded["url"] is None:
@@ -703,7 +710,10 @@ class API:
     # Upload API
 
     async def upload_file(
-        self, content: Union[bytes, str], mime: str, thread_id: str
+        self,
+        content: Union[bytes, str],
+        thread_id: str,
+        mime: Optional[str] = "application/octet-stream",
     ) -> Dict:
         id = str(uuid.uuid4())
         body = {"fileName": id, "contentType": mime, "threadId": thread_id}

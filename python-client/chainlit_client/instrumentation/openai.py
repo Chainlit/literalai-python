@@ -59,7 +59,7 @@ def instrument_openai(client: "ChainlitClient"):
                 step.generation.messages = [
                     GenerationMessage(
                         role=m.get("role", "user"),
-                        content=m.get("content", ""),
+                        formatted=m.get("content", ""),
                     )
                     for m in kwargs.get("messages", [])
                 ]
