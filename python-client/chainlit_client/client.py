@@ -5,8 +5,14 @@ from .api import API
 from .context import active_steps_var, active_thread_id_var
 from .event_processor import EventProcessor
 from .instrumentation.openai import instrument_openai
-from .message import Message, MessageType
-from .step import Step, StepContextManager, StepType, step_decorator
+from .message import Message
+from .step import (
+    MessageStepType,
+    Step,
+    StepContextManager,
+    TrueStepType,
+    step_decorator,
+)
 from .thread import ThreadContextManager, thread_decorator
 from .types import Attachment
 
@@ -47,7 +53,7 @@ class ChainlitClient:
         original_function=None,
         *,
         name: str = "",
-        type: StepType = "UNDEFINED",
+        type: TrueStepType = "UNDEFINED",
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
@@ -71,7 +77,7 @@ class ChainlitClient:
         self,
         content: str = "",
         id: Optional[str] = None,
-        type: Optional[MessageType] = None,
+        type: Optional[MessageStepType] = None,
         name: Optional[str] = None,
         thread_id: Optional[str] = None,
         attachments: List[Attachment] = [],
@@ -94,7 +100,7 @@ class ChainlitClient:
     def create_step(
         self,
         name: str = "",
-        type: Optional[StepType] = None,
+        type: Optional[TrueStepType] = None,
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,

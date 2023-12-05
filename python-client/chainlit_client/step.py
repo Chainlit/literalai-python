@@ -3,7 +3,7 @@ import inspect
 import json
 import uuid
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional, Union
 
 if TYPE_CHECKING:
     from .client import ChainlitClient
@@ -12,9 +12,13 @@ if TYPE_CHECKING:
 from .context import active_steps_var, active_thread_id_var
 from .types import Attachment, BaseGeneration, Feedback
 
-StepType = Literal[
+TrueStepType = Literal[
     "RUN", "TOOL", "LLM", "EMBEDDING", "RETRIEVAL", "RERANK", "UNDEFINED"
 ]
+
+MessageStepType = Literal["USER_MESSAGE", "ASSISTANT_MESSAGE", "SYSTEM_MESSAGE"]
+
+StepType = Union[TrueStepType, MessageStepType]
 
 
 class Step:
@@ -147,7 +151,7 @@ class StepContextManager:
         self,
         client: "ChainlitClient",
         name: str = "",
-        type: StepType = "UNDEFINED",
+        type: TrueStepType = "UNDEFINED",
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
@@ -198,7 +202,7 @@ class StepContextManager:
 def step_decorator(
     client: "ChainlitClient",
     func: Callable,
-    type: StepType = "UNDEFINED",
+    type: TrueStepType = "UNDEFINED",
     name: str = "",
     id: Optional[str] = None,
     parent_id: Optional[str] = None,

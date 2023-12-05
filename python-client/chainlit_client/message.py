@@ -1,21 +1,19 @@
 import datetime
-import json
 import uuid
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 if TYPE_CHECKING:
     from .event_processor import EventProcessor
 
 from .context import active_steps_var, active_thread_id_var
+from .step import MessageStepType
 from .types import Attachment, Feedback
-
-MessageType = Literal["USER_MESSAGE", "ASSISTANT_MESSAGE", "SYSTEM_MESSAGE"]
 
 
 class Message:
     id: Optional[str] = None
     name: Optional[str] = ""
-    type: Optional[MessageType] = None
+    type: Optional[MessageStepType] = None
     metadata: Dict = {}
     parent_id: Optional[str] = None
     start: Optional[str] = None
@@ -29,7 +27,7 @@ class Message:
         self,
         content: str = "",
         id: Optional[str] = None,
-        type: Optional[MessageType] = None,
+        type: Optional[MessageStepType] = None,
         name: Optional[str] = None,
         thread_id: Optional[str] = None,
         parent_id: Optional[str] = None,
