@@ -3,6 +3,9 @@ from importlib import import_module
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Callable, Optional, TypedDict
 
+
+# TODO fix relative imports
+
 if TYPE_CHECKING:
     from ..client import ChainlitClient
 
@@ -11,7 +14,6 @@ from packaging import version as packaging_version
 from ..step import Step
 from ..types import (
     ChatGeneration,
-    CompletionGeneration,
     GenerationMessage,
     GenerationType,
 )
@@ -28,7 +30,9 @@ class AfterContext(TypedDict):
     step: Step
 
 
-def instrument_openai(client: "ChainlitClient"):
+def instrument_openai(
+    client: "ChainlitClient",
+):  # TODO what does instrument mean in this context ?
     try:
         version("openai")
     except:

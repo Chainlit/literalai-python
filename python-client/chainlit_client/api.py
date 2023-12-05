@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 
+# TODO fix relative import
+
 from .step import Step, StepType
 from .thread import Thread
 from .types import (
@@ -44,25 +46,21 @@ step_fields = """
             url
         }"""
 
-thread_fields = (
-    """
+thread_fields = f"""
         id
         metadata
         tags
-        participant {
+        participant {{
             id
             identifier
             metadata
-        }
-        steps {
-"""
-    + step_fields
-    + """
-        }"""
-)
+        }}
+        steps {{
+            {step_fields}
+        }}"""
 
 
-def serialize_step(event, id):
+def serialize_step(event, id):  # TODO add typing
     result = {}
 
     for key, value in event.items():
@@ -75,8 +73,7 @@ def serialize_step(event, id):
 
 def variables_builder(steps: List[Union[Dict, "Step"]]):
     variables = {}
-    for i in range(len(steps)):
-        step = steps[i]
+    for i, step in enumerate(steps):
         if isinstance(step, Step):
             variables.update(serialize_step(step.to_dict(), i))
         else:
@@ -84,7 +81,7 @@ def variables_builder(steps: List[Union[Dict, "Step"]]):
     return variables
 
 
-def query_variables_builder(steps):
+def query_variables_builder(steps):  # TODO check if id 0 is ok
     generated = ""
     for id in range(len(steps)):
         generated += f"""$id_{id}: String!
@@ -104,33 +101,33 @@ def query_variables_builder(steps):
     return generated
 
 
-def ingest_steps_builder(steps):
+def ingest_steps_builder(steps):  # TODO add typing
     generated = ""
     for id in range(len(steps)):
         generated += f"""
-      step{id}: ingestStep(
-        id: $id_{id}
-        threadId: $threadId_{id}
-        startTime: $startTime_{id}
-        endTime: $endTime_{id}
-        type: $type_{id}
-        input: $input_{id}
-        output: $output_{id}
-        metadata: $metadata_{id}
-        parentId: $parentId_{id}
-        name: $name_{id}
-        generation: $generation_{id}
-        feedback: $feedback_{id}
-        attachments: $attachments_{id}
-      ) {{
-        ok
-        message
-      }}
-"""
+            step{id}: ingestStep(
+                id: $id_{id}
+                threadId: $threadId_{id}
+                startTime: $startTime_{id}
+                endTime: $endTime_{id}
+                type: $type_{id}
+                input: $input_{id}
+                output: $output_{id}
+                metadata: $metadata_{id}
+                parentId: $parentId_{id}
+                name: $name_{id}
+                generation: $generation_{id}
+                feedback: $feedback_{id}
+                attachments: $attachments_{id}
+            ) {{
+                ok
+                message
+            }}
+    """
     return generated
 
 
-def query_builder(steps):
+def query_builder(steps):  # TODO add typing
     return f"""
     mutation AddStep({query_variables_builder(steps)}) {{
       {ingest_steps_builder(steps)}
@@ -158,7 +155,9 @@ class API:
         self, description: str, query: str, variables: Dict[str, Any]
     ) -> Dict:
         def raise_error(error):
-            print(f"Failed to {description}: {error}")
+            print(
+                f"Failed to {description}: {error}"
+            )  # TODO do we want to use a logger instead of prints ?
             raise error
 
         async with httpx.AsyncClient() as client:
@@ -192,13 +191,13 @@ class API:
         self, identifier: str, metadata: Optional[Dict] = None
     ) -> User:
         query = """
-        mutation CreateUser($identifier: String!, $metadata: Json) {
-            createParticipant(identifier: $identifier, metadata: $metadata) {
-                id
-                identifier
-                metadata
+            mutation CreateUser($identifier: String!, $metadata: Json) {
+                createParticipant(identifier: $identifier, metadata: $metadata) {
+                    id
+                    identifier
+                    metadata
+                }
             }
-        }
         """
 
         variables = {"identifier": identifier, "metadata": metadata}
@@ -246,13 +245,14 @@ class API:
             raise Exception("Only one of id or identifier must be provided")
 
         query = """
-        query GetUser($id: String, $identifier: String) {
-            participant(id: $id, identifier: $identifier) {
-                id
-                identifier
-                metadata
+            query GetUser($id: String, $identifier: String) {
+                participant(id: $id, identifier: $identifier) {
+                    id
+                    identifier
+                    metadata
+                }
             }
-        }"""
+        """
 
         variables = {"id": id, "identifier": identifier}
 
@@ -262,15 +262,14 @@ class API:
 
     async def delete_user(self, id: str) -> str:
         query = """
-        mutation DeleteUser($id: String!) {
-            deleteParticipant(id: $id) {
-                id
+            mutation DeleteUser($id: String!) {
+                deleteParticipant(id: $id) {
+                    id
+                }
             }
-        }
         """
 
         variables = {"id": id}
-
         result = await self.make_api_call("delete user", query, variables)
 
         return result["data"]["deleteParticipant"]["id"]
@@ -279,48 +278,48 @@ class API:
 
     async def list_threads(self, first: int = 10, skip: int = 0) -> PaginatedResponse:
         query = """
-        query GetThreads(
-            $after: ID,
-            $before: ID,
-            $cursorAnchor: DateTime,
-            $filters: ThreadFiltersInput,
-            $first: Int,
-            $last: Int,
-            $projectId: String,
-            $skip: Int
-            ) {
-            threads(
-                after: $after,
-                before: $before,
-                cursorAnchor: $cursorAnchor,
-                filters: $filters,
-                first: $first,
-                last: $last,
-                projectId: $projectId,
-                skip: $skip
+            query GetThreads(
+                $after: ID,
+                $before: ID,
+                $cursorAnchor: DateTime,
+                $filters: ThreadFiltersInput,
+                $first: Int,
+                $last: Int,
+                $projectId: String,
+                $skip: Int
                 ) {
-                pageInfo {
-                    startCursor
-                    endCursor
-                    hasNextPage
-                    hasPreviousPage
-                }
-                totalCount
-                edges {
-                    cursor
-                    node {
-                        id
-                        metadata
-                        projectId
-                        startTime
-                        endTime
-                        tags
-                        tokenCount
-                        environment
+                threads(
+                    after: $after,
+                    before: $before,
+                    cursorAnchor: $cursorAnchor,
+                    filters: $filters,
+                    first: $first,
+                    last: $last,
+                    projectId: $projectId,
+                    skip: $skip
+                    ) {
+                    pageInfo {
+                        startCursor
+                        endCursor
+                        hasNextPage
+                        hasPreviousPage
+                    }
+                    totalCount
+                    edges {
+                        cursor
+                        node {
+                            id
+                            metadata
+                            projectId
+                            startTime
+                            endTime
+                            tags
+                            tokenCount
+                            environment
+                        }
                     }
                 }
             }
-        }
     """
         variables = {"first": first, "skip": skip}
 
@@ -342,8 +341,7 @@ class API:
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
     ) -> Thread:
-        query = (
-            """
+        query = f"""
         mutation CreateThread(
             $metadata: Json,
             $participantId: String,
@@ -351,7 +349,7 @@ class API:
             $tags: [String!],
             $startTime: DateTime,
             $endTime: DateTime,
-        ) {
+        ) {{
             createThread(
                 metadata: $metadata
                 participantId: $participantId
@@ -359,14 +357,11 @@ class API:
                 tags: $tags
                 startTime: $startTime
                 endTime: $endTime
-            ) {
+            ) {{
+            {thread_fields}
+            }}
+        }}
 """
-            + thread_fields
-            + """
-            }
-        }
-"""
-        )
         variables = {
             "metadata": metadata,
             "participantId": participant_id,
@@ -390,33 +385,29 @@ class API:
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
     ) -> Thread:
-        query = (
+        query = f"""
+                mutation UpdateThread(
+                    $id: String!,
+                    $metadata: Json,
+                    $participantId: String,
+                    $environment: String,
+                    $tags: [String!],
+                    $startTime: DateTime,
+                    $endTime: DateTime,
+                ) {{
+                    updateThread(
+                        id: $id
+                        metadata: $metadata
+                        participantId: $participantId
+                        environment: $environment
+                        tags: $tags
+                        startTime: $startTime
+                        endTime: $endTime
+                    ) {{
+                    {thread_fields}
+                    }}
+                }}
             """
-        mutation UpdateThread(
-            $id: String!,
-            $metadata: Json,
-            $participantId: String,
-            $environment: String,
-            $tags: [String!],
-            $startTime: DateTime,
-            $endTime: DateTime,
-        ) {
-            updateThread(
-                id: $id
-                metadata: $metadata
-                participantId: $participantId
-                environment: $environment
-                tags: $tags
-                startTime: $startTime
-                endTime: $endTime
-            ) {
-"""
-            + thread_fields
-            + """
-            }
-        }
-"""
-        )
         variables = {
             "id": id,
             "metadata": metadata,
@@ -435,17 +426,13 @@ class API:
         return Thread.from_dict(thread["data"]["updateThread"])
 
     async def get_thread(self, id: str) -> Thread:
-        query = (
+        query = f"""
+                query GetThread($id: String!) {{
+                    thread(id: $id) {{
+                        {thread_fields}
+                    }}
+                }}
             """
-        query GetThread($id: String!) {
-            thread(id: $id) {
-"""
-            + thread_fields
-            + """
-            }
-        }
-    """
-        )
 
         variables = {"id": id}
 
@@ -455,11 +442,11 @@ class API:
 
     async def delete_thread(self, id: str) -> str:
         query = """
-        mutation DeleteThread($thread_id: String!) {
-            deleteThread(id: $thread_id) {
-                id
+            mutation DeleteThread($thread_id: String!) {
+                deleteThread(id: $thread_id) {
+                    id
+                }
             }
-        }
         """
 
         variables = {"thread_id": id}
@@ -479,28 +466,28 @@ class API:
         strategy: Optional[FeedbackStrategy],
     ) -> "Feedback":
         query = """
-        mutation CreateFeedback(
-            $comment: String,
-            $stepId: String!,
-            $strategy: FeedbackStrategy,
-            $threadId: String!,
-            $value: Int!,
-        ) {
-            createFeedback(
-                comment: $comment,
-                stepId: $stepId,
-                strategy: $strategy,
-                threadId: $threadId,
-                value: $value,
+            mutation CreateFeedback(
+                $comment: String,
+                $stepId: String!,
+                $strategy: FeedbackStrategy,
+                $threadId: String!,
+                $value: Int!,
             ) {
-                id
-                threadId
-                stepId
-                value
-                comment
-                strategy
+                createFeedback(
+                    comment: $comment,
+                    stepId: $stepId,
+                    strategy: $strategy,
+                    threadId: $threadId,
+                    value: $value,
+                ) {
+                    id
+                    threadId
+                    stepId
+                    value
+                    comment
+                    strategy
+                }
             }
-        }
         """
 
         variables = {
@@ -523,26 +510,26 @@ class API:
         strategy: Optional["FeedbackStrategy"],
     ) -> "Feedback":
         query = """
-        mutation UpdateFeedback(
-            $id: String!,
-            $comment: String,
-            $value: Int,
-            $strategy: FeedbackStrategy,
-        ) {
-            updateFeedback(
-                id: $id,
-                comment: $comment,
-                value: $value,
-                strategy: $strategy,
+            mutation UpdateFeedback(
+                $id: String!,
+                $comment: String,
+                $value: Int,
+                $strategy: FeedbackStrategy,
             ) {
-                id
-                threadId
-                stepId
-                value
-                comment
-                strategy
+                updateFeedback(
+                    id: $id,
+                    comment: $comment,
+                    value: $value,
+                    strategy: $strategy,
+                ) {
+                    id
+                    threadId
+                    stepId
+                    value
+                    comment
+                    strategy
+                }
             }
-        }
         """
 
         variables = {"id": id, "comment": comment, "value": value, "strategy": strategy}
@@ -595,35 +582,34 @@ class API:
             attachment.url = uploaded["url"]
 
         query = """
-        mutation CreateAttachment(
-            $metadata: Json,
-            $mime: String,
-            $name: String!,
-            $objectKey: String,
-            $stepId: String!,
-            $threadId: String!,
-            $url: String,
-        ) {
-            createAttachment(
-                metadata: $metadata,
-                mime: $mime,
-                name: $name,
-                objectKey: $objectKey,
-                stepId: $stepId,
-                threadId: $threadId,
-                url: $url,
+            mutation CreateAttachment(
+                $metadata: Json,
+                $mime: String,
+                $name: String!,
+                $objectKey: String,
+                $stepId: String!,
+                $threadId: String!,
+                $url: String,
             ) {
-                id
-                threadId
-                stepId
-                metadata
-                mime
-                name
-                objectKey
-                url
+                createAttachment(
+                    metadata: $metadata,
+                    mime: $mime,
+                    name: $name,
+                    objectKey: $objectKey,
+                    stepId: $stepId,
+                    threadId: $threadId,
+                    url: $url,
+                ) {
+                    id
+                    threadId
+                    stepId
+                    metadata
+                    mime
+                    name
+                    objectKey
+                    url
+                }
             }
-        }
-        
         """
 
         variables = attachment.to_dict()
@@ -642,34 +628,34 @@ class API:
         url: Optional[str] = None,
     ):
         query = """
-        mutation UpdateAttachment(
-            $id: String!,
-            $metadata: Json,
-            $mime: String,
-            $name: String,
-            $objectKey: String,
-            $projectId: String,
-            $url: String,
-        ) {
-            updateAttachment(
-                id: $id,
-                metadata: $metadata,
-                mime: $mime,
-                name: $name,
-                objectKey: $objectKey,
-                projectId: $projectId,
-                url: $url,
+            mutation UpdateAttachment(
+                $id: String!,
+                $metadata: Json,
+                $mime: String,
+                $name: String,
+                $objectKey: String,
+                $projectId: String,
+                $url: String,
             ) {
-                id
-                threadId
-                stepId
-                metadata
-                mime
-                name
-                objectKey
-                url
+                updateAttachment(
+                    id: $id,
+                    metadata: $metadata,
+                    mime: $mime,
+                    name: $name,
+                    objectKey: $objectKey,
+                    projectId: $projectId,
+                    url: $url,
+                ) {
+                    id
+                    threadId
+                    stepId
+                    metadata
+                    mime
+                    name
+                    objectKey
+                    url
+                }
             }
-        }
         """
 
         variables = {
@@ -687,18 +673,18 @@ class API:
 
     async def get_attachment(self, id: str):
         query = """
-        query GetAttachment($id: String!) {
-            attachment(id: $id) {
-                id
-                threadId
-                stepId
-                metadata
-                mime
-                name
-                objectKey
-                url
+            query GetAttachment($id: String!) {
+                attachment(id: $id) {
+                    id
+                    threadId
+                    stepId
+                    metadata
+                    mime
+                    name
+                    objectKey
+                    url
+                }
             }
-        }
         """
 
         variables = {"id": id}
@@ -709,11 +695,11 @@ class API:
 
     async def delete_attachment(self, id: str):
         query = """
-        mutation DeleteAttachment($id: String!) {
-            deleteAttachment(id: $id) {
-                id
+            mutation DeleteAttachment($id: String!) {
+                deleteAttachment(id: $id) {
+                    id
+                }
             }
-        }
         """
 
         variables = {"id": id}
@@ -740,45 +726,41 @@ class API:
         feedback: Optional[Feedback],
         attachments: Optional[List[Attachment]],
     ) -> Step:
-        query = (
-            """
-        mutation CreateStep(
-            $id: String!,
-            $threadId: String!,
-            $type: StepType,
-            $startTime: DateTime,
-            $endTime: DateTime,
-            $input: String,
-            $output: String,
-            $metadata: Json,
-            $parentId: String,
-            $name: String,
-            $generation: GenerationPayloadInput,
-            $feedback: FeedbackPayloadInput,
-            $attachments: [AttachmentPayloadInput!],
-        ) {
-            createStep(
-                id: $id,
-                threadId: $threadId,
-                type: $type,
-                startTime: $startTime,
-                endTime: $endTime,
-                input: $input,
-                output: $output,
-                metadata: $metadata,
-                parentId: $parentId,
-                name: $name,
-                generation: $generation,
-                feedback: $feedback,
-                attachments: $attachments,
-            ) {
-"""
-            + step_fields
-            + """
-            }
-        }
+        query = f"""
+            mutation CreateStep(
+                $id: String!,
+                $threadId: String!,
+                $type: StepType,
+                $startTime: DateTime,
+                $endTime: DateTime,
+                $input: String,
+                $output: String,
+                $metadata: Json,
+                $parentId: String,
+                $name: String,
+                $generation: GenerationPayloadInput,
+                $feedback: FeedbackPayloadInput,
+                $attachments: [AttachmentPayloadInput!],
+            ) {{
+                createStep(
+                    id: $id,
+                    threadId: $threadId,
+                    type: $type,
+                    startTime: $startTime,
+                    endTime: $endTime,
+                    input: $input,
+                    output: $output,
+                    metadata: $metadata,
+                    parentId: $parentId,
+                    name: $name,
+                    generation: $generation,
+                    feedback: $feedback,
+                    attachments: $attachments,
+                ) {{
+                    {step_fields}
+                }}
+            }}
         """
-        )
 
         variables = {
             "threadId": thread_id,
@@ -816,43 +798,39 @@ class API:
         feedback: Optional[Feedback],
         attachments: Optional[List[Attachment]],
     ) -> Step:
-        query = (
-            """
-        mutation UpdateStep(
-            $id: String!,
-            $type: StepType,
-            $startTime: DateTime,
-            $endTime: DateTime,
-            $input: String,
-            $output: String,
-            $metadata: Json,
-            $parentId: String,
-            $name: String,
-            $generation: GenerationPayloadInput,
-            $feedback: FeedbackPayloadInput,
-            $attachments: [AttachmentPayloadInput!],
-        ) {
-            updateStep(
-                id: $id,
-                type: $type,
-                startTime: $startTime,
-                endTime: $endTime,
-                input: $input,
-                output: $output,
-                metadata: $metadata,
-                parentId: $parentId,
-                name: $name,
-                generation: $generation,
-                feedback: $feedback,
-                attachments: $attachments,
-            ) {    
-"""
-            + step_fields
-            + """
-            }
-        }
+        query = f"""
+                mutation UpdateStep(
+                    $id: String!,
+                    $type: StepType,
+                    $startTime: DateTime,
+                    $endTime: DateTime,
+                    $input: String,
+                    $output: String,
+                    $metadata: Json,
+                    $parentId: String,
+                    $name: String,
+                    $generation: GenerationPayloadInput,
+                    $feedback: FeedbackPayloadInput,
+                    $attachments: [AttachmentPayloadInput!],
+                ) {{
+                    updateStep(
+                        id: $id,
+                        type: $type,
+                        startTime: $startTime,
+                        endTime: $endTime,
+                        input: $input,
+                        output: $output,
+                        metadata: $metadata,
+                        parentId: $parentId,
+                        name: $name,
+                        generation: $generation,
+                        feedback: $feedback,
+                        attachments: $attachments,
+                    ) {{    
+                        {step_fields}
+                    }}
+                }}
         """
-        )
 
         variables = {
             "id": id,
@@ -875,16 +853,13 @@ class API:
         return Step.from_dict(result["data"]["updateStep"])
 
     async def get_step(self, id: str) -> Step:
-        query = (
+        query = f"""
+                query GetStep($id: String!) {{
+                    step(id: $id) {{
+                        {step_fields}
+                    }}
+                }}
             """
-        query GetStep($id: String!) {
-            step(id: $id) {"""
-            + step_fields
-            + """
-            }
-        }
-    """
-        )
         variables = {"id": id}
 
         result = await self.make_api_call("get step", query, variables)
@@ -893,11 +868,11 @@ class API:
 
     async def delete_step(self, id: str) -> str:
         query = """
-        mutation DeleteStep($id: String!) {
-            deleteStep(id: $id) {
-                id
+            mutation DeleteStep($id: String!) {
+                deleteStep(id: $id) {
+                    id
+                }
             }
-        }
         """
 
         variables = {"id": id}
@@ -957,8 +932,8 @@ class API:
             )
             try:
                 upload_response.raise_for_status()
-                url = f'{upload_details["url"]}/{object_key}'
+                url = f'{upload_details["url"]}/{object_key}' # TODO unsure why this variable unused
                 return {"object_key": object_key, "url": signed_url}
             except Exception as e:
-                print(f"Failed to upload file: {str(e)}")
+                print(f"Failed to upload file: {str(e)}") # TODO use logger ?
                 return {"object_key": None, "url": None}

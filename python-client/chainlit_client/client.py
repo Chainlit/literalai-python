@@ -19,13 +19,11 @@ class ChainlitClient:
         endpoint: Optional[str] = None,
     ):
         if not api_key:
-            api_key = os.getenv("CHAINLIT_API_KEY", None)
-            if not api_key:
+            if not (api_key := os.getenv("CHAINLIT_API_KEY", None)):
                 raise Exception("CHAINLIT_API_KEY not provided")
-        if not endpoint:
-            endpoint = os.getenv(
-                "CHAINLIT_ENDPOINT", "https://cloud.chainlit.io/graphql"
-            )
+        endpoint = endpoint or os.getenv(
+            "CHAINLIT_ENDPOINT", "https://cloud.chainlit.io/graphql"
+        )
 
         self.api = API(api_key=api_key, endpoint=endpoint)
         self.event_processor = EventProcessor(
@@ -39,8 +37,8 @@ class ChainlitClient:
     def thread(self, original_function=None, *, thread_id: Optional[str] = None):
         if original_function:
             return thread_decorator(self, func=original_function, thread_id=thread_id)
-        else:
-            return ThreadContextManager(self, thread_id=thread_id)
+
+        return ThreadContextManager(self, thread_id=thread_id)
 
     def step(
         self,
@@ -62,10 +60,10 @@ class ChainlitClient:
                 parent_id=parent_id,
                 thread_id=thread_id,
             )
-        else:
-            return StepContextManager(
-                self, type=type, id=id, parent_id=parent_id, thread_id=thread_id
-            )
+
+        return StepContextManager(
+            self, type=type, id=id, parent_id=parent_id, thread_id=thread_id
+        )
 
     def message(
         self,
@@ -99,7 +97,7 @@ class ChainlitClient:
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
     ):
-        step = Step(
+        return Step(
             name=name,
             type=type,
             id=id,
@@ -107,14 +105,13 @@ class ChainlitClient:
             thread_id=thread_id,
             processor=self.event_processor,
         )
-        return step
 
     def get_current_step(self):
         active_steps = active_steps_var.get()
         if active_steps and len(active_steps) > 0:
             return active_steps[-1]
-        else:
-            return None
+
+        return None
 
     def get_current_thread_id(self):
         return active_thread_id_var.get()

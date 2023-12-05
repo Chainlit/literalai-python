@@ -40,10 +40,7 @@ class Message:
         processor: Optional["EventProcessor"] = None,
     ):
         self.id = id or str(uuid.uuid4())
-        if not start:
-            self.start = datetime.datetime.utcnow().isoformat()
-        else:
-            self.start = start
+        self.start = start or datetime.datetime.utcnow().isoformat()
         self.name = name
         self.type = type
         self.output = content

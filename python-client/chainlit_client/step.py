@@ -106,7 +106,7 @@ class Step:
         }
 
     @classmethod
-    def from_dict(cls, step_dict: Dict) -> "Step":
+    def from_dict(cls, step_dict: Dict) -> "Step": # TODO better typing for step
         name = step_dict.get("name", "")
         step_type = step_dict.get("type", "UNDEFINED")  # type: StepType
         thread_id = step_dict.get("threadId")
