@@ -22,18 +22,16 @@ class ChainlitClient:
         self,
         batch_size: int = 1,
         api_key: Optional[str] = None,
-        endpoint: Optional[str] = None,
+        url: Optional[str] = None,
     ):
         if not api_key:
             api_key = os.getenv("CHAINLIT_API_KEY", None)
             if not api_key:
                 raise Exception("CHAINLIT_API_KEY not provided")
-        if not endpoint:
-            endpoint = os.getenv(
-                "CHAINLIT_ENDPOINT", "https://cloud.chainlit.io/graphql"
-            )
+        if not url:
+            url = os.getenv("CHAINLIT_API_URL", "https://cloud.chainlit.io")
 
-        self.api = API(api_key=api_key, endpoint=endpoint)
+        self.api = API(api_key=api_key, url=url)
         self.event_processor = EventProcessor(
             api=self.api,
             batch_size=batch_size,
