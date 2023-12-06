@@ -1,6 +1,6 @@
 import mimetypes
 import uuid
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, TypedDict
 
 import httpx
 
@@ -14,6 +14,7 @@ from .types import (
     PaginatedResponse,
     User,
 )
+
 
 step_fields = """
         id
@@ -185,7 +186,6 @@ class API:
                     headers=self.headers,
                     timeout=10,
                 )
-
                 json = response.json()
 
                 if response.status_code != 200:
@@ -541,41 +541,39 @@ class API:
 
         return Feedback.from_dict(result["data"]["createFeedback"])
 
+    class FeedbackUpdate(TypedDict):
+        comment: Optional[str]
+        value: Optional[int]
+        strategy: Optional[FeedbackStrategy]
+
     async def update_feedback(
         self,
         id: str,
-        value: int,
-        comment: Optional[str] = None,
-        strategy: Optional["FeedbackStrategy"] = None,
+        **kwargs: FeedbackUpdate,
     ) -> "Feedback":
         query = """
-        mutation UpdateFeedback(
-            $id: String!,
-            $comment: String,
-            $value: Int,
-            $strategy: FeedbackStrategy,
-        ) {
-            updateFeedback(
-                id: $id,
-                comment: $comment,
-                value: $value,
-                strategy: $strategy,
+            mutation UpdateFeedback(
+                $id: String!,
+                $comment: String,
+                $value: Int!,
+                $strategy: FeedbackStrategy,
             ) {
-                id
-                threadId
-                stepId
-                value
-                comment
-                strategy
+                updateFeedback(
+                    id: $id,
+                    comment: $comment,
+                    value: $value,
+                    strategy: $strategy,
+                ) {
+                    id
+                    threadId
+                    stepId
+                    value
+                    comment
+                    strategy
+                }
             }
-        }
         """
-
-        variables = {"id": id, "comment": comment, "value": value, "strategy": strategy}
-
-        # remove None values to prevent the API from removing existing values
-        variables = {k: v for k, v in variables.items() if v is not None}
-
+        variables = {"id": id, **kwargs}
         result = await self.make_api_call("update feedback", query, variables)
 
         return Feedback.from_dict(result["data"]["updateFeedback"])
@@ -584,17 +582,24 @@ class API:
 
     async def create_attachment(
         self,
-        attachment: "Attachment",
+        thread_id: str,
+        step_id: str,
+        id: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+        mime: Optional[str] = None,
+        name: Optional[str] = None,
+        object_key: Optional[str] = None,
+        url: Optional[str] = None,
         content: Optional[Union[bytes, str]] = None,
         path: Optional[str] = None,
     ):
-        if not content and not attachment.url and not path:
+        if not content and not url and not path:
             raise Exception("Either content, path or attachment url must be provided")
 
         if content and path:
             raise Exception("Only one of content and path must be provided")
 
-        if (content and attachment.url) or (path and attachment.url):
+        if (content and url) or (path and url):
             raise Exception(
                 "Only one of content, path and attachment url must be provided"
             )
@@ -603,22 +608,25 @@ class API:
             # TODO: if attachment.mime is text, we could read as text?
             with open(path, "rb") as f:
                 content = f.read()
-            if not attachment.name:
-                attachment.name = path.split("/")[-1]
-            if not attachment.mime:
+            if not name:
+                name = path.split("/")[-1]
+            if not mime:
                 mime, _ = mimetypes.guess_type(path)
-                attachment.mime = mime or "application/octet-stream"
+                mime = mime or "application/octet-stream"
+
+        if not name:
+            raise Exception("Attachment name must be provided")
 
         if content:
             uploaded = await self.upload_file(
-                content=content, thread_id=attachment.thread_id, mime=attachment.mime
+                content=content, thread_id=thread_id, mime=mime
             )
 
             if uploaded["object_key"] is None or uploaded["url"] is None:
                 raise Exception("Failed to upload file")
 
-            attachment.object_key = uploaded["object_key"]
-            attachment.url = uploaded["url"]
+            object_key = uploaded["object_key"]
+            url = uploaded["url"]
 
         query = """
         mutation CreateAttachment(
@@ -649,21 +657,32 @@ class API:
         }
         
         """
-
-        variables = attachment.to_dict()
+        variables = {
+            "metadata": metadata,
+            "mime": mime,
+            "name": name,
+            "object_key": object_key,
+            "stepId": step_id,
+            "threadId": thread_id,
+            "url": url,
+            "id": id,
+        }
 
         result = await self.make_api_call("create attachment", query, variables)
 
         return Attachment.from_dict(result["data"]["createAttachment"])
 
+    class AttachmentUpload(TypedDict):
+        metadata: Optional[Dict]
+        name: Optional[str]
+        mime: Optional[str]
+        objectKey: Optional[str]
+        url: Optional[str]
+
     async def update_attachment(
         self,
         id: str,
-        metadata: Optional[Dict] = None,
-        name: Optional[str] = None,
-        mime: Optional[str] = None,
-        objectKey: Optional[str] = None,
-        url: Optional[str] = None,
+        **kwargs: AttachmentUpload,
     ):
         query = """
         mutation UpdateAttachment(
@@ -695,16 +714,7 @@ class API:
             }
         }
         """
-
-        variables = {
-            "id": id,
-            "metadata": metadata,
-            "mime": mime,
-            "name": name,
-            "objectKey": objectKey,
-            "url": url,
-        }
-
+        variables = {"id": id, **kwargs}
         result = await self.make_api_call("update attachment", query, variables)
 
         return Attachment.from_dict(result["data"]["updateAttachment"])
@@ -848,8 +858,6 @@ class API:
                 metadata: $metadata,
                 name: $name,
                 parentId: $parentId,
-                startTime: $startTime,
-                endTime: $endTime,
             ) {    
 """
             + step_fields
