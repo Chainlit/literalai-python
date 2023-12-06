@@ -22,10 +22,12 @@ jobs:
       with:
         python-version: "3.8"
     - name: Install dependencies
+      working-directory: ./python-client
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
+      working-directory: ./python-client
       run: |
         pytest -m e2e
