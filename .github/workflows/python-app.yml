@@ -29,5 +29,8 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       working-directory: ./python-client
+      env:
+        CHAINLIT_API_URL: ${{ secrets.CHAINLIT_API_URL }}
+        CHAINLIT_API_KEY: ${{ secrets.CHAINLIT_API_KEY }}
       run: |
         pytest -m e2e
