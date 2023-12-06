@@ -814,9 +814,6 @@ class API:
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        generation: Optional[Dict] = None,
-        feedback: Optional[Feedback] = None,
-        attachments: Optional[List[Attachment]] = None,
     ) -> Step:
         query = (
             """
@@ -830,9 +827,6 @@ class API:
             $metadata: Json,
             $parentId: String,
             $name: String,
-            $generation: GenerationPayloadInput,
-            $feedback: FeedbackPayloadInput,
-            $attachments: [AttachmentPayloadInput!],
         ) {
             updateStep(
                 id: $id,
@@ -844,9 +838,6 @@ class API:
                 metadata: $metadata,
                 parentId: $parentId,
                 name: $name,
-                generation: $generation,
-                feedback: $feedback,
-                attachments: $attachments,
             ) {    
 """
             + step_fields
@@ -867,9 +858,6 @@ class API:
             "parentId": parent_id,
             "name": name,
             "tags": tags,
-            "generation": generation,
-            "feedback": feedback,
-            "attachments": attachments,
         }
 
         result = await self.make_api_call("update step", query, variables)
