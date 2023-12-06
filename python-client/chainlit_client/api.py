@@ -162,7 +162,7 @@ class API:
     ) -> Dict:
         def raise_error(error):
             print(f"Failed to {description}: {error}")
-            raise error
+            raise Exception(error)
 
         async with httpx.AsyncClient() as client:
             try:
@@ -615,7 +615,6 @@ class API:
             $name: String!,
             $objectKey: String,
             $stepId: String!,
-            $threadId: String!,
             $url: String,
         ) {
             createAttachment(
@@ -624,7 +623,6 @@ class API:
                 name: $name,
                 objectKey: $objectKey,
                 stepId: $stepId,
-                threadId: $threadId,
                 url: $url,
             ) {
                 id
