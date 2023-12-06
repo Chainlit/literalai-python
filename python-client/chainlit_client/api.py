@@ -752,9 +752,6 @@ class API:
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        generation: Optional[BaseGeneration] = None,
-        feedback: Optional[Feedback] = None,
-        attachments: Optional[List[Attachment]] = None,
     ) -> Step:
         query = (
             """
@@ -768,9 +765,6 @@ class API:
             $metadata: Json,
             $parentId: String,
             $name: String,
-            $generation: GenerationPayloadInput,
-            $feedback: FeedbackPayloadInput,
-            $attachments: [AttachmentPayloadInput!],
         ) {
             createStep(
                 threadId: $threadId,
@@ -782,9 +776,6 @@ class API:
                 metadata: $metadata,
                 parentId: $parentId,
                 name: $name,
-                generation: $generation,
-                feedback: $feedback,
-                attachments: $attachments,
             ) {
 """
             + step_fields
@@ -805,9 +796,6 @@ class API:
             "parentId": parent_id,
             "name": name,
             "tags": tags,
-            "generation": generation,
-            "feedback": feedback,
-            "attachments": attachments,
         }
 
         result = await self.make_api_call("create step", query, variables)
