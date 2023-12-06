@@ -549,7 +549,7 @@ class API:
     async def update_feedback(
         self,
         id: str,
-        **kwargs: FeedbackUpdate,
+        update_params: FeedbackUpdate,
     ) -> "Feedback":
         query = """
             mutation UpdateFeedback(
@@ -573,7 +573,7 @@ class API:
                 }
             }
         """
-        variables = {"id": id, **kwargs}
+        variables = {"id": id, **update_params}
         result = await self.make_api_call("update feedback", query, variables)
 
         return Feedback.from_dict(result["data"]["updateFeedback"])
@@ -682,7 +682,7 @@ class API:
     async def update_attachment(
         self,
         id: str,
-        **kwargs: AttachmentUpload,
+        update_params: AttachmentUpload,
     ):
         query = """
         mutation UpdateAttachment(
@@ -714,7 +714,7 @@ class API:
             }
         }
         """
-        variables = {"id": id, **kwargs}
+        variables = {"id": id, **update_params}
         result = await self.make_api_call("update attachment", query, variables)
 
         return Attachment.from_dict(result["data"]["updateAttachment"])

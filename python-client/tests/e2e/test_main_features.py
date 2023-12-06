@@ -110,7 +110,9 @@ class Teste2e:
         assert feedback.id is not None
         assert feedback.comment == "hello"
 
-        updated_feedback = await client.api.update_feedback(id=feedback.id, value=2)
+        updated_feedback = await client.api.update_feedback(
+            id=feedback.id, update_params={"value": 2}
+        )
         assert updated_feedback.value == 2
         assert updated_feedback.comment == "hello"
 
@@ -137,7 +139,7 @@ class Teste2e:
         assert fetched_attachment.id == attachment.id
 
         updated_attachment = await client.api.update_attachment(
-            id=attachment.id, name="bar"
+            id=attachment.id, update_params={"name": "bar"}
         )
         assert updated_attachment.name == "bar"
         assert updated_attachment.metadata == {"foo": "bar"}
