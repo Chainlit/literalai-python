@@ -367,8 +367,6 @@ class API:
         participant_id: Optional[str] = None,
         environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
     ) -> Thread:
         query = (
             """
@@ -377,16 +375,12 @@ class API:
             $participantId: String,
             $environment: String,
             $tags: [String!],
-            $startTime: DateTime,
-            $endTime: DateTime,
         ) {
             createThread(
                 metadata: $metadata
                 participantId: $participantId
                 environment: $environment
                 tags: $tags
-                startTime: $startTime
-                endTime: $endTime
             ) {
 """
             + thread_fields
@@ -400,13 +394,54 @@ class API:
             "participantId": participant_id,
             "environment": environment,
             "tags": tags,
-            "startTime": start_time,
-            "endTime": end_time,
         }
 
         thread = await self.make_api_call("create thread", query, variables)
 
         return Thread.from_dict(thread["data"]["createThread"])
+
+    async def upsert_thread(
+        self,
+        thread_id: str,
+        metadata: Optional[Dict] = None,
+        participant_id: Optional[str] = None,
+        environment: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ) -> Thread:
+        query = (
+            """
+        mutation UpsertThread(
+            $threadId: String!,
+            $metadata: Json,
+            $participantId: String,
+            $environment: String,
+            $tags: [String!],
+        ) {
+            upsertThread(
+                id: $threadId
+                metadata: $metadata
+                participantId: $participantId
+                environment: $environment
+                tags: $tags
+            ) {
+"""
+            + thread_fields
+            + """
+            }
+        }
+"""
+        )
+        variables = {
+            "threadId": thread_id,
+            "metadata": metadata,
+            "participantId": participant_id,
+            "environment": environment,
+            "tags": tags,
+        }
+
+        thread = await self.make_api_call("upsert thread", query, variables)
+
+        return Thread.from_dict(thread["data"]["upsertThread"])
 
     async def update_thread(
         self,
@@ -415,8 +450,6 @@ class API:
         participant_id: Optional[str] = None,
         environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
     ) -> Thread:
         query = (
             """
@@ -426,8 +459,6 @@ class API:
             $participantId: String,
             $environment: String,
             $tags: [String!],
-            $startTime: DateTime,
-            $endTime: DateTime,
         ) {
             updateThread(
                 id: $id
@@ -435,8 +466,6 @@ class API:
                 participantId: $participantId
                 environment: $environment
                 tags: $tags
-                startTime: $startTime
-                endTime: $endTime
             ) {
 """
             + thread_fields
@@ -451,8 +480,6 @@ class API:
             "participantId": participant_id,
             "environment": environment,
             "tags": tags,
-            "startTime": start_time,
-            "endTime": end_time,
         }
 
         # remove None values to prevent the API from removing existing values
