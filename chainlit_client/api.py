@@ -995,7 +995,7 @@ class API:
         object_key = upload_details["fields"]["key"]
         signed_url = json_res["signedUrl"]
         headers = json_res["fields"]["headers"]
-        method = json_res["fields"]["method"]
+        method = json_res["fields"]["method"] or "POST"
 
         # Prepare form data
         form_data = {}  # type: Dict[str, Tuple[Union[str, None], Any]]
@@ -1007,9 +1007,11 @@ class API:
         form_data["file"] = (id, content)
 
         async with httpx.AsyncClient() as client:
-            client_request = client.put if method == "PUT" else client.post
-            upload_response = await client_request(
-                upload_details["url"], files=form_data, headers=headers
+            upload_response = await client.request(
+                url=upload_details["url"],
+                files=form_data,
+                headers=headers,
+                method=method,
             )
             try:
                 upload_response.raise_for_status()
