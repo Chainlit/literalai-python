@@ -83,11 +83,11 @@ class Message:
         return {
             "id": self.id,
             "metadata": self.metadata,
-            "parent_id": self.parent_id,
+            "parentId": self.parent_id,
             "start": self.start,
             "end": self.start,  # start = end in Message
             "type": self.type,
-            "thread_id": self.thread_id,
+            "threadId": self.thread_id,
             "output": self.output,  # no input, output = content in Message
             "name": self.name,
             "feedback": self.feedback.to_dict() if self.feedback else None,
@@ -98,10 +98,10 @@ class Message:
     def from_dict(cls, message_dict: Dict) -> "Message":
         id = message_dict.get("id", "")
         metadata = message_dict.get("metadata", {})
-        parent_id = message_dict.get("parent_id", "")
+        parent_id = message_dict.get("parentId", "")
         start = message_dict.get("start", "")
         type = message_dict.get("type", "")
-        thread_id = message_dict.get("thread_id", "")
+        thread_id = message_dict.get("threadId", "")
         output = message_dict.get("output", "")
         name = message_dict.get("name", "")
         feedback = message_dict.get("feedback", "")
