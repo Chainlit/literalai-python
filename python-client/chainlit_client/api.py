@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import httpx
 
 from .step import Step, StepDict, StepType
-from .thread import Thread
+from .thread import Thread, ThreadFilter
 from .types import (
     Attachment,
     BaseGeneration,
@@ -61,6 +61,19 @@ thread_fields = (
     + """
         }"""
 )
+
+shallow_thread_fields = """
+        id
+        metadata
+        tags
+        createdAt
+        participant {
+            id
+            identifier
+            metadata
+        }    
+        
+"""
 
 
 def serialize_step(event, id):
@@ -287,9 +300,10 @@ class API:
         self,
         first: Optional[int] = None,
         after: Optional[str] = None,
-        filters: Optional[str] = None,
+        filters: Optional[ThreadFilter] = None,
     ) -> PaginatedResponse:
-        query = """
+        query = (
+            """
         query GetThreads(
             $after: ID,
             $before: ID,
@@ -320,25 +334,23 @@ class API:
                 edges {
                     cursor
                     node {
-                        id
-                        metadata
-                        projectId
-                        startTime
-                        endTime
-                        tags
-                        tokenCount
-                        environment
+"""
+            + shallow_thread_fields
+            + """
                     }
                 }
             }
         }
     """
+        )
         variables: Dict[str, Any] = {}
 
         if first:
             variables["first"] = first
         if after:
             variables["after"] = after
+        if filters:
+            variables["filters"] = filters.to_dict()
 
         result = await self.make_api_call("list threads", query, variables)
 
@@ -804,12 +816,9 @@ class API:
         self,
         id: str,
         type: Optional[StepType] = None,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
         input: Optional[str] = None,
         output: Optional[str] = None,
         metadata: Optional[Dict] = None,
-        parent_id: Optional[str] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ) -> Step:
@@ -818,12 +827,9 @@ class API:
         mutation UpdateStep(
             $id: String!,
             $type: StepType,
-            $startTime: DateTime,
-            $endTime: DateTime,
             $input: String,
             $output: String,
             $metadata: Json,
-            $parentId: String,
             $name: String,
         ) {
             updateStep(
@@ -834,7 +840,6 @@ class API:
                 input: $input,
                 output: $output,
                 metadata: $metadata,
-                parentId: $parentId,
                 name: $name,
             ) {    
 """
@@ -848,12 +853,9 @@ class API:
         variables = {
             "id": id,
             "type": type,
-            "startTime": start_time,
-            "endTime": end_time,
             "input": input,
             "output": output,
             "metadata": metadata,
-            "parentId": parent_id,
             "name": name,
             "tags": tags,
         }

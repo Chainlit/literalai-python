@@ -45,7 +45,10 @@ class PaginatedResponse(Generic[T]):
     def to_dict(self):
         return {
             "pageInfo": self.pageInfo.to_dict(),
-            "data": self.data,
+            "data": [
+                (d.to_dict() if hasattr(d, "to_dict") and callable(d.to_dict) else d)
+                for d in self.data
+            ],
         }
 
     @classmethod

@@ -2,6 +2,7 @@ import asyncio
 import json
 
 from chainlit_client import ChainlitClient
+from chainlit_client.thread import DateTimeFilter, DateTimeOperators, ThreadFilter
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -43,6 +44,15 @@ async def main():
         max_calls -= 1
         if max_calls == 0:
             break
+
+    print("filtered")
+
+    filters = ThreadFilter(
+        createdAt=DateTimeFilter(operator=DateTimeOperators.gt, value="2023-12-05")
+    )
+
+    threads = await sdk.api.list_threads(filters=filters)
+    print(threads.to_dict())
 
 
 asyncio.run(main())
