@@ -821,6 +821,9 @@ class API:
         metadata: Optional[Dict] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        parent_id: Optional[str] = None,
     ) -> Step:
         query = (
             """
@@ -831,6 +834,9 @@ class API:
             $output: String,
             $metadata: Json,
             $name: String,
+            $startTime: DateTime,
+            $endTime: DateTime,
+            $parentId: String,
         ) {
             updateStep(
                 id: $id,
@@ -841,6 +847,9 @@ class API:
                 output: $output,
                 metadata: $metadata,
                 name: $name,
+                parentId: $parentId,
+                startTime: $startTime,
+                endTime: $endTime,
             ) {    
 """
             + step_fields
@@ -858,6 +867,9 @@ class API:
             "metadata": metadata,
             "name": name,
             "tags": tags,
+            "startTime": start_time,
+            "endTime": end_time,
+            "parentId": parent_id,
         }
 
         result = await self.make_api_call("update step", query, variables)
