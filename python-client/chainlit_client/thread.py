@@ -220,6 +220,8 @@ class DateTimeFilter:
 class ThreadFilter:
     attachmentsName: Optional[StringListFilter] = None
     createdAt: Optional[DateTimeFilter] = None
+    afterCreatedAt: Optional[DateTimeFilter] = None
+    beforeCreatedAt: Optional[DateTimeFilter] = None
     duration: Optional[NumberFilter] = None
     environment: Optional[StringFilter] = None
     feedbacksValue: Optional[NumberListFilter] = None
@@ -233,6 +235,12 @@ class ThreadFilter:
             if self.attachmentsName
             else None,
             "createdAt": self.createdAt.to_dict() if self.createdAt else None,
+            "afterCreatedAt": self.afterCreatedAt.to_dict()
+            if self.afterCreatedAt
+            else None,
+            "beforeCreatedAt": self.beforeCreatedAt.to_dict()
+            if self.beforeCreatedAt
+            else None,
             "duration": self.duration.to_dict() if self.duration else None,
             "environment": self.environment.to_dict() if self.environment else None,
             "feedbacksValue": self.feedbacksValue.to_dict()
