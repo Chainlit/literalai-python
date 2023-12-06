@@ -994,8 +994,8 @@ class API:
         upload_details = json_res["post"]
         object_key = upload_details["fields"]["key"]
         signed_url = json_res["signedUrl"]
-        headers = json_res["fields"]["headers"]
-        method = json_res["fields"]["method"] or "POST"
+        headers = upload_details["fields"]["headers"]
+        method = upload_details["fields"].get("method", "POST")
 
         # Prepare form data
         form_data = {}  # type: Dict[str, Tuple[Union[str, None], Any]]
