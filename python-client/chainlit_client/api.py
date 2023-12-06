@@ -140,13 +140,15 @@ def query_builder(steps):
 
 
 class API:
-    def __init__(self, api_key=None, endpoint=None):
+    def __init__(self, api_key=None, url=None):
         self.api_key = api_key
-        self.endpoint = endpoint
+        self.url = url
+        self.graphql_endpoint = url + "/api/graphql"
+
         if self.api_key is None:
             raise Exception("CHAINLIT_API_KEY not set")
-        if self.endpoint is None:
-            raise Exception("CHAINLIT_ENDPOINT not set")
+        if self.url is None:
+            raise Exception("CHAINLIT_API_URL not set")
 
     @property
     def headers(self):
@@ -165,7 +167,7 @@ class API:
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
-                    self.endpoint,
+                    self.graphql_endpoint,
                     json={"query": query, "variables": variables},
                     headers=self.headers,
                     timeout=10,
@@ -941,7 +943,7 @@ class API:
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{self.endpoint}{path}",
+                f"{self.url}{path}",
                 json=body,
                 headers=self.headers,
             )
