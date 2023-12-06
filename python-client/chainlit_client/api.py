@@ -504,8 +504,8 @@ class API:
         self,
         step_id: str,
         value: int,
-        comment: Optional[str],
-        strategy: Optional[FeedbackStrategy],
+        comment: Optional[str] = None,
+        strategy: Optional[FeedbackStrategy] = None,
     ) -> "Feedback":
         query = """
         mutation CreateFeedback(
@@ -545,8 +545,8 @@ class API:
         self,
         id: str,
         value: int,
-        comment: Optional[str],
-        strategy: Optional["FeedbackStrategy"],
+        comment: Optional[str] = None,
+        strategy: Optional["FeedbackStrategy"] = None,
     ) -> "Feedback":
         query = """
         mutation UpdateFeedback(

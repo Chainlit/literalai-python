@@ -62,7 +62,6 @@ sdk.wait_until_queue_empty()
 # Get the steps from the API for the demo
 async def main():
     threads = await sdk.api.list_threads()
-    print(threads["data"]["threads"]["totalCount"], "threads")
 
     print("\nSearching for the thread", thread_id, "...")
     thread = await sdk.api.get_thread(id=thread_id)
@@ -77,7 +76,7 @@ async def main():
         return
 
     # attach a feedback
-    await sdk.api.set_feedback(
+    await sdk.api.create_feedback(
         step_id=llm_step.id, value=1, comment="this is a comment"
     )
 
