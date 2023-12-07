@@ -111,10 +111,10 @@ class GenerationMessage:
 
 @dataclass
 class BaseGeneration:
-    provider: Optional[str] = None
-    inputs: Optional[Dict] = None
+    provider: Optional[str] = "Unknown"
+    inputs: Optional[Dict] = Field(default_factory=dict)
     completion: Optional[str] = None
-    settings: Optional[Dict] = None
+    settings: Optional[Dict] = Field(default_factory=dict)
     token_count: Optional[int] = None
     functions: Optional[List[Dict]] = None
 
