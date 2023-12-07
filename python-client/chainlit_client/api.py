@@ -28,6 +28,7 @@ step_fields = """
         output
         metadata
         feedback {
+            id
             value
             comment
         }
@@ -36,10 +37,19 @@ step_fields = """
             type
             provider
             settings
+            inputs
+            completion
+            templateFormat
+            template
+            formatted
+            messages
+            tokenCount
         }
         name
         attachments {
             id
+            stepId
+            metadata
             mime
             name
             objectKey
@@ -51,6 +61,7 @@ thread_fields = (
         id
         metadata
         tags
+        createdAt
         participant {
             id
             identifier
@@ -438,6 +449,9 @@ class API:
             "environment": environment,
             "tags": tags,
         }
+
+        # remove None values to prevent the API from removing existing values
+        variables = {k: v for k, v in variables.items() if v is not None}
 
         thread = await self.make_api_call("upsert thread", query, variables)
 

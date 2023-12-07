@@ -1,17 +1,16 @@
 import inspect
 import uuid
-from enum import Enum, unique
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Literal
 
 from pydantic.dataclasses import dataclass
 
 from .context import active_thread_id_var
 from .step import Step
+from .types import User
 
 if TYPE_CHECKING:
     from .client import ChainlitClient
-    from .types import User
 
 
 class Thread:
@@ -116,14 +115,11 @@ def thread_decorator(
         return sync_wrapper
 
 
-@unique
-class StringOperators(Enum):
-    eq = "eq"
-    ilike = "ilike"
-    like = "like"
-    neq = "neq"
-    nilike = "nilike"
-    nlike = "nlike"
+StringOperators = Literal["eq", "ilike", "like", "neq", "nilike", "nlike"]
+StringListOperators = Literal["in", "nin"]
+NumberListOperators = Literal["in", "nin"]
+NumberOperators = Literal["eq", "gt", "gte", "lt", "lte", "neq"]
+DateTimeOperators = Literal["gt", "gte", "lt", "lte"]
 
 
 @dataclass
@@ -133,15 +129,9 @@ class StringFilter:
 
     def to_dict(self):
         return {
-            "operator": self.operator.value,
+            "operator": self.operator,
             "value": self.value,
         }
-
-
-@unique
-class StringListOperators(Enum):
-    in_ = "in"
-    nin = "nin"
 
 
 @dataclass
@@ -151,15 +141,9 @@ class StringListFilter:
 
     def to_dict(self):
         return {
-            "operator": self.operator.value,
+            "operator": self.operator,
             "value": self.value,
         }
-
-
-@unique
-class NumberListOperators(Enum):
-    in_ = "in"
-    nin = "nin"
 
 
 @dataclass
@@ -169,19 +153,9 @@ class NumberListFilter:
 
     def to_dict(self):
         return {
-            "operator": self.operator.value,
+            "operator": self.operator,
             "value": self.value,
         }
-
-
-@unique
-class NumberOperators(Enum):
-    eq = "eq"
-    gt = "gt"
-    gte = "gte"
-    lt = "lt"
-    lte = "lte"
-    neq = "neq"
 
 
 @dataclass
@@ -191,17 +165,9 @@ class NumberFilter:
 
     def to_dict(self):
         return {
-            "operator": self.operator.value,
+            "operator": self.operator,
             "value": self.value,
         }
-
-
-@unique
-class DateTimeOperators(Enum):
-    gt = "gt"
-    gte = "gte"
-    lt = "lt"
-    lte = "lte"
 
 
 @dataclass
@@ -211,7 +177,7 @@ class DateTimeFilter:
 
     def to_dict(self):
         return {
-            "operator": self.operator.value,
+            "operator": self.operator,
             "value": self.value,
         }
 

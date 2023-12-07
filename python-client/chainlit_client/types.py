@@ -161,6 +161,7 @@ class CompletionGeneration(BaseGeneration):
             provider=generation_dict.get("provider"),
             completion=generation_dict.get("completion"),
             settings=generation_dict.get("settings"),
+            inputs=generation_dict.get("inputs", {}),
             token_count=generation_dict.get("tokenCount"),
         )
 
@@ -188,6 +189,7 @@ class ChatGeneration(BaseGeneration):
                 GenerationMessage.from_dict(m)
                 for m in generation_dict.get("messages", [])
             ],
+            inputs=generation_dict.get("inputs", {}),
             provider=generation_dict.get("provider"),
             completion=generation_dict.get("completion"),
             settings=generation_dict.get("settings"),
