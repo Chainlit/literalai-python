@@ -1,6 +1,6 @@
 import mimetypes
 import uuid
-from typing import Any, Dict, List, Optional, Tuple, Union, TypedDict
+from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
 
 import httpx
 
@@ -14,7 +14,6 @@ from .types import (
     PaginatedResponse,
     User,
 )
-
 
 step_fields = """
         id

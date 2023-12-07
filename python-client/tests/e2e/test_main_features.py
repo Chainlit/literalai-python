@@ -1,9 +1,8 @@
 import os
-import pytest
 import secrets
 
+import pytest
 from chainlit_client import ChainlitClient
-
 
 """
 End to end tests for the SDK
