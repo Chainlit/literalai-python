@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
 
 from pydantic.dataclasses import dataclass
 
-from .context import active_thread_id_var
-from .step import Step
-from .types import User
+from chainlit_client.context import active_thread_id_var
+from chainlit_client.step import Step
+from chainlit_client.types import User
 
 if TYPE_CHECKING:
-    from .client import ChainlitClient
+    from chainlit_client.client import ChainlitClient
 
 
 class Thread:

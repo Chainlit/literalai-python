@@ -4,7 +4,7 @@ import threading
 from typing import TYPE_CHECKING, Dict, Optional
 
 if TYPE_CHECKING:
-    from .api import API
+    from chainlit_client.api import API
 
 
 # to_thread is a backport of asyncio.to_thread from Python 3.9

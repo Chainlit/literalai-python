@@ -1,21 +1,19 @@
 import json
+import logging
 from importlib import import_module
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Callable, Optional, TypedDict
 
 if TYPE_CHECKING:
-    from ..client import ChainlitClient
+    from chainlit_client.client import ChainlitClient
 
 from packaging import version as packaging_version
 
-from ..step import Step
-from ..types import (
-    ChatGeneration,
-    CompletionGeneration,
-    GenerationMessage,
-    GenerationType,
-)
-from ..wrappers import async_wrapper, sync_wrapper
+from chainlit_client.step import Step
+from chainlit_client.types import ChatGeneration, GenerationMessage, GenerationType
+from chainlit_client.wrappers import async_wrapper, sync_wrapper
+
+logger = logging.getLogger(__name__)
 
 
 class BeforeContext(TypedDict):
@@ -35,9 +33,10 @@ def instrument_openai(client: "ChainlitClient"):
         # openai not installed, no need to patch
         return
 
-    is_legacy = packaging_version.parse(version("openai")) < packaging_version.parse(
-        "1.0.0"
-    )
+    if is_legacy := packaging_version.parse(
+        version("openai")
+    ) < packaging_version.parse("1.0.0"):
+        logger.warning("Legacy OpenAI version detected, please upgrade to 1.0.0+")
 
     def before_wrapper(generation_type: GenerationType = GenerationType.CHAT):
         def before(context: BeforeContext, *args, **kwargs):

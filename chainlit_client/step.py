@@ -15,11 +15,17 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from .client import ChainlitClient
-    from .event_processor import EventProcessor
+    from chainlit_client.client import ChainlitClient
+    from chainlit_client.event_processor import EventProcessor
 
-from .context import active_steps_var, active_thread_id_var
-from .types import Attachment, AttachmentDict, BaseGeneration, Feedback, FeedbackDict
+from chainlit_client.context import active_steps_var, active_thread_id_var
+from chainlit_client.types import (
+    Attachment,
+    AttachmentDict,
+    BaseGeneration,
+    Feedback,
+    FeedbackDict,
+)
 
 TrueStepType = Literal[
     "RUN", "TOOL", "LLM", "EMBEDDING", "RETRIEVAL", "RERANK", "UNDEFINED"

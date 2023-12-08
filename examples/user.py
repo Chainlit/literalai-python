@@ -1,8 +1,9 @@
 import asyncio
 import json
 
-from chainlit_client import ChainlitClient
 from dotenv import load_dotenv
+
+from chainlit_client import ChainlitClient
 
 load_dotenv()
 

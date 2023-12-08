@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
 
 import httpx
 
-from .step import Step, StepDict, StepType
-from .thread import Thread, ThreadFilter
-from .types import (
+from chainlit_client.step import Step, StepDict, StepType
+from chainlit_client.thread import Thread, ThreadFilter
+from chainlit_client.types import (
     Attachment,
     BaseGeneration,
     Feedback,

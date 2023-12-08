@@ -2,6 +2,7 @@ import os
 import secrets
 
 import pytest
+
 from chainlit_client import ChainlitClient
 
 """

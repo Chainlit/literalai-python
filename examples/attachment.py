@@ -1,9 +1,10 @@
 import asyncio
 import json
 
+from dotenv import load_dotenv
+
 from chainlit_client import ChainlitClient
 from chainlit_client.types import Attachment
-from dotenv import load_dotenv
 
 load_dotenv()
 
