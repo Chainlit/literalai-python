@@ -1,7 +1,7 @@
 import asyncio
 import queue
 import threading
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
     from chainlit_client.api import API

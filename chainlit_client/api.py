@@ -1,6 +1,7 @@
+import logging
 import mimetypes
 import uuid
-from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 import httpx
 
@@ -8,12 +9,13 @@ from chainlit_client.step import Step, StepDict, StepType
 from chainlit_client.thread import Thread, ThreadFilter
 from chainlit_client.types import (
     Attachment,
-    BaseGeneration,
     Feedback,
     FeedbackStrategy,
     PaginatedResponse,
     User,
 )
+
+logger = logging.getLogger(__name__)
 
 step_fields = """
         id
@@ -185,7 +187,7 @@ class API:
         self, description: str, query: str, variables: Dict[str, Any]
     ) -> Dict:
         def raise_error(error):
-            print(f"Failed to {description}: {error}")
+            logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
 
         async with httpx.AsyncClient() as client:
@@ -985,7 +987,7 @@ class API:
             )
             if response.status_code != 200:
                 reason = response.text
-                print(f"Failed to sign upload url: {reason}")
+                logger.error(f"Failed to sign upload url: {reason}")
                 return {"object_key": None, "url": None}
             json_res = response.json()
 
@@ -1009,8 +1011,7 @@ class API:
             )
             try:
                 upload_response.raise_for_status()
-                url = f'{upload_details["url"]}/{object_key}'
                 return {"object_key": object_key, "url": signed_url}
             except Exception as e:
-                print(f"Failed to upload file: {str(e)}")
+                logger.error(f"Failed to upload file: {str(e)}")
                 return {"object_key": None, "url": None}

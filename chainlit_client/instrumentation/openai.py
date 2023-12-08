@@ -29,7 +29,7 @@ class AfterContext(TypedDict):
 def instrument_openai(client: "ChainlitClient"):
     try:
         version("openai")
-    except:
+    except Exception:
         # openai not installed, no need to patch
         return
 

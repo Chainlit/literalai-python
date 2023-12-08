@@ -261,13 +261,13 @@ def step_decorator(
             ) as step:
                 try:
                     step.input = json.dumps({"args": args, "kwargs": kwargs})
-                except:
+                except Exception:
                     pass
                 result = await func(*args, **kwargs)
                 try:
                     if step.output is None:
                         step.output = json.dumps(result)
-                except:
+                except Exception:
                     pass
                 return result
 
@@ -286,13 +286,13 @@ def step_decorator(
             ) as step:
                 try:
                     step.input = json.dumps({"args": args, "kwargs": kwargs})
-                except:
+                except Exception:
                     pass
                 result = func(*args, **kwargs)
                 try:
                     if step.output is None:
                         step.output = json.dumps(result)
-                except:
+                except Exception:
                     pass
                 return result
 
