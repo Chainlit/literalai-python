@@ -6,26 +6,28 @@ if TYPE_CHECKING:
     from .event_processor import EventProcessor
 
 from .context import active_steps_var, active_thread_id_var
-from .step import MessageStepType
+from .step import MessageStepType, StepDict
 from .types import Attachment, Feedback
 
 
 class Message:
     id: Optional[str] = None
-    name: Optional[str] = ""
+    name: Optional[str] = None
     type: Optional[MessageStepType] = None
-    metadata: Dict = {}
+    metadata: Optional[Dict] = {}
     parent_id: Optional[str] = None
-    start: Optional[str] = None
-    input: Optional[str] = None
-    output: Optional[str] = None
+    timestamp: Optional[str] = None
+    content: str
+    thread_id: Optional[str] = None
+    tags: Optional[List[str]] = None
+    created_at: Optional[str] = None
 
     feedback: Optional[Feedback] = None
     attachments: List[Attachment] = []
 
     def __init__(
         self,
-        content: str = "",
+        content: str,
         id: Optional[str] = None,
         type: Optional[MessageStepType] = None,
         name: Optional[str] = None,
@@ -33,21 +35,23 @@ class Message:
         parent_id: Optional[str] = None,
         feedback: Optional[Feedback] = None,
         attachments: List[Attachment] = [],
-        metadata: Dict = {},
-        start: Optional[str] = None,
+        metadata: Optional[Dict] = {},
+        timestamp: Optional[str] = None,
+        tags: Optional[List[str]] = [],
         processor: Optional["EventProcessor"] = None,
     ):
         self.id = id or str(uuid.uuid4())
-        if not start:
-            self.start = datetime.datetime.utcnow().isoformat()
+        if not timestamp:
+            self.timestamp = datetime.datetime.utcnow().isoformat()
         else:
-            self.start = start
+            self.timestamp = timestamp
         self.name = name
         self.type = type
-        self.output = content
+        self.content = content
         self.feedback = feedback
         self.attachments = attachments
         self.metadata = metadata
+        self.tags = tags
 
         self.processor = processor
 
@@ -78,46 +82,50 @@ class Message:
             )
         self.processor.add_event(self.to_dict())
 
-    def to_dict(self):
+    def to_dict(self) -> "StepDict":
         # Create a correct step Dict from a message
         return {
             "id": self.id,
             "metadata": self.metadata,
             "parentId": self.parent_id,
-            "start": self.start,
-            "end": self.start,  # start = end in Message
+            "startTime": self.timestamp,
+            "endTime": self.timestamp,  # startTime = endTime in Message
             "type": self.type,
             "threadId": self.thread_id,
-            "output": self.output,  # no input, output = content in Message
+            "output": self.content,  # no input, output = content in Message
             "name": self.name,
+            "tags": self.tags,
             "feedback": self.feedback.to_dict() if self.feedback else None,
             "attachments": [attachment.to_dict() for attachment in self.attachments],
         }
 
     @classmethod
     def from_dict(cls, message_dict: Dict) -> "Message":
-        id = message_dict.get("id", "")
-        metadata = message_dict.get("metadata", {})
-        parent_id = message_dict.get("parentId", "")
-        start = message_dict.get("start", "")
-        type = message_dict.get("type", "")
-        thread_id = message_dict.get("threadId", "")
-        output = message_dict.get("output", "")
-        name = message_dict.get("name", "")
-        feedback = message_dict.get("feedback", "")
-        attachments = message_dict.get("attachments", "")
+        id = message_dict.get("id", None)
+        type = message_dict.get("type", None)
+        thread_id = message_dict.get("threadId", None)
+
+        metadata = message_dict.get("metadata", None)
+        parent_id = message_dict.get("parentId", None)
+        timestamp = message_dict.get("startTime", None)
+        content = message_dict.get("output", None)
+        name = message_dict.get("name", None)
+        feedback = message_dict.get("feedback", None)
+        attachments = message_dict.get("attachments", [])
 
         message = cls(
             id=id,
             metadata=metadata,
             parent_id=parent_id,
-            start=start,
+            timestamp=timestamp,
             type=type,
             thread_id=thread_id,
-            content=output,
+            content=content,
             name=name,
             feedback=feedback,
             attachments=attachments,
         )
+
+        message.created_at = message_dict.get("createdAt", None)
 
         return message
