@@ -41,7 +41,7 @@ def instrument_openai(client: "ChainlitClient"):
     def before_wrapper(generation_type: GenerationType = GenerationType.CHAT):
         def before(context: BeforeContext, *args, **kwargs):
             step = client.create_step(
-                name=context["original_func"].__name__, type="LLM"
+                name=context["original_func"].__name__, type="llm"
             )
 
             # TODO: Support AzureOpenAI
