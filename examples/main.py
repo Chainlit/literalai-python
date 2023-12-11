@@ -1,10 +1,10 @@
 import asyncio
 import json
 
-from chainlit_client import ChainlitClient
-from chainlit_client.types import Attachment
 from dotenv import load_dotenv
 from openai import OpenAI
+
+from chainlit_client import ChainlitClient
 
 load_dotenv()
 
@@ -61,8 +61,6 @@ sdk.wait_until_queue_empty()
 
 # Get the steps from the API for the demo
 async def main():
-    threads = await sdk.api.list_threads()
-
     print("\nSearching for the thread", thread_id, "...")
     thread = await sdk.api.get_thread(id=thread_id)
 
