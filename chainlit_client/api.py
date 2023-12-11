@@ -1,7 +1,7 @@
 import logging
 import mimetypes
 import uuid
-from typing import Any, Dict, List, Optional, TypedDict, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
 
 import httpx
 

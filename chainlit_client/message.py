@@ -61,11 +61,13 @@ class Message:
         # priority for parent_id: parent_id > parent_step.id
         self.parent_id = parent_id
 
-        if active_steps := active_steps_var.get():
+    def end(self):
+        active_steps = active_steps_var.get()
+        if len(active_steps) > 0:
             parent_step = active_steps[-1]
-            if not parent_id:
+            if not self.parent_id:
                 self.parent_id = parent_step.id
-            if not thread_id:
+            if not self.thread_id:
                 self.thread_id = parent_step.thread_id
 
         if not self.thread_id:
@@ -75,7 +77,6 @@ class Message:
         if not self.thread_id:
             raise Exception("Message must be initialized with a thread_id.")
 
-    def finalize(self):
         if self.processor is None:
             raise Exception(
                 "Message must be initialized with a processor to allow finalization."

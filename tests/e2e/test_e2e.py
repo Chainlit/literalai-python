@@ -3,6 +3,7 @@ import secrets
 
 import pytest
 
+import chainlit_client
 from chainlit_client import ChainlitClient
 
 """
@@ -147,3 +148,16 @@ class Teste2e:
         await client.api.delete_attachment(id=attachment.id)
         deleted_attachment = await client.api.get_attachment(id=attachment.id)
         assert deleted_attachment is None
+
+    async def test_ingestion(self, client):
+        with client.thread() as thread:
+            with client.step(name="test_ingestion") as step:
+                step.metadata = {"foo": "bar"}
+                assert client.event_processor.event_queue._qsize() == 0
+                stack = chainlit_client.context.active_steps_var.get()
+                print(stack)
+                assert len(stack) == 1
+
+        assert client.event_processor.event_queue._qsize() == 1
+        stack = chainlit_client.context.active_steps_var.get()
+        assert len(stack) == 0
