@@ -15,11 +15,17 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from .client import ChainlitClient
-    from .event_processor import EventProcessor
+    from chainlit_client.client import ChainlitClient
+    from chainlit_client.event_processor import EventProcessor
 
-from .context import active_steps_var, active_thread_id_var
-from .types import Attachment, AttachmentDict, BaseGeneration, Feedback, FeedbackDict
+from chainlit_client.context import active_steps_var, active_thread_id_var
+from chainlit_client.types import (
+    Attachment,
+    AttachmentDict,
+    BaseGeneration,
+    Feedback,
+    FeedbackDict,
+)
 
 TrueStepType = Literal[
     "run", "tool", "llm", "embedding", "retrieval", "rerank", "undefined"
@@ -255,13 +261,13 @@ def step_decorator(
             ) as step:
                 try:
                     step.input = json.dumps({"args": args, "kwargs": kwargs})
-                except:
+                except Exception:
                     pass
                 result = await func(*args, **kwargs)
                 try:
                     if step.output is None:
                         step.output = json.dumps(result)
-                except:
+                except Exception:
                     pass
                 return result
 
@@ -280,13 +286,13 @@ def step_decorator(
             ) as step:
                 try:
                     step.input = json.dumps({"args": args, "kwargs": kwargs})
-                except:
+                except Exception:
                     pass
                 result = func(*args, **kwargs)
                 try:
                     if step.output is None:
                         step.output = json.dumps(result)
-                except:
+                except Exception:
                     pass
                 return result
 

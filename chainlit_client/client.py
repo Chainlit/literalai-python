@@ -1,20 +1,20 @@
 import os
 from typing import Dict, List, Optional
 
-from .api import API
-from .context import active_steps_var, active_thread_id_var
-from .event_processor import EventProcessor
-from .instrumentation.openai import instrument_openai
-from .message import Message
-from .step import (
+from chainlit_client.api import API
+from chainlit_client.context import active_steps_var, active_thread_id_var
+from chainlit_client.event_processor import EventProcessor
+from chainlit_client.instrumentation.openai import instrument_openai
+from chainlit_client.message import Message
+from chainlit_client.step import (
     MessageStepType,
     Step,
     StepContextManager,
     TrueStepType,
     step_decorator,
 )
-from .thread import ThreadContextManager, thread_decorator
-from .types import Attachment
+from chainlit_client.thread import ThreadContextManager, thread_decorator
+from chainlit_client.types import Attachment
 
 
 class ChainlitClient:

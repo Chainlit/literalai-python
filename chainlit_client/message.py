@@ -3,11 +3,11 @@ import uuid
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 if TYPE_CHECKING:
-    from .event_processor import EventProcessor
+    from chainlit_client.event_processor import EventProcessor
 
-from .context import active_steps_var, active_thread_id_var
-from .step import MessageStepType, StepDict
-from .types import Attachment, Feedback
+from chainlit_client.context import active_steps_var, active_thread_id_var
+from chainlit_client.step import MessageStepType, StepDict
+from chainlit_client.types import Attachment, Feedback
 
 
 class Message:
