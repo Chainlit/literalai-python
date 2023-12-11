@@ -114,7 +114,7 @@ class Step:
         active_steps.append(self)
         active_steps_var.set(active_steps)
 
-    def stop(self):
+    def end(self):
         self.end_time = datetime.datetime.utcnow().isoformat()
         active_steps = active_steps_var.get()
         if self.id != active_steps[-1].id:
@@ -224,7 +224,7 @@ class StepContextManager:
         return self.step
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.step.stop()
+        self.step.end()
 
     def __enter__(self) -> Step:
         self.step = self.client.start_step(
@@ -237,7 +237,7 @@ class StepContextManager:
         return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.step.stop()
+        self.step.end()
 
 
 def step_decorator(

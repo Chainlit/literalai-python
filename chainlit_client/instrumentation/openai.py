@@ -75,7 +75,7 @@ def instrument_openai(client: "ChainlitClient"):
 
             if step.generation:
                 step.generation.token_count = result.usage.total_tokens
-            step.stop()
+            step.end()
 
         return after
 

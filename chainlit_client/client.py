@@ -91,7 +91,7 @@ class ChainlitClient:
             metadata=metadata,
             processor=self.event_processor,
         )
-        step.stop()
+        step.end()
 
         return step
 

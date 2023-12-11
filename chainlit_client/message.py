@@ -61,7 +61,7 @@ class Message:
         # priority for parent_id: parent_id > parent_step.id
         self.parent_id = parent_id
 
-    def stop(self):
+    def end(self):
         active_steps = active_steps_var.get()
         if len(active_steps) > 0:
             parent_step = active_steps[-1]
