@@ -40,9 +40,7 @@ def instrument_openai(client: "ChainlitClient"):
 
     def before_wrapper(generation_type: GenerationType = GenerationType.CHAT):
         def before(context: BeforeContext, *args, **kwargs):
-            step = client.create_step(
-                name=context["original_func"].__name__, type="llm"
-            )
+            step = client.start_step(name=context["original_func"].__name__, type="llm")
 
             # TODO: Support AzureOpenAI
 
@@ -77,7 +75,7 @@ def instrument_openai(client: "ChainlitClient"):
 
             if step.generation:
                 step.generation.token_count = result.usage.total_tokens
-            step.finalize()
+            step.stop()
 
         return after
 

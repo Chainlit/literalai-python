@@ -94,12 +94,14 @@ class Step:
         # priority for parent_id: parent_id > parent_step.id
         self.parent_id = parent_id
 
+    def start(self):
         active_steps = active_steps_var.get()
-        if active_steps:
+
+        if len(active_steps) > 0:
             parent_step = active_steps[-1]
-            if not parent_id:
+            if not self.parent_id:
                 self.parent_id = parent_step.id
-            if not thread_id:
+            if not self.thread_id:
                 self.thread_id = parent_step.thread_id
 
         if not self.thread_id:
@@ -112,18 +114,18 @@ class Step:
         active_steps.append(self)
         active_steps_var.set(active_steps)
 
-    def finalize(self):
+    def stop(self):
         self.end_time = datetime.datetime.utcnow().isoformat()
         active_steps = active_steps_var.get()
         if self.id != active_steps[-1].id:
             raise Exception(
-                "Step must be finalized in the reverse order of initialization."
+                "Step must be stopped in the reverse order of initialization."
             )
         active_steps.pop()
         active_steps_var.set(active_steps)
         if self.processor is None:
             raise Exception(
-                "Step must be initialized with a processor to allow finalization."
+                "Step must be stopped with a processor to allow finalization."
             )
         self.processor.add_event(self.to_dict())
 
@@ -212,7 +214,7 @@ class StepContextManager:
         )
 
     async def __aenter__(self):
-        self.step = self.client.create_step(
+        self.step = self.client.start_step(
             name=self.step_name,
             type=self.step_type,
             id=self.id,
@@ -222,10 +224,10 @@ class StepContextManager:
         return self.step
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.step.finalize()
+        self.step.stop()
 
     def __enter__(self) -> Step:
-        self.step = self.client.create_step(
+        self.step = self.client.start_step(
             name=self.step_name,
             type=self.step_type,
             id=self.id,
@@ -235,7 +237,7 @@ class StepContextManager:
         return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.step.finalize()
+        self.step.stop()
 
 
 def step_decorator(

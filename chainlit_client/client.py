@@ -91,11 +91,11 @@ class ChainlitClient:
             metadata=metadata,
             processor=self.event_processor,
         )
-        step.finalize()
+        step.stop()
 
         return step
 
-    def create_step(
+    def start_step(
         self,
         name: str = "",
         type: Optional[TrueStepType] = None,
@@ -111,6 +111,7 @@ class ChainlitClient:
             thread_id=thread_id,
             processor=self.event_processor,
         )
+        step.start()
         return step
 
     def get_current_step(self):

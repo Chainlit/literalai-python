@@ -13,7 +13,7 @@ sdk = ChainlitClient(batch_size=2)
 
 async def main():
     thread = await sdk.api.create_thread()
-    step = sdk.create_step(name="test", thread_id=thread.id)
+    step = sdk.start_step(name="test", thread_id=thread.id)
     await sdk.api.send_steps([step])
 
     try:
