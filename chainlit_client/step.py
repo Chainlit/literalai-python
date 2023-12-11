@@ -115,6 +115,10 @@ class Step:
     def finalize(self):
         self.end_time = datetime.datetime.utcnow().isoformat()
         active_steps = active_steps_var.get()
+        if self.id != active_steps[-1].id:
+            raise Exception(
+                "Step must be finalized in the reverse order of initialization."
+            )
         active_steps.pop()
         active_steps_var.set(active_steps)
         if self.processor is None:
