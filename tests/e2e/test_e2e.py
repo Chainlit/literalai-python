@@ -3,8 +3,8 @@ import secrets
 
 import pytest
 
-from chainlit_client import ChainlitClient
 import chainlit_client
+from chainlit_client import ChainlitClient
 
 """
 End to end tests for the SDK
