@@ -51,7 +51,7 @@ class ChainlitClient:
         original_function=None,
         *,
         name: str = "",
-        type: TrueStepType = "UNDEFINED",
+        type: TrueStepType = "undefined",
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,

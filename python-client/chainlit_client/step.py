@@ -22,10 +22,10 @@ from .context import active_steps_var, active_thread_id_var
 from .types import Attachment, AttachmentDict, BaseGeneration, Feedback, FeedbackDict
 
 TrueStepType = Literal[
-    "RUN", "TOOL", "LLM", "EMBEDDING", "RETRIEVAL", "RERANK", "UNDEFINED"
+    "run", "tool", "llm", "embedding", "retrieval", "rerank", "undefined"
 ]
 
-MessageStepType = Literal["USER_MESSAGE", "ASSISTANT_MESSAGE", "SYSTEM_MESSAGE"]
+MessageStepType = Literal["user_message", "assistant_message", "system_message"]
 
 StepType = Union[TrueStepType, MessageStepType]
 
@@ -129,7 +129,7 @@ class Step:
             "input": self.input,
             "output": self.output,
             "generation": self.generation.to_dict()
-            if self.generation and self.type == "LLM"
+            if self.generation and self.type == "llm"
             else None,
             "name": self.name,
             "tags": self.tags,
@@ -140,7 +140,7 @@ class Step:
     @classmethod
     def from_dict(cls, step_dict: StepDict) -> "Step":
         name = step_dict.get("name") or ""
-        step_type = step_dict.get("type", "UNDEFINED")
+        step_type = step_dict.get("type", "undefined")
         thread_id = step_dict.get("threadId")
 
         step = cls(name=name, type=step_type, thread_id=thread_id)
@@ -155,7 +155,7 @@ class Step:
         step.end_time = step_dict.get("endTime", None)
         step.created_at = step_dict.get("createdAt", None)
 
-        if "generation" in step_dict and step_type == "LLM":
+        if "generation" in step_dict and step_type == "llm":
             generation_dict = step_dict["generation"]
             if generation_dict:
                 step.generation = BaseGeneration.from_dict(generation_dict)
@@ -180,7 +180,7 @@ class StepContextManager:
         self,
         client: "ChainlitClient",
         name: str = "",
-        type: TrueStepType = "UNDEFINED",
+        type: TrueStepType = "undefined",
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
@@ -231,7 +231,7 @@ class StepContextManager:
 def step_decorator(
     client: "ChainlitClient",
     func: Callable,
-    type: TrueStepType = "UNDEFINED",
+    type: TrueStepType = "undefined",
     name: str = "",
     id: Optional[str] = None,
     parent_id: Optional[str] = None,

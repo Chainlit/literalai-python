@@ -16,7 +16,7 @@ sdk.instrument_openai()
 thread_id = None
 
 
-@sdk.step(type="RUN")
+@sdk.step(type="run")
 def get_completion(welcome_message, text):
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -44,15 +44,15 @@ def run():
     thread_id = sdk.get_current_thread_id()
 
     welcome_message = "What's your name? "
-    sdk.message(content=welcome_message, type="SYSTEM_MESSAGE")
+    sdk.message(content=welcome_message, type="system_message")
     text = input(welcome_message)
-    sdk.message(content=text, type="USER_MESSAGE")
+    sdk.message(content=text, type="user_message")
 
     completion = get_completion(welcome_message=welcome_message, text=text)
 
     print("")
     print(completion)
-    sdk.message(content=completion, type="ASSISTANT_MESSAGE")
+    sdk.message(content=completion, type="assistant_message")
 
 
 run()
@@ -69,7 +69,7 @@ async def main():
     print(json.dumps(thread.to_dict(), indent=2))
 
     # get the LLM step
-    llm_step = [step for step in thread.steps if step.type == "LLM"][0]
+    llm_step = [step for step in thread.steps if step.type == "llm"][0]
 
     if not llm_step:
         print("Error: No LLM step found")
@@ -85,7 +85,7 @@ async def main():
 
     print(
         json.dumps(
-            [step.to_dict() for step in thread.steps if step.type == "LLM"],
+            [step.to_dict() for step in thread.steps if step.type == "llm"],
             indent=2,
         )
     )

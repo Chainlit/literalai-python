@@ -803,7 +803,7 @@ class API:
     async def create_step(
         self,
         thread_id: str,
-        type: Optional[StepType] = "UNDEFINED",
+        type: Optional[StepType] = "undefined",
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
         input: Optional[str] = None,

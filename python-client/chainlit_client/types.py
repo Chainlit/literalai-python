@@ -105,7 +105,7 @@ class GenerationMessage:
             formatted=message_dict.get("formatted"),
             placeholder_size=message_dict.get("placeholder_size"),
             name=message_dict.get("name"),
-            role=message_dict.get("role", "ASSISTANT"),
+            role=message_dict.get("role", "assistant"),
         )
 
 
