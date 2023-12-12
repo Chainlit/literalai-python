@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
 from pydantic.dataclasses import dataclass
 
 from chainlit_client.context import active_thread_id_var
+from chainlit_client.my_types import User
 from chainlit_client.step import Step
-from chainlit_client.types import User
 
 if TYPE_CHECKING:
     from chainlit_client.client import ChainlitClient

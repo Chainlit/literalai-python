@@ -14,3 +14,4 @@ repos:
       - id: mypy
         additional_dependencies:
           - pydantic
+          - httpx

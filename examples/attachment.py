@@ -3,7 +3,7 @@ import asyncio
 from dotenv import load_dotenv
 
 from chainlit_client import ChainlitClient
-from chainlit_client.types import Attachment
+from chainlit_client.my_types import Attachment
 
 load_dotenv()
 

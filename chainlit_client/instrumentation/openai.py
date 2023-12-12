@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 from packaging import version as packaging_version
 
+from chainlit_client.my_types import ChatGeneration, GenerationMessage, GenerationType
 from chainlit_client.step import Step
-from chainlit_client.types import ChatGeneration, GenerationMessage, GenerationType
 from chainlit_client.wrappers import async_wrapper, sync_wrapper
 
 logger = logging.getLogger(__name__)
