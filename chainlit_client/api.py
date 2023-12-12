@@ -990,25 +990,31 @@ class API:
                 logger.error(f"Failed to sign upload url: {reason}")
                 return {"object_key": None, "url": None}
             json_res = response.json()
+        method = "put" if "put" in json_res else "post"
+        request_dict: Dict[str, Any] = json_res.get(method, {})
+        url: Optional[str] = request_dict.get("url")
 
-        upload_details = json_res["post"]
-        object_key = upload_details["fields"]["key"]
-        signed_url = json_res["signedUrl"]
-        headers = upload_details["fields"]["headers"]
-        method = upload_details["fields"].get("method", "POST")
+        if not url:
+            raise Exception("Invalid server response")
+        headers: Optional[Dict] = request_dict.get("headers")
+        fields: Dict = request_dict.get("fields", {})
+        object_key: Optional[str] = fields.get("key")
+        signed_url: Optional[str] = request_dict.get("signed_url")
 
         # Prepare form data
-        form_data = {}  # type: Dict[str, Tuple[Union[str, None], Any]]
-        for field_name, field_value in upload_details["fields"].items():
+        form_data = (
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
         # Add file to the form_data
         # Note: The content_type parameter is not needed here, as the correct MIME type should be set in the 'Content-Type' field from upload_details
-        form_data["file"] = (id, content)
+        form_data["file"] = (id, content, mime)
 
         async with httpx.AsyncClient() as client:
             upload_response = await client.request(
-                url=upload_details["url"],
+                url=url,
                 files=form_data,
                 headers=headers,
                 method=method,
