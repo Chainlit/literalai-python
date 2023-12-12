@@ -1,7 +1,7 @@
 import logging
 import mimetypes
 import uuid
-from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, Union
 
 import httpx
 
@@ -990,25 +990,37 @@ class API:
                 logger.error(f"Failed to sign upload url: {reason}")
                 return {"object_key": None, "url": None}
             json_res = response.json()
+        method = "put" if "put" in json_res else "post"
+        request_dict: Dict[str, Any] = json_res.get(method, {})
+        url: Optional[str] = request_dict.get("url")
 
-        upload_details = json_res["post"]
-        object_key = upload_details["fields"]["key"]
-        signed_url = json_res["signedUrl"]
+        if not url:
+            raise Exception("Invalid server response")
+        headers: Optional[Dict] = request_dict.get("headers")
+        fields: Dict = request_dict.get("fields", {})
+        object_key: Optional[str] = fields.get("key")
+        upload_type: Literal["raw", "multipart"] = fields.get("uploadType", "multipart")
+        signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = {}  # type: Dict[str, Tuple[Union[str, None], Any]]
-        for field_name, field_value in upload_details["fields"].items():
+        form_data = (
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
         # Add file to the form_data
         # Note: The content_type parameter is not needed here, as the correct MIME type should be set in the 'Content-Type' field from upload_details
-        form_data["file"] = (id, content)
+        form_data["file"] = (id, content, mime)
 
         async with httpx.AsyncClient() as client:
-            upload_response = await client.post(
-                upload_details["url"],
-                files=form_data,
-            )
+            request_kwargs = {"url": url, "headers": headers, "method": method}
+
+            if upload_type == "raw":
+                request_kwargs["data"] = content
+            else:
+                request_kwargs["files"] = form_data
+            upload_response = await client.request(**request_kwargs)
             try:
                 upload_response.raise_for_status()
                 return {"object_key": object_key, "url": signed_url}
