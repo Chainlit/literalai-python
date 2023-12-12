@@ -6,6 +6,7 @@ from chainlit_client.context import active_steps_var, active_thread_id_var
 from chainlit_client.event_processor import EventProcessor
 from chainlit_client.instrumentation.openai import instrument_openai
 from chainlit_client.message import Message
+from chainlit_client.my_types import Attachment
 from chainlit_client.step import (
     MessageStepType,
     Step,
@@ -14,7 +15,6 @@ from chainlit_client.step import (
     step_decorator,
 )
 from chainlit_client.thread import ThreadContextManager, thread_decorator
-from chainlit_client.types import Attachment
 
 
 class ChainlitClient:

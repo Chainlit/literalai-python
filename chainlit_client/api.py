@@ -1,19 +1,22 @@
 import logging
 import mimetypes
 import uuid
-from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, TypedDict, Union
+
+if TYPE_CHECKING:
+    from typing import Tuple  # noqa: F401
 
 import httpx
 
-from chainlit_client.step import Step, StepDict, StepType
-from chainlit_client.thread import Thread, ThreadFilter
-from chainlit_client.types import (
+from chainlit_client.my_types import (
     Attachment,
     Feedback,
     FeedbackStrategy,
     PaginatedResponse,
     User,
 )
+from chainlit_client.step import Step, StepDict, StepType
+from chainlit_client.thread import Thread, ThreadFilter
 
 logger = logging.getLogger(__name__)
 
@@ -1016,13 +1019,18 @@ class API:
         form_data["file"] = (id, content, mime)
 
         async with httpx.AsyncClient() as client:
-            request_kwargs = {"url": url, "headers": headers, "method": method}
-
             if upload_type == "raw":
-                request_kwargs["data"] = content  # type: ignore
+                upload_response = await client.request(
+                    url=url, headers=headers, method=method, data=content  # type: ignore
+                )
             else:
-                request_kwargs["files"] = form_data
-            upload_response = await client.request(**request_kwargs)
+                upload_response = await client.request(
+                    url=url,
+                    headers=headers,
+                    method=method,
+                    data=content,  # type: ignore
+                    files=form_data,
+                )  # type: ignore
             try:
                 upload_response.raise_for_status()
                 return {"object_key": object_key, "url": signed_url}

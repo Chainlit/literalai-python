@@ -2,3 +2,5 @@ pytest
 pytest-asyncio
 pre-commit
 python-dotenv
+ruff
+mypy

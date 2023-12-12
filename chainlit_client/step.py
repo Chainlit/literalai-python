@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from chainlit_client.event_processor import EventProcessor
 
 from chainlit_client.context import active_steps_var, active_thread_id_var
-from chainlit_client.types import (
+from chainlit_client.my_types import (
     Attachment,
     AttachmentDict,
     BaseGeneration,
