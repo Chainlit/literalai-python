@@ -1019,7 +1019,7 @@ class API:
             request_kwargs = {"url": url, "headers": headers, "method": method}
 
             if upload_type == "raw":
-                request_kwargs["data"] = content
+                request_kwargs["data"] = content  # type: ignore
             else:
                 request_kwargs["files"] = form_data
             upload_response = await client.request(**request_kwargs)
