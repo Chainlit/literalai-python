@@ -999,7 +999,7 @@ class API:
         headers: Optional[Dict] = request_dict.get("headers")
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
-        signed_url: Optional[str] = request_dict.get("signed_url")
+        signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
         form_data = (
