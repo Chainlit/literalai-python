@@ -68,7 +68,12 @@ class ChainlitClient:
             )
         else:
             return StepContextManager(
-                self, type=type, id=id, parent_id=parent_id, thread_id=thread_id
+                self,
+                name=name,
+                type=type,
+                id=id,
+                parent_id=parent_id,
+                thread_id=thread_id,
             )
 
     def message(
