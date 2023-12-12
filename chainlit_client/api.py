@@ -1,7 +1,7 @@
 import logging
 import mimetypes
 import uuid
-from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, Union
 
 import httpx
 
@@ -999,6 +999,7 @@ class API:
         headers: Optional[Dict] = request_dict.get("headers")
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
+        upload_type: Literal["raw", "multipart"] = fields.get("uploadType", "multipart")
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
@@ -1013,12 +1014,13 @@ class API:
         form_data["file"] = (id, content, mime)
 
         async with httpx.AsyncClient() as client:
-            upload_response = await client.request(
-                url=url,
-                files=form_data,
-                headers=headers,
-                method=method,
-            )
+            request_kwargs = {"url": url, "headers": headers, "method": method}
+
+            if upload_type == "raw":
+                request_kwargs["data"] = content
+            else:
+                request_kwargs["files"] = form_data
+            upload_response = await client.request(**request_kwargs)
             try:
                 upload_response.raise_for_status()
                 return {"object_key": object_key, "url": signed_url}
