@@ -999,7 +999,9 @@ class API:
         headers: Optional[Dict] = request_dict.get("headers")
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
-        upload_type: Literal["raw", "multipart"] = fields.get("uploadType", "multipart")
+        upload_type: Literal["raw", "multipart"] = request_dict.get(
+            "uploadType", "multipart"
+        )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
