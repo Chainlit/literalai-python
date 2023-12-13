@@ -33,3 +33,4 @@ jobs:
         with:
           packages-dir: dist
           password: ${{ secrets.PYPI_API_TOKEN_TESTING }}
+          repository-url: https://test.pypi.org/legacy/
