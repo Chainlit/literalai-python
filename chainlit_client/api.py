@@ -671,7 +671,9 @@ class API:
                 raise Exception("Failed to upload file")
 
             object_key = uploaded["object_key"]
-            url = uploaded["url"]
+            url = None
+            if not object_key:
+                url = uploaded["url"]
 
         query = """
         mutation CreateAttachment(
@@ -706,7 +708,7 @@ class API:
             "metadata": metadata,
             "mime": mime,
             "name": name,
-            "object_key": object_key,
+            "objectKey": object_key,
             "stepId": step_id,
             "threadId": thread_id,
             "url": url,
@@ -1028,7 +1030,6 @@ class API:
                     url=url,
                     headers=headers,
                     method=method,
-                    data=content,  # type: ignore
                     files=form_data,
                 )  # type: ignore
             try:
