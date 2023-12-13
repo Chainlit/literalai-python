@@ -1,4 +1,4 @@
-name: Publish
+name: Publish Testing
 
 on:
   workflow_dispatch:
@@ -7,11 +7,11 @@ on:
 
 jobs:
   build-n-publish:
-    name: Upload release to PyPI
+    name: Upload release to PyPI Test
     runs-on: ubuntu-latest
     env:
       name: pypi
-      url: https://pypi.org/p/chainlit-python-client
+      url: https://test.pypi.org/p/chainlit-python-client
     permissions:
       contents: read
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
@@ -31,4 +31,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.PYPI_API_TOKEN_TESTING }}
