@@ -116,13 +116,19 @@ class Step:
 
     def end(self):
         self.end_time = datetime.datetime.utcnow().isoformat()
+
+        # Update active steps
         active_steps = active_steps_var.get()
-        if self.id != active_steps[-1].id:
-            raise Exception(
-                "Step must be stopped in the reverse order of initialization."
-            )
-        active_steps.pop()
+
+        # Check if step is active
+        matched_step = (step for step in active_steps if step.id == self.id)
+        if not matched_step:
+            raise Exception("Step must be started before ending.")
+
+        # Remove step from active steps
+        active_steps = [step for step in active_steps if step.id != self.id]
         active_steps_var.set(active_steps)
+
         if self.processor is None:
             raise Exception(
                 "Step must be stopped with a processor to allow finalization."
