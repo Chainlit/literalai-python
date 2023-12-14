@@ -126,7 +126,7 @@ class Step:
             raise Exception("Step must be started before ending.")
 
         # Remove step from active steps
-        active_steps = [step for step in active_steps if step.id != self.id]
+        active_steps.remove(self)
         active_steps_var.set(active_steps)
 
         if self.processor is None:
