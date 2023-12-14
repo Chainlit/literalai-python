@@ -1,7 +1,8 @@
 import os
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from chainlit_client.api import API
+from chainlit_client.callback.langchain_callback import LangchainTracer
 from chainlit_client.context import active_steps_var, active_thread_id_var
 from chainlit_client.event_processor import EventProcessor
 from chainlit_client.instrumentation.openai import instrument_openai
@@ -39,6 +40,19 @@ class ChainlitClient:
 
     def instrument_openai(self):
         instrument_openai(self)
+
+    def langchain_callback(
+        self,
+        to_ignore: Optional[List[str]] = None,
+        to_keep: Optional[List[str]] = None,
+        **kwargs: Any,
+    ):
+        return LangchainTracer(
+            self,
+            to_ignore=to_ignore,
+            to_keep=to_keep,
+            **kwargs,
+        )
 
     def thread(self, original_function=None, *, thread_id: Optional[str] = None):
         if original_function:
