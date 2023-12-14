@@ -40,6 +40,10 @@ class Message:
         tags: Optional[List[str]] = [],
         processor: Optional["EventProcessor"] = None,
     ):
+        from time import sleep
+
+        sleep(0.001)
+
         self.id = id or str(uuid.uuid4())
         if not timestamp:
             self.timestamp = datetime.datetime.utcnow().isoformat()

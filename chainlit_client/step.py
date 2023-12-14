@@ -81,6 +81,9 @@ class Step:
         parent_id: Optional[str] = None,
         processor: Optional["EventProcessor"] = None,
     ):
+        from time import sleep
+
+        sleep(0.001)
         self.id = id or str(uuid.uuid4())
         self.start_time = datetime.datetime.utcnow().isoformat()
         self.name = name
