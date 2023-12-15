@@ -121,8 +121,7 @@ class Step:
         active_steps = active_steps_var.get()
 
         # Check if step is active
-        matched_step = (step for step in active_steps if step.id == self.id)
-        if not matched_step:
+        if self not in active_steps:
             raise Exception("Step must be started before ending.")
 
         # Remove step from active steps

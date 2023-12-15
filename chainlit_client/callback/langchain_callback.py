@@ -218,6 +218,7 @@ class GenerationHelper:
                     template_messages += [
                         GenerationMessage(
                             template=template,
+                            template_format=template_format,
                             role=self._convert_message_role(class_name),
                         )
                     ]
