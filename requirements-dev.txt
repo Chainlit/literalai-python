@@ -4,3 +4,4 @@ pre-commit
 python-dotenv
 ruff
 mypy
+langchain
