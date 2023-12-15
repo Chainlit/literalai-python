@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from chainlit_client.api import API
-from chainlit_client.callback.langchain_callback import LangchainTracer
+from chainlit_client.callback.langchain_callback import get_langchain_callback
 from chainlit_client.context import active_steps_var, active_thread_id_var
 from chainlit_client.event_processor import EventProcessor
 from chainlit_client.instrumentation.openai import instrument_openai
@@ -47,6 +47,7 @@ class ChainlitClient:
         to_keep: Optional[List[str]] = None,
         **kwargs: Any,
     ):
+        LangchainTracer = get_langchain_callback()
         return LangchainTracer(
             self,
             to_ignore=to_ignore,
