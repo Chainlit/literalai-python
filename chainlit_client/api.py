@@ -376,6 +376,58 @@ class API:
 
         return PaginatedResponse[Thread].from_dict(response, Thread)
 
+    async def export_threads(
+        self,
+        after: Optional[str] = None,
+        filters: Optional[ThreadFilter] = None,
+    ) -> PaginatedResponse:
+        query = (
+            """
+        query ExportThreads(
+            $after: ID,
+            $filters: ExportThreadFiltersInput,
+            ) {
+            exportThreads(
+                after: $after,
+                filters: $filters,
+                ) {
+                pageInfo {
+                    startCursor
+                    endCursor
+                    hasNextPage
+                    hasPreviousPage
+                }
+                totalCount
+                edges {
+                    cursor
+                    node {
+"""
+            + thread_fields
+            + """
+                    }
+                }
+            }
+        }
+    """
+        )
+
+        variables: Dict[str, Any] = {}
+
+        if after:
+            variables["after"] = after
+        if filters:
+            variables["filters"] = filters.to_dict()
+
+        result = await self.make_api_call("export threads", query, variables)
+
+        response = result["data"]["exportThreads"]
+
+        response["data"] = list(map(lambda x: x["node"], response["edges"]))
+
+        del response["edges"]
+
+        return PaginatedResponse[Thread].from_dict(response, Thread)
+
     async def create_thread(
         self,
         metadata: Optional[Dict] = None,
