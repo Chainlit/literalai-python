@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="chainlit_client",
-    version="0.1.0rc6",
+    version="0.1.0rc7",
     description="An SDK for observability in Python applications",
     author="",
     package_data={"chainlit_client": ["py.typed"]},
