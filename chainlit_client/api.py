@@ -450,7 +450,7 @@ class API:
                 tags: $tags
             ) {
 """
-            + thread_fields
+            + shallow_thread_fields
             + """
             }
         }
@@ -492,7 +492,7 @@ class API:
                 tags: $tags
             ) {
 """
-            + thread_fields
+            + shallow_thread_fields
             + """
             }
         }
@@ -538,7 +538,7 @@ class API:
                 tags: $tags
             ) {
 """
-            + thread_fields
+            + shallow_thread_fields
             + """
             }
         }
