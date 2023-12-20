@@ -1,10 +1,11 @@
 import asyncio
 import queue
 import threading
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from chainlit_client.api import API
+    from chainlit_client.step import StepDict
 
 
 # to_thread is a backport of asyncio.to_thread from Python 3.9
@@ -31,17 +32,17 @@ class EventProcessor:
         self.processing_thread.start()
         self.stop_event = threading.Event()
 
-    def add_event(self, event: Dict):
+    def add_event(self, event: "StepDict"):
         self.event_queue.put(event)
 
-    async def a_add_events(self, event: Dict):
+    async def a_add_events(self, event: "StepDict"):
         await to_thread(self.event_queue.put, event)
 
     def _process_events(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         while True:
-            batch = []
+            batch: List["StepDict"] = []
             try:
                 # Try to fill the batch up to the batch_size
                 while len(batch) < self.batch_size:

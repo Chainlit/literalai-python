@@ -1,4 +1,19 @@
 from functools import wraps
+from importlib import import_module
+from typing import TYPE_CHECKING, Callable, Optional, TypedDict
+
+if TYPE_CHECKING:
+    from chainlit_client.step import Step
+
+
+class BeforeContext(TypedDict):
+    original_func: Callable
+    step: Optional["Step"]
+
+
+class AfterContext(TypedDict):
+    original_func: Callable
+    step: "Step"
 
 
 def sync_wrapper(before_func=None, after_func=None):
@@ -43,3 +58,23 @@ def async_wrapper(before_func=None, after_func=None):
         return wrapped
 
     return decorator
+
+
+def wrap_all(to_wrap: list, before_wrapper, after_wrapper):
+    for patch in to_wrap:
+        module = import_module(str(patch["module"]))
+        target_object = getattr(module, str(patch["object"]))
+        original_method = getattr(target_object, str(patch["method"]))
+
+        if patch["async"]:
+            wrapped_method = async_wrapper(
+                before_func=before_wrapper(metadata=patch["metadata"]),
+                after_func=after_wrapper(metadata=patch["metadata"]),
+            )(original_method)
+        else:
+            wrapped_method = sync_wrapper(
+                before_func=before_wrapper(metadata=patch["metadata"]),
+                after_func=after_wrapper(metadata=patch["metadata"]),
+            )(original_method)
+
+        setattr(target_object, str(patch["method"]), wrapped_method)

@@ -1,6 +1,16 @@
 import uuid
 from enum import Enum, unique
-from typing import Dict, Generic, List, Literal, Optional, Protocol, TypedDict, TypeVar
+from typing import (
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 
 from pydantic.dataclasses import Field, dataclass
 
@@ -119,7 +129,9 @@ class BaseGeneration:
     functions: Optional[List[Dict]] = None
 
     @classmethod
-    def from_dict(self, generation_dict: Dict) -> "BaseGeneration":
+    def from_dict(
+        self, generation_dict: Dict
+    ) -> Union["ChatGeneration", "CompletionGeneration"]:
         type = GenerationType(generation_dict.get("type"))
         if type == GenerationType.CHAT:
             return ChatGeneration.from_dict(generation_dict)
