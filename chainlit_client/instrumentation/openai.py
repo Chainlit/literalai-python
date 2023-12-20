@@ -61,11 +61,7 @@ TO_WRAP = [
 
 def instrument_openai(client: "ChainlitClient"):
     if not check_all_requirements(REQUIREMENTS):
-        logger.warning(
-            "Requirements not satisfied, not instrumenting",
-            extra={"requirements": REQUIREMENTS},
-        )
-        return
+        raise Exception(f"Instrumentation requirements not satisfied: {REQUIREMENTS}")
 
     def before_wrapper(metadata: Dict):
         def before(context: BeforeContext, *args, **kwargs):
