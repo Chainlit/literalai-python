@@ -181,9 +181,13 @@ class API:
 
     @property
     def headers(self):
+        from chainlit_client.version import __version__
+
         return {
             "Content-Type": "application/json",
             "x-api-key": self.api_key,
+            "x-client-name": "python-chainlit-client",
+            "x-client-version": __version__,
         }
 
     async def make_api_call(
