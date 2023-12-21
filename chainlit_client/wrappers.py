@@ -29,7 +29,7 @@ def sync_wrapper(before_func=None, after_func=None):
 
             # If an after_func is provided, call it with the result and the shared context.
             if after_func:
-                after_func(result, context, *args, **kwargs)
+                result = after_func(result, context, *args, **kwargs)
 
             return result
 
@@ -45,13 +45,13 @@ def async_wrapper(before_func=None, after_func=None):
             context = {"original_func": original_func}
             # If a before_func is provided, call it with the shared context.
             if before_func:
-                before_func(context, *args, **kwargs)
+                await before_func(context, *args, **kwargs)
 
             result = await original_func(*args, **kwargs)
 
             # If an after_func is provided, call it with the result and the shared context.
             if after_func:
-                after_func(result, context, *args, **kwargs)
+                result = await after_func(result, context, *args, **kwargs)
 
             return result
 
@@ -60,7 +60,13 @@ def async_wrapper(before_func=None, after_func=None):
     return decorator
 
 
-def wrap_all(to_wrap: list, before_wrapper, after_wrapper):
+def wrap_all(
+    to_wrap: list,
+    before_wrapper,
+    after_wrapper,
+    async_before_wrapper,
+    async_after_wrapper,
+):
     for patch in to_wrap:
         module = import_module(str(patch["module"]))
         target_object = getattr(module, str(patch["object"]))
@@ -68,8 +74,8 @@ def wrap_all(to_wrap: list, before_wrapper, after_wrapper):
 
         if patch["async"]:
             wrapped_method = async_wrapper(
-                before_func=before_wrapper(metadata=patch["metadata"]),
-                after_func=after_wrapper(metadata=patch["metadata"]),
+                before_func=async_before_wrapper(metadata=patch["metadata"]),
+                after_func=async_after_wrapper(metadata=patch["metadata"]),
             )(original_method)
         else:
             wrapped_method = sync_wrapper(
