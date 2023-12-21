@@ -3,7 +3,7 @@ import urllib.parse
 from asyncio import sleep
 
 import pytest
-from openai import AsyncOpenAI, OpenAI
+from openai import AsyncOpenAI, AzureOpenAI, OpenAI
 from pytest_httpx import HTTPXMock
 
 from chainlit_client import ChainlitClient
@@ -281,6 +281,72 @@ class TestOpenAI:
             return client.get_current_thread_id()
 
         thread_id = await main()
+        await wait_until_queue_empty(client)
+
+        thread = await client.api.get_thread(id=thread_id)
+        assert thread is not None
+        assert thread.steps is not None
+        assert len(thread.steps) == 1
+
+        step = thread.steps[0]
+
+        assert step.type == "llm"
+        assert step.generation is not None
+        assert type(step.generation) == CompletionGeneration
+        assert step.generation.settings is not None
+        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.completion == "\n\nThis is indeed a test"
+        assert step.generation.token_count == 12
+        assert step.generation.formatted == "Tell me a funny joke."
+
+    async def test_azure_completion(
+        self, client: "ChainlitClient", httpx_mock: "HTTPXMock"
+    ):
+        # https://platform.openai.com/docs/api-reference/completions/object
+        httpx_mock.add_response(
+            json={
+                "id": "cmpl-uqkvlQyYK7bGYrRHQ0eXlWi7",
+                "object": "text_completion",
+                "created": 1589478378,
+                "model": "gpt-3.5-turbo",
+                "choices": [
+                    {
+                        "text": "\n\nThis is indeed a test",
+                        "index": 0,
+                        "logprobs": None,
+                        "finish_reason": "length",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 5,
+                    "completion_tokens": 7,
+                    "total_tokens": 12,
+                },
+            },
+        )
+
+        openai_client = AzureOpenAI(
+            api_key="sk_test_123",
+            api_version="2023-05-15",
+            azure_endpoint="https://example.org",
+        )
+        thread_id = None
+
+        @client.thread
+        def main():
+            # https://platform.openai.com/docs/api-reference/completions/create
+            openai_client.completions.create(
+                model="gpt-3.5-turbo",
+                prompt="Tell me a funny joke.",
+                temperature=1,
+                max_tokens=256,
+                top_p=1,
+                frequency_penalty=0,
+                presence_penalty=0,
+            )
+            return client.get_current_thread_id()
+
+        thread_id = main()
         await wait_until_queue_empty(client)
 
         thread = await client.api.get_thread(id=thread_id)
