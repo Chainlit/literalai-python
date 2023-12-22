@@ -99,7 +99,6 @@ class Teste2e:
 
         assert deleted_step is None
 
-    @pytest.mark.skip(reason="projectId became temporarily mandatory FIXME: remove")
     async def test_feedback(self, client):
         thread = await client.api.create_thread()
         step = await client.api.create_step(
@@ -150,7 +149,7 @@ class Teste2e:
         deleted_attachment = await client.api.get_attachment(id=attachment.id)
         assert deleted_attachment is None
 
-    @pytest.mark.skip(reason="segmentaion fault")
+    # @pytest.mark.skip(reason="segmentation fault")
     async def test_ingestion(self, client):
         with client.thread():
             with client.step(name="test_ingestion") as step:
