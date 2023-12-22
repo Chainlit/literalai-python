@@ -23,6 +23,8 @@ from chainlit_client.my_types import (
     Attachment,
     AttachmentDict,
     BaseGeneration,
+    ChatGeneration,
+    CompletionGeneration,
     Feedback,
     FeedbackDict,
 )
@@ -68,7 +70,7 @@ class Step:
     tags: Optional[List[str]] = None
     thread_id: Optional[str] = None
 
-    generation: Optional[BaseGeneration] = None
+    generation: Optional[Union[ChatGeneration, CompletionGeneration]] = None
     feedback: Optional[Feedback] = None
     attachments: List[Attachment] = []
 

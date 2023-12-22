@@ -1,55 +1,92 @@
 import json
 import logging
-from importlib import import_module
-from importlib.metadata import version
-from typing import TYPE_CHECKING, Callable, Optional, TypedDict
+from typing import TYPE_CHECKING, Dict
+
+from chainlit_client.requirements import check_all_requirements
 
 if TYPE_CHECKING:
     from chainlit_client.client import ChainlitClient
+    from chainlit_client.step import Step
 
-from packaging import version as packaging_version
-
-from chainlit_client.my_types import ChatGeneration, GenerationMessage, GenerationType
-from chainlit_client.step import Step
-from chainlit_client.wrappers import async_wrapper, sync_wrapper
+from chainlit_client.my_types import (
+    ChatGeneration,
+    CompletionGeneration,
+    GenerationMessage,
+    GenerationType,
+)
+from chainlit_client.wrappers import AfterContext, BeforeContext, wrap_all
 
 logger = logging.getLogger(__name__)
 
+REQUIREMENTS = ["openai>=1.0.0"]
 
-class BeforeContext(TypedDict):
-    original_func: Callable
-    step: Optional[Step]
-
-
-class AfterContext(TypedDict):
-    original_func: Callable
-    step: Step
+TO_WRAP = [
+    {
+        "module": "openai.resources.chat.completions",
+        "object": "Completions",
+        "method": "create",
+        "metadata": {
+            "type": GenerationType.CHAT,
+        },
+        "async": False,
+    },
+    {
+        "module": "openai.resources.completions",
+        "object": "Completions",
+        "method": "create",
+        "metadata": {
+            "type": GenerationType.COMPLETION,
+        },
+        "async": False,
+    },
+    {
+        "module": "openai.resources.chat.completions",
+        "object": "AsyncCompletions",
+        "method": "create",
+        "metadata": {
+            "type": GenerationType.CHAT,
+        },
+        "async": True,
+    },
+    {
+        "module": "openai.resources.completions",
+        "object": "AsyncCompletions",
+        "method": "create",
+        "metadata": {
+            "type": GenerationType.COMPLETION,
+        },
+        "async": True,
+    },
+]
 
 
 def instrument_openai(client: "ChainlitClient"):
-    try:
-        version("openai")
-    except Exception:
-        # openai not installed, no need to patch
-        return
+    if not check_all_requirements(REQUIREMENTS):
+        raise Exception(f"Instrumentation requirements not satisfied: {REQUIREMENTS}")
 
-    if is_legacy := packaging_version.parse(
-        version("openai")
-    ) < packaging_version.parse("1.0.0"):
-        logger.warning("Legacy OpenAI version detected, please upgrade to 1.0.0+")
+    from openai import AsyncStream, Stream
 
-    def before_wrapper(generation_type: GenerationType = GenerationType.CHAT):
-        def before(context: BeforeContext, *args, **kwargs):
-            step = client.start_step(name=context["original_func"].__name__, type="llm")
-
-            # TODO: Support AzureOpenAI
-
-            # TODO: Capture all settings
+    def update_step_before(step: "Step", generation_type: "GenerationType", kwargs):
+        if generation_type == GenerationType.CHAT:
             settings = {
                 "model": kwargs.get("model"),
+                "frequency_penalty": kwargs.get("frequency_penalty"),
+                "logit_bias": kwargs.get("logit_bias"),
+                "logprobs": kwargs.get("logprobs"),
+                "top_logprobs": kwargs.get("top_logprobs"),
+                "max_tokens": kwargs.get("max_tokens"),
+                "n": kwargs.get("n"),
+                "presence_penalty": kwargs.get("presence_penalty"),
+                "response_format": kwargs.get("response_format"),
+                "seed": kwargs.get("seed"),
+                "stop": kwargs.get("stop"),
+                "stream": kwargs.get("stream"),
+                "temperature": kwargs.get("temperature"),
+                "top_p": kwargs.get("top_p"),
+                "tools": kwargs.get("tools"),
+                "tool_choice": kwargs.get("tool_choice"),
             }
-
-            # TODO: Handle CompletionGeneration
+            settings = {k: v for k, v in settings.items() if v is not None}
             step.generation = ChatGeneration(provider="openai", settings=settings)
             if kwargs.get("messages"):
                 step.input = json.dumps(kwargs.get("messages"))
@@ -60,110 +97,147 @@ def instrument_openai(client: "ChainlitClient"):
                     )
                     for m in kwargs.get("messages", [])
                 ]
+        elif generation_type == GenerationType.COMPLETION:
+            settings = {
+                "model": kwargs.get("model"),
+                "best_of": kwargs.get("best_of"),
+                "echo": kwargs.get("echo"),
+                "frequency_penalty": kwargs.get("frequency_penalty"),
+                "logit_bias": kwargs.get("logit_bias"),
+                "logprobs": kwargs.get("logprobs"),
+                "max_tokens": kwargs.get("max_tokens"),
+                "n": kwargs.get("n"),
+                "presence_penalty": kwargs.get("presence_penalty"),
+                "seed": kwargs.get("seed"),
+                "stop": kwargs.get("stop"),
+                "stream": kwargs.get("stream"),
+                "suffix": kwargs.get("suffix"),
+                "temperature": kwargs.get("temperature"),
+                "top_p": kwargs.get("top_p"),
+            }
+            settings = {k: v for k, v in settings.items() if v is not None}
+            step.input = kwargs.get("prompt")
+            step.generation = CompletionGeneration(
+                provider="openai", settings=settings, formatted=kwargs.get("prompt")
+            )
+
+    def update_step_after(step: "Step", generation_type: "GenerationType", result):
+        if generation_type == GenerationType.CHAT:
+            step.output = result.choices[0].message.content
+            if step.generation and step.generation.type == GenerationType.CHAT:
+                step.generation.completion = result.choices[0].message.content
+        elif generation_type == GenerationType.COMPLETION:
+            step.output = result.choices[0].text
+            if step.generation and step.generation.type == GenerationType.COMPLETION:
+                step.generation.completion = result.choices[0].text
+
+        if step.generation:
+            step.generation.token_count = result.usage.total_tokens
+
+    def before_wrapper(metadata: Dict):
+        def before(context: BeforeContext, *args, **kwargs):
+            step = client.start_step(name=context["original_func"].__name__, type="llm")
+
+            generation_type = metadata["type"]
+
+            update_step_before(step, generation_type, kwargs)
 
             context["step"] = step
 
         return before
 
-    def after_wrapper():
-        def after(result, context: AfterContext, *args, **kwargs):
-            step = context["step"]
-            if is_legacy:
-                step.output = result.choices[0].text
-            else:
-                step.output = result.choices[0].message.content
+    def async_before_wrapper(metadata: Dict):
+        async def before(context: BeforeContext, *args, **kwargs):
+            step = client.start_step(name=context["original_func"].__name__, type="llm")
 
-            if step.generation:
-                step.generation.token_count = result.usage.total_tokens
+            generation_type = metadata["type"]
+
+            update_step_before(step, generation_type, kwargs)
+
+            context["step"] = step
+
+        return before
+
+    def streaming_response(step: "Step", generation_type: "GenerationType", result):
+        content = ""
+        for chunk in result:
+            if generation_type == GenerationType.CHAT:
+                if (
+                    len(chunk.choices) > 0
+                    and chunk.choices[0].delta.content is not None
+                ):
+                    content += chunk.choices[0].delta.content
+                yield chunk
+            elif generation_type == GenerationType.COMPLETION:
+                if len(chunk.choices) > 0 and chunk.choices[0].text is not None:
+                    content += chunk.choices[0].text
+                yield chunk
+
+        step.output = content
+        if step.generation:
+            step.generation.completion = content
+        step.end()
+
+    def after_wrapper(metadata: Dict):
+        # Needs to be done in a separate function to avoid transforming all returned data into generators
+        def after(result, context: AfterContext, *args, **kwargs):
+            generation_type = metadata["type"]
+
+            step = context["step"]
+
+            if isinstance(result, Stream):
+                return streaming_response(step, generation_type, result)
+
+            update_step_after(step, generation_type, result)
             step.end()
+
+            return result
 
         return after
 
-    sync_patches = []
-    async_patches = []
-    if is_legacy:
-        sync_patches = [
-            {
-                "module": "openai",
-                "object": "Completion",
-                "method": "create",
-                "type": GenerationType.COMPLETION,
-            },
-            {
-                "module": "openai",
-                "object": "ChatCompletion",
-                "method": "create",
-                "type": GenerationType.CHAT,
-            },
-        ]
-        async_patches = [
-            {
-                "module": "openai",
-                "object": "Completion",
-                "method": "acreate",
-                "type": GenerationType.COMPLETION,
-            },
-            {
-                "module": "openai",
-                "object": "ChatCompletion",
-                "method": "acreate",
-                "type": GenerationType.CHAT,
-            },
-        ]
-    else:
-        sync_patches = [
-            {
-                "module": "openai.resources.chat.completions",
-                "object": "Completions",
-                "method": "create",
-                "type": GenerationType.CHAT,
-            },
-            {
-                "module": "openai.resources.completions",
-                "object": "Completions",
-                "method": "create",
-                "type": GenerationType.COMPLETION,
-            },
-        ]
-        async_patches = [
-            {
-                "module": "openai.resources.chat.completions",
-                "object": "AsyncCompletions",
-                "method": "create",
-                "type": GenerationType.CHAT,
-            },
-            {
-                "module": "openai.resources.completions",
-                "object": "AsyncCompletions",
-                "method": "create",
-                "type": GenerationType.COMPLETION,
-            },
-        ]
+    async def async_streaming_response(
+        step: "Step", generation_type: "GenerationType", result
+    ):
+        # Needs to be done in a separate function to avoid transforming all returned data into generators
+        content = ""
+        async for chunk in result:
+            if generation_type == GenerationType.CHAT:
+                if (
+                    len(chunk.choices) > 0
+                    and chunk.choices[0].delta.content is not None
+                ):
+                    content += chunk.choices[0].delta.content
+            elif generation_type == GenerationType.COMPLETION:
+                if len(chunk.choices) > 0 and chunk.choices[0].text is not None:
+                    content += chunk.choices[0].text
 
-    for patch in sync_patches:
-        module = import_module(str(patch["module"]))
-        target_object = getattr(module, str(patch["object"]))
-        original_method = getattr(target_object, str(patch["method"]))
+            yield chunk
 
-        generation_type = GenerationType(patch["type"])
+        step.output = content
+        if step.generation:
+            step.generation.completion = content
+        step.end()
 
-        wrapped_method = sync_wrapper(
-            before_func=before_wrapper(generation_type=generation_type),
-            after_func=after_wrapper(),
-        )(original_method)
+    def async_after_wrapper(metadata: Dict):
+        async def after(result, context: AfterContext, *args, **kwargs):
+            generation_type = metadata["type"]
 
-        setattr(target_object, str(patch["method"]), wrapped_method)
+            step = context["step"]
 
-    for patch in async_patches:
-        module = import_module(str(patch["module"]))
-        target_object = getattr(module, str(patch["object"]))
-        original_method = getattr(target_object, str(patch["method"]))
+            if isinstance(result, AsyncStream):
+                return async_streaming_response(step, generation_type, result)
 
-        generation_type = GenerationType(patch["type"])
+            update_step_after(step, generation_type, result)
+            step.end()
 
-        wrapped_method = async_wrapper(
-            before_func=before_wrapper(generation_type=generation_type),
-            after_func=after_wrapper(),
-        )(original_method)
+            return result
 
-        setattr(target_object, str(patch["method"]), wrapped_method)
+        return after
+
+    wrap_all(
+        TO_WRAP,
+        before_wrapper,
+        after_wrapper,
+        async_before_wrapper,
+        async_after_wrapper,
+    )
