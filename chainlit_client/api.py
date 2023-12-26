@@ -205,10 +205,11 @@ class API:
                     headers=self.headers,
                     timeout=10,
                 )
-                json = response.json()
 
-                if response.status_code != 200:
+                if response.status_code >= 400:
                     raise_error(response.text)
+
+                json = response.json()
 
                 if json.get("errors"):
                     raise_error(json["errors"])
@@ -1046,7 +1047,7 @@ class API:
                 json=body,
                 headers=self.headers,
             )
-            if response.status_code != 200:
+            if response.status_code >= 400:
                 reason = response.text
                 logger.error(f"Failed to sign upload url: {reason}")
                 return {"object_key": None, "url": None}
