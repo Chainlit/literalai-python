@@ -694,7 +694,7 @@ class API:
         url: Optional[str] = None,
         content: Optional[Union[bytes, str]] = None,
         path: Optional[str] = None,
-    ):
+    ) -> "Attachment":
         if not content and not url and not path:
             raise Exception("Either content, path or attachment url must be provided")
 
@@ -787,7 +787,7 @@ class API:
         self,
         id: str,
         update_params: AttachmentUpload,
-    ):
+    ) -> "Attachment":
         query = """
         mutation UpdateAttachment(
             $id: String!,
@@ -876,7 +876,7 @@ class API:
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
-    ) -> Step:
+    ) -> "Step":
         query = (
             """
         mutation CreateStep(
@@ -938,7 +938,7 @@ class API:
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
         parent_id: Optional[str] = None,
-    ) -> Step:
+    ) -> "Step":
         query = (
             """
         mutation UpdateStep(
@@ -1022,7 +1022,7 @@ class API:
 
         return result["data"]["deleteStep"]["id"]
 
-    async def send_steps(self, steps: List[Union[StepDict, "Step"]]) -> Dict:
+    async def send_steps(self, steps: List[Union[StepDict, "Step"]]) -> "Dict":
         query = query_builder(steps)
         variables = variables_builder(steps)
 
