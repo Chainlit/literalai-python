@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
 
 from pydantic.dataclasses import dataclass
 
-from chainlit_client.context import active_thread_id_var
+from chainlit_client.context import active_thread_var
 from chainlit_client.my_types import User
 from chainlit_client.step import Step
 
@@ -74,23 +74,22 @@ class ThreadContextManager:
         if thread_id is None:
             thread_id = str(uuid.uuid4())
         self.thread_id = thread_id
-        active_thread_id_var.set(thread_id)
-        self.thread = Thread(id=thread_id)
+        active_thread_var.set(Thread(id=thread_id))
 
     def __call__(self, func):
         return thread_decorator(self.client, func=func, thread_id=self.thread_id)
 
     def __enter__(self) -> Thread:
-        return self.thread
+        return active_thread_var.get()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        active_thread_id_var.set(None)
+        active_thread_var.set(None)
 
     async def __aenter__(self):
-        return self.thread
+        return active_thread_var.get()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        active_thread_id_var.set(None)
+        active_thread_var.set(None)
 
 
 def thread_decorator(

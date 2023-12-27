@@ -2,7 +2,7 @@ import json
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-from chainlit_client.context import active_steps_var, active_thread_id_var
+from chainlit_client.context import active_steps_var, active_thread_var
 from chainlit_client.my_types import (
     ChatGeneration,
     CompletionGeneration,
@@ -356,7 +356,7 @@ def get_langchain_callback():
             self.ignored_runs = set()
 
             self.step_context = active_steps_var.get()
-            self.thread_context = active_thread_id_var.get()
+            self.thread_context = active_thread_var.get()
 
             if self.thread_context is None:
                 raise Exception(
@@ -463,7 +463,7 @@ def get_langchain_callback():
         def _start_trace(self, run: Run) -> None:
             super()._start_trace(run)
 
-            active_thread_id_var.set(self.thread_context)
+            active_thread_var.set(self.thread_context)
             active_steps_var.set(self.step_context)
 
             if run.run_type in ["chain", "prompt"]:

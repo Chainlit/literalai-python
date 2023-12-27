@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from chainlit_client.client import ChainlitClient
     from chainlit_client.event_processor import EventProcessor
 
-from chainlit_client.context import active_steps_var, active_thread_id_var
+from chainlit_client.context import active_steps_var, active_thread_var
 from chainlit_client.my_types import (
     Attachment,
     AttachmentDict,
@@ -110,8 +110,8 @@ class Step:
                 self.thread_id = parent_step.thread_id
 
         if not self.thread_id:
-            if active_thread := active_thread_id_var.get():
-                self.thread_id = active_thread
+            if active_thread := active_thread_var.get():
+                self.thread_id = active_thread.id
 
         if not self.thread_id:
             raise Exception("Step must be initialized with a thread_id.")

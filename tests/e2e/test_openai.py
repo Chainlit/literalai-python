@@ -93,9 +93,9 @@ class TestOpenAI:
                 frequency_penalty=0,
                 presence_penalty=0,
             )
-            return client.get_current_thread_id()
+            return client.get_current_thread()
 
-        thread_id = main()
+        thread_id = main().id
         await wait_until_queue_empty(client)
 
         thread = await client.api.get_thread(id=thread_id)
@@ -150,9 +150,9 @@ class TestOpenAI:
                 frequency_penalty=0,
                 presence_penalty=0,
             )
-            return client.get_current_thread_id()
+            return client.get_current_thread()
 
-        thread_id = main()
+        thread_id = main().id
         await wait_until_queue_empty(client)
 
         thread = await client.api.get_thread(id=thread_id)
@@ -219,9 +219,9 @@ class TestOpenAI:
                 frequency_penalty=0,
                 presence_penalty=0,
             )
-            return client.get_current_thread_id()
+            return client.get_current_thread()
 
-        thread_id = await main()
+        thread_id = (await main()).id
         await wait_until_queue_empty(client)
 
         thread = await client.api.get_thread(id=thread_id)
@@ -278,9 +278,9 @@ class TestOpenAI:
                 frequency_penalty=0,
                 presence_penalty=0,
             )
-            return client.get_current_thread_id()
+            return client.get_current_thread()
 
-        thread_id = await main()
+        thread_id = (await main()).id
         await wait_until_queue_empty(client)
 
         thread = await client.api.get_thread(id=thread_id)
@@ -344,9 +344,9 @@ class TestOpenAI:
                 frequency_penalty=0,
                 presence_penalty=0,
             )
-            return client.get_current_thread_id()
+            return client.get_current_thread()
 
-        thread_id = main()
+        thread_id = main().id
         await wait_until_queue_empty(client)
 
         thread = await client.api.get_thread(id=thread_id)
