@@ -55,11 +55,15 @@ class ChainlitClient:
             **kwargs,
         )
 
-    def thread(self, original_function=None, *, thread_id: Optional[str] = None):
+    def thread(
+        self, original_function=None, *, thread_id: Optional[str] = None, **kwargs
+    ):
         if original_function:
-            return thread_decorator(self, func=original_function, thread_id=thread_id)
+            return thread_decorator(
+                self, func=original_function, thread_id=thread_id, **kwargs
+            )
         else:
-            return ThreadContextManager(self, thread_id=thread_id)
+            return ThreadContextManager(self, thread_id=thread_id, **kwargs)
 
     def step(
         self,

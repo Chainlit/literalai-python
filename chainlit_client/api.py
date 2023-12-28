@@ -474,7 +474,7 @@ class API:
 
     async def upsert_thread(
         self,
-        thread_id: str,
+        id: str,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
         environment: Optional[str] = None,
@@ -483,14 +483,14 @@ class API:
         query = (
             """
         mutation UpsertThread(
-            $threadId: String!,
+            $id: String!,
             $metadata: Json,
             $participantId: String,
             $environment: String,
             $tags: [String!],
         ) {
             upsertThread(
-                id: $threadId
+                id: $id
                 metadata: $metadata
                 participantId: $participantId
                 environment: $environment
@@ -504,7 +504,7 @@ class API:
 """
         )
         variables = {
-            "threadId": thread_id,
+            "id": id,
             "metadata": metadata,
             "participantId": participant_id,
             "environment": environment,

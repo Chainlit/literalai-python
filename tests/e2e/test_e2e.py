@@ -151,8 +151,8 @@ class Teste2e:
 
     # @pytest.mark.skip(reason="segmentation fault")
     async def test_ingestion(self, client):
-        with client.thread():
-            with client.step(name="test_ingestion") as step:
+        async with client.thread():
+            async with client.step(name="test_ingestion") as step:
                 step.metadata = {"foo": "bar"}
                 assert client.event_processor.event_queue._qsize() == 0
                 stack = chainlit_client.context.active_steps_var.get()
@@ -161,3 +161,13 @@ class Teste2e:
         assert client.event_processor.event_queue._qsize() == 1
         stack = chainlit_client.context.active_steps_var.get()
         assert len(stack) == 0
+
+    async def create_thread(self, client):
+        async with client.thread(tags=["foo", "bar"]) as thread:
+            thread_id = thread.id
+            return thread_id
+
+    async def test_thread_context(self, client):
+        thread_id = await self.create_thread(client)
+        new_thread = await client.api.get_thread(id=thread_id)
+        assert new_thread.tags == ["foo", "bar"]
