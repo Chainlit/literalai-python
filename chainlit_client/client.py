@@ -18,12 +18,46 @@ from chainlit_client.step import (
 from chainlit_client.thread import ThreadContextManager, thread_decorator
 
 
-class ChainlitClient:
+def ChainlitClient(enabled: bool = True, *args, **kwargs):
+    if enabled:
+        return ChainlitClientWrapper(*args, **kwargs)
+    else:
+        return DisabledChainlitClient(*args, **kwargs)
+
+
+class DisabledChainlitClient:
+    def __getattr__(self, item):
+        if item in ["thread", "step"]:
+            return super().__getattr__(item)
+
+        return self
+
+    def __call__(self, *args, **kwargs):
+        return self
+
+    def thread(self, original_function=None, *args, **kwargs):
+        if original_function:
+            return original_function
+        return self
+
+    def step(self, original_function=None, *args, **kwargs):
+        if original_function:
+            return original_function
+        return self
+
+    def __enter__(self, *args, **kwargs):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        return self
+
+
+class ChainlitClientWrapper:
     def __init__(
         self,
         batch_size: int = 1,
-        api_key: Optional[str] = None,
-        url: Optional[str] = None,
+        api_key: "Optional[str]" = None,
+        url: "Optional[str]" = None,
     ):
         if not api_key:
             api_key = os.getenv("CHAINLIT_API_KEY", None)
