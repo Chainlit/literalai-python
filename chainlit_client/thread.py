@@ -82,17 +82,17 @@ class ThreadContextManager:
     async def upsert(self):
         thread = active_thread_var.get()
         thread_data = thread.to_dict()
-        thread_data = {
+        thread_data_to_upsert = {
             "id": thread_data["id"],
         }
         if metadata := thread_data.get("metadata"):
-            thread_data["metadata"] = metadata
+            thread_data_to_upsert["metadata"] = metadata
         if tags := thread_data.get("tags"):
-            thread_data["tags"] = tags
+            thread_data_to_upsert["tags"] = tags
         if user := thread_data.get("user"):
-            thread_data["participant_id"] = user
+            thread_data_to_upsert["participant_id"] = user
 
-        await self.client.api.upsert_thread(**thread_data)
+        await self.client.api.upsert_thread(**thread_data_to_upsert)
 
     def __call__(self, func):
         return thread_decorator(self.client, func=func, thread_id=self.thread_id)
