@@ -657,7 +657,7 @@ class API:
             mutation UpdateFeedback(
                 $id: String!,
                 $comment: String,
-                $value: Int!,
+                $value: Int,
                 $strategy: FeedbackStrategy,
             ) {
                 updateFeedback(
