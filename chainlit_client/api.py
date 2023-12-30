@@ -600,6 +600,124 @@ class API:
 
         return result["data"]["deleteThread"]["id"]
 
+    # User Session API
+
+    async def create_user_session(
+        self,
+        anon_participant_identifier: str,
+        started_at: str,
+        id: Optional[str] = None,
+        interactive: Optional[bool] = None,
+        ended_at: Optional[str] = None,
+        participant_identifier: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ):
+        query = """
+        mutation CreateParticipantSession(
+            $id: String, 
+            $interactive: Boolean, 
+            $startedAt: DateTime!, 
+            $endedAt: DateTime, 
+            $anonParticipantIdentifier: String!, 
+            $participantIdentifier: String, 
+            $metadata: Json, 
+        ) {
+            createParticipantSession(
+                id: $id, 
+                interactive: $interactive, 
+                startedAt: $startedAt, 
+                endedAt: $endedAt, 
+                anonParticipantIdentifier: $anonParticipantIdentifier, 
+                participantIdentifier: $participantIdentifier, 
+                metadata: $metadata, 
+            ) {
+                id
+                interactive
+                startedAt
+                endedAt
+                anonParticipantIdentifier
+                participantIdentifier
+                metadata
+            }
+        }
+        """
+
+        variables = {
+            "id": id,
+            "interactive": interactive,
+            "startedAt": started_at,
+            "endedAt": ended_at if ended_at else None,
+            "anonParticipantIdentifier": anon_participant_identifier,
+            "participantIdentifier": participant_identifier,
+            "metadata": metadata,
+        }
+
+        participant_session = await self.make_api_call(
+            "create participant session", query, variables
+        )
+
+        return participant_session["data"]["createParticipantSession"]
+
+    async def update_user_session(
+        self,
+        id: str,
+        interactive: Optional[bool] = None,
+        ended_at: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ):
+        query = """
+        mutation UpdateParticipantSession(
+            $id: String!,
+            $interactive: Boolean,
+            $endedAt: DateTime,
+            $metadata: Json,
+        ) {
+            updateParticipantSession(
+                id: $id,
+                interactive: $interactive,
+                endedAt: $endedAt,
+                metadata: $metadata,
+            ) {
+                id
+                interactive
+                endedAt
+                metadata
+            }
+        }
+        """
+        variables = {
+            "id": id,
+            "interactive": interactive,
+            "endedAt": ended_at,
+            "metadata": metadata,
+        }
+
+        # remove None values to prevent the API from removing existing values
+        variables = {k: v for k, v in variables.items() if v is not None}
+
+        session = await self.make_api_call(
+            "update participant session", query, variables
+        )
+
+        return session["data"]["updateParticipantSession"]
+
+    async def delete_user_session(self, id: str) -> str:
+        query = """
+        mutation DeleteParticipantSession($id: String!) {
+            deleteParticipantSession(id: $id) {
+                id
+            }
+        }
+        """
+
+        variables = {"id": id}
+
+        result = await self.make_api_call(
+            "delete participant session", query, variables
+        )
+
+        return result["data"]["deleteParticipantSession"]["id"]
+
     # Feedback API
 
     async def create_feedback(
