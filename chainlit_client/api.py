@@ -607,7 +607,7 @@ class API:
         anon_participant_identifier: str,
         started_at: str,
         id: Optional[str] = None,
-        interactive: Optional[bool] = None,
+        is_interactive: Optional[bool] = None,
         ended_at: Optional[str] = None,
         participant_identifier: Optional[str] = None,
         metadata: Optional[Dict] = None,
@@ -615,7 +615,7 @@ class API:
         query = """
         mutation CreateParticipantSession(
             $id: String, 
-            $interactive: Boolean, 
+            $isInteractive: Boolean, 
             $startedAt: DateTime!, 
             $endedAt: DateTime, 
             $anonParticipantIdentifier: String!, 
@@ -624,7 +624,7 @@ class API:
         ) {
             createParticipantSession(
                 id: $id, 
-                interactive: $interactive, 
+                isInteractive: $isInteractive, 
                 startedAt: $startedAt, 
                 endedAt: $endedAt, 
                 anonParticipantIdentifier: $anonParticipantIdentifier, 
@@ -632,7 +632,7 @@ class API:
                 metadata: $metadata, 
             ) {
                 id
-                interactive
+                isInteractive
                 startedAt
                 endedAt
                 anonParticipantIdentifier
@@ -644,7 +644,7 @@ class API:
 
         variables = {
             "id": id,
-            "interactive": interactive,
+            "isInteractive": is_interactive,
             "startedAt": started_at,
             "endedAt": ended_at if ended_at else None,
             "anonParticipantIdentifier": anon_participant_identifier,
@@ -661,25 +661,25 @@ class API:
     async def update_user_session(
         self,
         id: str,
-        interactive: Optional[bool] = None,
+        is_interactive: Optional[bool] = None,
         ended_at: Optional[str] = None,
         metadata: Optional[Dict] = None,
     ):
         query = """
         mutation UpdateParticipantSession(
             $id: String!,
-            $interactive: Boolean,
+            $isInteractive: Boolean,
             $endedAt: DateTime,
             $metadata: Json,
         ) {
             updateParticipantSession(
                 id: $id,
-                interactive: $interactive,
+                isInteractive: $isInteractive,
                 endedAt: $endedAt,
                 metadata: $metadata,
             ) {
                 id
-                interactive
+                isInteractive
                 endedAt
                 metadata
             }
@@ -687,7 +687,7 @@ class API:
         """
         variables = {
             "id": id,
-            "interactive": interactive,
+            "isInteractive": is_interactive,
             "endedAt": ended_at,
             "metadata": metadata,
         }
