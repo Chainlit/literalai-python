@@ -54,7 +54,7 @@ class Teste2e:
 
     async def test_user_session(self, client: ChainlitClient):
         user_identifier = f"test_user_{secrets.token_hex()}"
-        user = await client.api.create_user(identifier=user_identifier)
+        await client.api.create_user(identifier=user_identifier)
 
         user_session = await client.api.create_user_session(
             participant_identifier=user_identifier,
@@ -80,10 +80,10 @@ class Teste2e:
         )
 
         assert updated_user_session["endedAt"] is not None
-        assert updated_user_session["isInteractive"] == True
+        assert updated_user_session["isInteractive"] is True
 
         assert updated_anon_user_session["endedAt"] is not None
-        assert updated_anon_user_session["isInteractive"] == False
+        assert updated_anon_user_session["isInteractive"] is False
 
         fetched_user_session = await client.api.get_user_session(id=user_session["id"])
         fetched_anon_user_session = await client.api.get_user_session(
