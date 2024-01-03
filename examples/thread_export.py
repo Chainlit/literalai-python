@@ -3,7 +3,7 @@ import asyncio
 from dotenv import load_dotenv
 
 from chainlit_client import ChainlitClient
-from chainlit_client.thread import DateTimeFilter, ThreadFilter
+from chainlit_client.thread import DateTimeFilter, NumberListFilter, ThreadFilter
 
 load_dotenv()
 
@@ -22,9 +22,10 @@ async def main():
         print("threads fetched", len(result.data))
         # save the fetched threads somewhere
 
-    print("filtered")
-
-    filters = ThreadFilter(createdAt=DateTimeFilter(operator="gt", value="2023-12-14"))
+    filters = ThreadFilter(
+        createdAt=DateTimeFilter(operator="gt", value="2023-12-14"),
+        feedbacksValue=NumberListFilter(operator="in", value=[1]),
+    )
 
     after = None
     has_next_page = True
