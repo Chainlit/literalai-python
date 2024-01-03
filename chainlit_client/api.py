@@ -1,3 +1,4 @@
+import datetime
 import logging
 import mimetypes
 import uuid
@@ -198,25 +199,22 @@ class API:
             raise Exception(error)
 
         async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    self.graphql_endpoint,
-                    json={"query": query, "variables": variables},
-                    headers=self.headers,
-                    timeout=10,
-                )
+            response = await client.post(
+                self.graphql_endpoint,
+                json={"query": query, "variables": variables},
+                headers=self.headers,
+                timeout=10,
+            )
 
-                if response.status_code >= 400:
-                    raise_error(response.text)
+            if response.status_code >= 400:
+                raise_error(response.text)
 
-                json = response.json()
+            json = response.json()
 
-                if json.get("errors"):
-                    raise_error(json["errors"])
+            if json.get("errors"):
+                raise_error(json["errors"])
 
-                return response.json()
-            except Exception as error:
-                raise_error(error)
+            return response.json()
 
         # This should not be reached, exceptions should be thrown beforehands
         # Added because of mypy
@@ -600,6 +598,146 @@ class API:
 
         return result["data"]["deleteThread"]["id"]
 
+    # User Session API
+
+    async def create_user_session(
+        self,
+        id: Optional[str] = None,
+        started_at: Optional[str] = None,
+        is_interactive: Optional[bool] = None,
+        ended_at: Optional[str] = None,
+        anon_participant_identifier: Optional[str] = None,
+        participant_identifier: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ):
+        query = """
+        mutation CreateParticipantSession(
+            $id: String, 
+            $isInteractive: Boolean, 
+            $startedAt: DateTime!, 
+            $endedAt: DateTime, 
+            $anonParticipantIdentifier: String, 
+            $participantIdentifier: String, 
+            $metadata: Json, 
+        ) {
+            createParticipantSession(
+                id: $id, 
+                isInteractive: $isInteractive, 
+                startedAt: $startedAt, 
+                endedAt: $endedAt, 
+                anonParticipantIdentifier: $anonParticipantIdentifier, 
+                participantIdentifier: $participantIdentifier, 
+                metadata: $metadata, 
+            ) {
+                id
+                isInteractive
+                startedAt
+                endedAt
+                anonParticipantIdentifier
+                participantIdentifier
+                metadata
+            }
+        }
+        """
+
+        variables = {
+            "id": id,
+            "isInteractive": is_interactive,
+            "startedAt": started_at or datetime.datetime.utcnow().isoformat(),
+            "endedAt": ended_at if ended_at else None,
+            "anonParticipantIdentifier": anon_participant_identifier,
+            "participantIdentifier": participant_identifier,
+            "metadata": metadata,
+        }
+
+        participant_session = await self.make_api_call(
+            "create participant session", query, variables
+        )
+
+        return participant_session["data"]["createParticipantSession"]
+
+    async def update_user_session(
+        self,
+        id: str,
+        is_interactive: Optional[bool] = None,
+        ended_at: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ):
+        query = """
+        mutation UpdateParticipantSession(
+            $id: String!,
+            $isInteractive: Boolean,
+            $endedAt: DateTime,
+            $metadata: Json,
+        ) {
+            updateParticipantSession(
+                id: $id,
+                isInteractive: $isInteractive,
+                endedAt: $endedAt,
+                metadata: $metadata,
+            ) {
+                id
+                isInteractive
+                endedAt
+                metadata
+            }
+        }
+        """
+        variables = {
+            "id": id,
+            "isInteractive": is_interactive,
+            "endedAt": ended_at,
+            "metadata": metadata,
+        }
+
+        # remove None values to prevent the API from removing existing values
+        variables = {k: v for k, v in variables.items() if v is not None}
+
+        session = await self.make_api_call(
+            "update participant session", query, variables
+        )
+
+        return session["data"]["updateParticipantSession"]
+
+    async def get_user_session(self, id: str) -> Optional[Dict]:
+        query = """
+        query GetParticipantSession($id: String!) {
+            participantSession(id: $id) {
+                id
+                isInteractive
+                startedAt
+                endedAt
+                anonParticipantIdentifier
+                participantIdentifier
+                metadata
+            }
+        }"""
+
+        variables = {"id": id}
+
+        result = await self.make_api_call("get user session", query, variables)
+
+        user_session = result["data"]["participantSession"]
+
+        return user_session
+
+    async def delete_user_session(self, id: str) -> str:
+        query = """
+        mutation DeleteParticipantSession($id: String!) {
+            deleteParticipantSession(id: $id) {
+                id
+            }
+        }
+        """
+
+        variables = {"id": id}
+
+        result = await self.make_api_call(
+            "delete participant session", query, variables
+        )
+
+        return result["data"]["deleteParticipantSession"]["id"]
+
     # Feedback API
 
     async def create_feedback(
@@ -643,7 +781,7 @@ class API:
 
         return Feedback.from_dict(result["data"]["createFeedback"])
 
-    class FeedbackUpdate(TypedDict):
+    class FeedbackUpdate(TypedDict, total=False):
         comment: Optional[str]
         value: Optional[int]
         strategy: Optional[FeedbackStrategy]
@@ -776,7 +914,7 @@ class API:
 
         return Attachment.from_dict(result["data"]["createAttachment"])
 
-    class AttachmentUpload(TypedDict):
+    class AttachmentUpload(TypedDict, total=False):
         metadata: Optional[Dict]
         name: Optional[str]
         mime: Optional[str]
