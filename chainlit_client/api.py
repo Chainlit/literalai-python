@@ -172,13 +172,18 @@ def query_builder(steps):
 class API:
     def __init__(self, api_key=None, url=None):
         self.api_key = api_key
+
+        if url and url[-1] == "/":
+            url = url[:-1]
+
         self.url = url
-        self.graphql_endpoint = url + "/api/graphql"
 
         if self.api_key is None:
             raise Exception("CHAINLIT_API_KEY not set")
         if self.url is None:
             raise Exception("CHAINLIT_API_URL not set")
+
+        self.graphql_endpoint = self.url + "/api/graphql"
 
     @property
     def headers(self):
