@@ -102,7 +102,7 @@ class GenerationMessage:
         return {
             "template": self.template,
             "formatted": self.formatted,
-            "placeholder_size": self.placeholder_size,
+            "placeholderSize": self.placeholder_size,
             "name": self.name,
             "role": self.role if self.role else None,
             "templateFormat": self.template_format,
@@ -113,7 +113,8 @@ class GenerationMessage:
         return GenerationMessage(
             template=message_dict.get("template"),
             formatted=message_dict.get("formatted"),
-            placeholder_size=message_dict.get("placeholder_size"),
+            placeholder_size=message_dict.get("placeholderSize"),
+            template_format=message_dict.get("templateFormat", "f-string"),
             name=message_dict.get("name"),
             role=message_dict.get("role", "assistant"),
         )

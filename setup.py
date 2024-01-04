@@ -1,10 +1,8 @@
 from setuptools import find_packages, setup
 
-from chainlit_client.version import __version__
-
 setup(
     name="chainlit_client",
-    version=__version__,  # update version in chainlit_client/version.py
+    version="0.1.0rc10",  # update version in chainlit_client/version.py
     description="An SDK for observability in Python applications",
     author="",
     package_data={"chainlit_client": ["py.typed"]},
