@@ -1,6 +1,6 @@
+import asyncio
 import inspect
 import uuid
-import asyncio
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
 
@@ -77,7 +77,7 @@ class ThreadContextManager:
         if thread_id is None:
             thread_id = str(uuid.uuid4())
         self.thread_id = thread_id
-        active_thread_var.set(Thread(id=thread_id, **kwargs))
+        self.kwargs = kwargs
 
     async def upsert(self):
         thread = active_thread_var.get()
@@ -91,13 +91,13 @@ class ThreadContextManager:
             thread_data_to_upsert["tags"] = tags
         if user := thread_data.get("user"):
             thread_data_to_upsert["participant_id"] = user
-
         await self.client.api.upsert_thread(**thread_data_to_upsert)
 
     def __call__(self, func):
-        return thread_decorator(self.client, func=func, thread_id=self.thread_id)
+        return thread_decorator(self.client, func=func, ctx_manager=self)
 
     def __enter__(self) -> "Optional[Thread]":
+        active_thread_var.set(Thread(id=self.thread_id, **self.kwargs))
         return active_thread_var.get()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -106,6 +106,7 @@ class ThreadContextManager:
         active_thread_var.set(None)
 
     async def __aenter__(self):
+        active_thread_var.set(Thread(id=self.thread_id, **self.kwargs))
         return active_thread_var.get()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -118,13 +119,18 @@ def thread_decorator(
     client: "ChainlitClient",
     func: Callable,
     thread_id: Optional[str] = None,
+    ctx_manager: Optional[ThreadContextManager] = None,
     **decorator_kwargs,
 ):
+    if not ctx_manager:
+        ctx_manager = ThreadContextManager(
+            client, thread_id=thread_id, **decorator_kwargs
+        )
     if inspect.iscoroutinefunction(func):
 
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-            with ThreadContextManager(client, thread_id=thread_id, **decorator_kwargs):
+            with ctx_manager:
                 result = await func(*args, **kwargs)
                 return result
 
@@ -133,7 +139,7 @@ def thread_decorator(
 
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
-            with ThreadContextManager(client, thread_id=thread_id, **decorator_kwargs):
+            with ctx_manager:
                 return func(*args, **kwargs)
 
         return sync_wrapper
