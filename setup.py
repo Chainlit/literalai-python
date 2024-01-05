@@ -11,5 +11,6 @@ setup(
         "packaging>=23.0",
         "httpx>=0.23.0,<0.25.0",
         "pydantic>=1,<3",
+        "nest-asyncio>=1.5.0",
     ],
 )

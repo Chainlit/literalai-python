@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from chainlit_client.client import ChainlitClient
     from chainlit_client.event_processor import EventProcessor
 
-from chainlit_client.context import active_steps_var, active_thread_id_var
+from chainlit_client.context import active_steps_var, active_thread_var
 from chainlit_client.my_types import (
     Attachment,
     AttachmentDict,
@@ -110,8 +110,8 @@ class Step:
                 self.thread_id = parent_step.thread_id
 
         if not self.thread_id:
-            if active_thread := active_thread_id_var.get():
-                self.thread_id = active_thread
+            if active_thread := active_thread_var.get():
+                self.thread_id = active_thread.id
 
         if not self.thread_id:
             raise Exception("Step must be initialized with a thread_id.")
@@ -218,9 +218,7 @@ class StepContextManager:
         return step_decorator(
             self.client,
             func=func,
-            type=self.step_type,
-            name=self.step_name,
-            thread_id=self.thread_id,
+            ctx_manager=self,
         )
 
     async def __aenter__(self):
@@ -258,23 +256,25 @@ def step_decorator(
     id: Optional[str] = None,
     parent_id: Optional[str] = None,
     thread_id: Optional[str] = None,
+    ctx_manager: Optional[StepContextManager] = None,
 ):
     if not name:
         name = func.__name__
-
+    if not ctx_manager:
+        ctx_manager = StepContextManager(
+            client=client,
+            type=type,
+            name=name,
+            id=id,
+            parent_id=parent_id,
+            thread_id=thread_id,
+        )
     # Handle async decorator
     if inspect.iscoroutinefunction(func):
 
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-            with StepContextManager(
-                client=client,
-                type=type,
-                name=name,
-                id=id,
-                parent_id=parent_id,
-                thread_id=thread_id,
-            ) as step:
+            with ctx_manager as step:
                 try:
                     step.input = json.dumps({"args": args, "kwargs": kwargs})
                 except Exception:
@@ -292,14 +292,7 @@ def step_decorator(
         # Handle sync decorator
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
-            with StepContextManager(
-                client=client,
-                type=type,
-                name=name,
-                id=id,
-                parent_id=parent_id,
-                thread_id=thread_id,
-            ) as step:
+            with ctx_manager as step:
                 try:
                     step.input = json.dumps({"args": args, "kwargs": kwargs})
                 except Exception:

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from chainlit_client.api import API
 from chainlit_client.callback.langchain_callback import get_langchain_callback
-from chainlit_client.context import active_steps_var, active_thread_id_var
+from chainlit_client.context import active_steps_var, active_thread_var
 from chainlit_client.event_processor import EventProcessor
 from chainlit_client.instrumentation.openai import instrument_openai
 from chainlit_client.message import Message
@@ -55,11 +55,15 @@ class ChainlitClient:
             **kwargs,
         )
 
-    def thread(self, original_function=None, *, thread_id: Optional[str] = None):
+    def thread(
+        self, original_function=None, *, thread_id: Optional[str] = None, **kwargs
+    ):
         if original_function:
-            return thread_decorator(self, func=original_function, thread_id=thread_id)
+            return thread_decorator(
+                self, func=original_function, thread_id=thread_id, **kwargs
+            )
         else:
-            return ThreadContextManager(self, thread_id=thread_id)
+            return ThreadContextManager(self, thread_id=thread_id, **kwargs)
 
     def step(
         self,
@@ -141,8 +145,8 @@ class ChainlitClient:
         else:
             return None
 
-    def get_current_thread_id(self):
-        return active_thread_id_var.get()
+    def get_current_thread(self):
+        return active_thread_var.get()
 
     def wait_until_queue_empty(self):
         self.event_processor.wait_until_queue_empty()

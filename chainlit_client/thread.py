@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 import uuid
 from functools import wraps
@@ -5,7 +6,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
 
 from pydantic.dataclasses import dataclass
 
-from chainlit_client.context import active_thread_id_var
+from chainlit_client.context import active_thread_var
 from chainlit_client.my_types import User
 from chainlit_client.step import Step
 
@@ -20,6 +21,7 @@ class Thread:
     steps: Optional[List[Step]]
     user: Optional["User"]
     created_at: Optional[str]  # read-only, set by server
+    needs_upsert: Optional[bool]
 
     def __init__(
         self,
@@ -34,6 +36,7 @@ class Thread:
         self.metadata = metadata
         self.tags = tags
         self.user = user
+        self.needs_upsert = bool(metadata or tags or user)
 
     def to_dict(self):
         return {
@@ -42,7 +45,6 @@ class Thread:
             "tags": self.tags,
             "steps": [step.to_dict() for step in self.steps] if self.steps else [],
             "participant": self.user.to_dict() if self.user else None,
-            "createdAt": self.created_at,
         }
 
     @classmethod
@@ -68,39 +70,67 @@ class ThreadContextManager:
     def __init__(
         self,
         client: "ChainlitClient",
-        thread_id: Optional[str] = None,
+        thread_id: "Optional[str]" = None,
+        **kwargs,
     ):
         self.client = client
         if thread_id is None:
             thread_id = str(uuid.uuid4())
         self.thread_id = thread_id
-        active_thread_id_var.set(thread_id)
-        self.thread = Thread(id=thread_id)
+        self.kwargs = kwargs
+
+    async def upsert(self):
+        thread = active_thread_var.get()
+        thread_data = thread.to_dict()
+        thread_data_to_upsert = {
+            "thread_id": thread_data["id"],
+        }
+        if metadata := thread_data.get("metadata"):
+            thread_data_to_upsert["metadata"] = metadata
+        if tags := thread_data.get("tags"):
+            thread_data_to_upsert["tags"] = tags
+        if user := thread_data.get("user"):
+            thread_data_to_upsert["participant_id"] = user
+        await self.client.api.upsert_thread(**thread_data_to_upsert)
 
     def __call__(self, func):
-        return thread_decorator(self.client, func=func, thread_id=self.thread_id)
+        return thread_decorator(self.client, func=func, ctx_manager=self)
 
-    def __enter__(self) -> Thread:
-        return self.thread
+    def __enter__(self) -> "Optional[Thread]":
+        active_thread_var.set(Thread(id=self.thread_id, **self.kwargs))
+        return active_thread_var.get()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        active_thread_id_var.set(None)
+        if (thread := active_thread_var.get()) and thread.needs_upsert:
+            asyncio.run(self.upsert())
+        active_thread_var.set(None)
 
     async def __aenter__(self):
-        return self.thread
+        active_thread_var.set(Thread(id=self.thread_id, **self.kwargs))
+        return active_thread_var.get()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        active_thread_id_var.set(None)
+        if (thread := active_thread_var.get()) and thread.needs_upsert:
+            await self.upsert()
+        active_thread_var.set(None)
 
 
 def thread_decorator(
-    client: "ChainlitClient", func: Callable, thread_id: Optional[str] = None
+    client: "ChainlitClient",
+    func: Callable,
+    thread_id: Optional[str] = None,
+    ctx_manager: Optional[ThreadContextManager] = None,
+    **decorator_kwargs,
 ):
+    if not ctx_manager:
+        ctx_manager = ThreadContextManager(
+            client, thread_id=thread_id, **decorator_kwargs
+        )
     if inspect.iscoroutinefunction(func):
 
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-            with ThreadContextManager(client, thread_id=thread_id):
+            with ctx_manager:
                 result = await func(*args, **kwargs)
                 return result
 
@@ -109,7 +139,7 @@ def thread_decorator(
 
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
-            with ThreadContextManager(client, thread_id=thread_id):
+            with ctx_manager:
                 return func(*args, **kwargs)
 
         return sync_wrapper

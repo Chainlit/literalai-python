@@ -486,14 +486,14 @@ class API:
         query = (
             """
         mutation UpsertThread(
-            $threadId: String!,
+            $id: String!,
             $metadata: Json,
             $participantId: String,
             $environment: String,
             $tags: [String!],
         ) {
             upsertThread(
-                id: $threadId
+                id: $id
                 metadata: $metadata
                 participantId: $participantId
                 environment: $environment
@@ -507,7 +507,7 @@ class API:
 """
         )
         variables = {
-            "threadId": thread_id,
+            "id": thread_id,
             "metadata": metadata,
             "participantId": participant_id,
             "environment": environment,
@@ -588,7 +588,7 @@ class API:
 
         return Thread.from_dict(thread) if thread else None
 
-    async def delete_thread(self, id: str) -> str:
+    async def delete_thread(self, id: str) -> bool:
         query = """
         mutation DeleteThread($thread_id: String!) {
             deleteThread(id: $thread_id) {
@@ -600,8 +600,8 @@ class API:
         variables = {"thread_id": id}
 
         result = await self.make_api_call("delete thread", query, variables)
-
-        return result["data"]["deleteThread"]["id"]
+        deleted = bool(result["data"]["deleteThread"])
+        return deleted
 
     # User Session API
 
@@ -1150,7 +1150,7 @@ class API:
 
         return Step.from_dict(step) if step else None
 
-    async def delete_step(self, id: str) -> str:
+    async def delete_step(self, id: str) -> bool:
         query = """
         mutation DeleteStep($id: String!) {
             deleteStep(id: $id) {
@@ -1163,7 +1163,8 @@ class API:
 
         result = await self.make_api_call("delete step", query, variables)
 
-        return result["data"]["deleteStep"]["id"]
+        deleted = bool(result["data"]["deleteStep"])
+        return deleted
 
     async def send_steps(self, steps: List[Union[StepDict, "Step"]]) -> "Dict":
         query = query_builder(steps)

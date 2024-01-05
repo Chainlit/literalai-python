@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import os
 import secrets
@@ -24,7 +25,7 @@ class Teste2e:
     """
 
     @pytest.fixture(
-        scope="class"
+        scope="session"
     )  # Feel free to move this fixture up for further testing
     def client(self):
         url = os.getenv("CHAINLIT_API_URL", None)
@@ -32,7 +33,8 @@ class Teste2e:
         assert url is not None and api_key is not None, "Missing environment variables"
 
         client = ChainlitClient(batch_size=1, url=url, api_key=api_key)
-        return client
+        yield client
+        client.event_processor.wait_until_queue_empty()
 
     async def test_user(self, client: ChainlitClient):
         user = await client.api.create_user(
@@ -220,4 +222,74 @@ class Teste2e:
         stack = chainlit_client.context.active_steps_var.get()
         assert len(stack) == 0
 
-        client.event_processor.wait_until_queue_empty()
+    async def test_thread_decorator(self, client: ChainlitClient):
+        @client.thread(tags=["foo"], metadata={"async": "False"})
+        def thread_decorated():
+            t = client.get_current_thread()
+            assert t is not None
+            assert t.tags == ["foo"]
+            assert t.metadata == {"async": "False"}
+            return t.id
+
+        id = thread_decorated()
+        assert await client.api.delete_thread(id) is True
+
+        @client.thread(tags=["foo"], metadata={"async": True})
+        async def a_thread_decorated():
+            t = client.get_current_thread()
+            assert t is not None
+            assert t.tags == ["foo"]
+            assert t.metadata == {"async": True}
+            return t.id
+
+        id = await a_thread_decorated()
+        assert await client.api.delete_thread(id) is True
+
+    @pytest.mark.timeout(5)
+    async def test_step_decorator(self, client: ChainlitClient):
+        async def assert_delete(thread_id: str, step_id: str):
+            while True:
+                step = await client.api.get_step(step_id)
+                if step is not None:
+                    break
+                await asyncio.sleep(1)
+            assert await client.api.delete_step(step_id) is True
+
+            while True:
+                thread = await client.api.get_thread(thread_id)
+                if thread is not None:
+                    break
+                await asyncio.sleep(1)
+            assert await client.api.delete_thread(thread_id) is True
+
+        @client.thread
+        def thread_decorated():
+            @client.step(name="foo", type="llm")
+            def step_decorated():
+                t = client.get_current_thread()
+                s = client.get_current_step()
+                assert s is not None
+                assert s.name == "foo"
+                assert s.type == "llm"
+                return t.id, s.id
+
+            return step_decorated()
+
+        thread_id, step_id = thread_decorated()
+        await assert_delete(thread_id, step_id)
+
+        @client.thread
+        async def a_thread_decorated():
+            @client.step(name="foo", type="llm")
+            async def a_step_decorated():
+                t = client.get_current_thread()
+                s = client.get_current_step()
+                assert s is not None
+                assert s.name == "foo"
+                assert s.type == "llm"
+                return t.id, s.id
+
+            return await a_step_decorated()
+
+        thread_id, step_id = await a_thread_decorated()
+        await assert_delete(thread_id, step_id)
