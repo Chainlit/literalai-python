@@ -83,7 +83,7 @@ class ThreadContextManager:
         thread = active_thread_var.get()
         thread_data = thread.to_dict()
         thread_data_to_upsert = {
-            "id": thread_data["id"],
+            "thread_id": thread_data["id"],
         }
         if metadata := thread_data.get("metadata"):
             thread_data_to_upsert["metadata"] = metadata

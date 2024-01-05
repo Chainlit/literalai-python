@@ -477,7 +477,7 @@ class API:
 
     async def upsert_thread(
         self,
-        id: str,
+        thread_id: str,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
         environment: Optional[str] = None,
@@ -507,7 +507,7 @@ class API:
 """
         )
         variables = {
-            "id": id,
+            "id": thread_id,
             "metadata": metadata,
             "participantId": participant_id,
             "environment": environment,
