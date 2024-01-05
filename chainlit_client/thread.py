@@ -45,6 +45,7 @@ class Thread:
             "tags": self.tags,
             "steps": [step.to_dict() for step in self.steps] if self.steps else [],
             "participant": self.user.to_dict() if self.user else None,
+            "createdAt": self.created_at,
         }
 
     @classmethod
