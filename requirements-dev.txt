@@ -6,4 +6,3 @@ ruff
 mypy
 langchain
 pytest_httpx
-gradio
