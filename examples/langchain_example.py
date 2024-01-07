@@ -1,8 +1,8 @@
 import asyncio
 
 from dotenv import load_dotenv
-from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
+from langchain_community.chat_models import ChatOpenAI
 
 from literalai import LiteralClient
 
