@@ -1,24 +1,24 @@
 import os
 from typing import Any, Dict, List, Optional
 
-from chainlit_client.api import API
-from chainlit_client.callback.langchain_callback import get_langchain_callback
-from chainlit_client.context import active_steps_var, active_thread_var
-from chainlit_client.event_processor import EventProcessor
-from chainlit_client.instrumentation.openai import instrument_openai
-from chainlit_client.message import Message
-from chainlit_client.my_types import Attachment
-from chainlit_client.step import (
+from literalai.api import API
+from literalai.callback.langchain_callback import get_langchain_callback
+from literalai.context import active_steps_var, active_thread_var
+from literalai.event_processor import EventProcessor
+from literalai.instrumentation.openai import instrument_openai
+from literalai.message import Message
+from literalai.my_types import Attachment
+from literalai.step import (
     MessageStepType,
     Step,
     StepContextManager,
     TrueStepType,
     step_decorator,
 )
-from chainlit_client.thread import ThreadContextManager, thread_decorator
+from literalai.thread import ThreadContextManager, thread_decorator
 
 
-class ChainlitClient:
+class LiteralClient:
     def __init__(
         self,
         batch_size: int = 1,
@@ -26,11 +26,11 @@ class ChainlitClient:
         url: Optional[str] = None,
     ):
         if not api_key:
-            api_key = os.getenv("CHAINLIT_API_KEY", None)
+            api_key = os.getenv("LITERAL_API_KEY", None)
             if not api_key:
-                raise Exception("CHAINLIT_API_KEY not provided")
+                raise Exception("LITERAL_API_KEY not provided")
         if not url:
-            url = os.getenv("CHAINLIT_API_URL", "https://cloud.chainlit.io")
+            url = os.getenv("LITERAL_API_URL", "https://cloud.getliteral.ai")
 
         self.api = API(api_key=api_key, url=url)
         self.event_processor = EventProcessor(

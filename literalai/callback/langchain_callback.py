@@ -2,19 +2,15 @@ import json
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-from chainlit_client.context import active_steps_var, active_thread_var
-from chainlit_client.my_types import (
-    ChatGeneration,
-    CompletionGeneration,
-    GenerationMessage,
-)
-from chainlit_client.step import Step
+from literalai.context import active_steps_var, active_thread_var
+from literalai.my_types import ChatGeneration, CompletionGeneration, GenerationMessage
+from literalai.step import Step
 
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from chainlit_client.client import ChainlitClient
-    from chainlit_client.step import TrueStepType
+    from literalai.client import LiteralClient
+    from literalai.step import TrueStepType
 
 
 def stringify_function_call(function_call):
@@ -337,11 +333,11 @@ def get_langchain_callback():
         steps: Dict[str, Step]
         parent_id_map: Dict[str, str]
         ignored_runs: set
-        client: "ChainlitClient"
+        client: "LiteralClient"
 
         def __init__(
             self,
-            client: "ChainlitClient",
+            client: "LiteralClient",
             # Runs to ignore to enhance readability
             to_ignore: Optional[List[str]] = None,
             # Runs to keep within ignored runs

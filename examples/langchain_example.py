@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 
-from chainlit_client import ChainlitClient
+from literalai import LiteralClient
 
 load_dotenv()
 
-client = ChainlitClient()
+client = LiteralClient()
 chat_model = ChatOpenAI()
 
 

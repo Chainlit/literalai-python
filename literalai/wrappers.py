@@ -3,7 +3,7 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Callable, Optional, TypedDict
 
 if TYPE_CHECKING:
-    from chainlit_client.step import Step
+    from literalai.step import Step
 
 
 class BeforeContext(TypedDict):

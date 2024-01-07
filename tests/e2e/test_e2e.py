@@ -5,15 +5,15 @@ import secrets
 
 import pytest
 
-import chainlit_client
-from chainlit_client import ChainlitClient
+import literalai
+from literalai import LiteralClient
 
 """
 End to end tests for the SDK
 By default this test suite won't run, you need to explicitly run it with the following command:
     pytest -m e2e
 
-Those test require a $CHAINLIT_API_URL and $CHAINLIT_API_KEY environment variables to be set.
+Those test require a $LITERAL_API_URL and $LITERAL_API_KEY environment variables to be set.
 """
 
 
@@ -28,15 +28,15 @@ class Teste2e:
         scope="session"
     )  # Feel free to move this fixture up for further testing
     def client(self):
-        url = os.getenv("CHAINLIT_API_URL", None)
-        api_key = os.getenv("CHAINLIT_API_KEY", None)
+        url = os.getenv("LITERAL_API_URL", None)
+        api_key = os.getenv("LITERAL_API_KEY", None)
         assert url is not None and api_key is not None, "Missing environment variables"
 
-        client = ChainlitClient(batch_size=1, url=url, api_key=api_key)
+        client = LiteralClient(batch_size=1, url=url, api_key=api_key)
         yield client
         client.event_processor.wait_until_queue_empty()
 
-    async def test_user(self, client: ChainlitClient):
+    async def test_user(self, client: LiteralClient):
         user = await client.api.create_user(
             identifier=f"test_user_{secrets.token_hex()}", metadata={"foo": "bar"}
         )
@@ -54,7 +54,7 @@ class Teste2e:
         deleted_user = await client.api.get_user(id=user.id)
         assert deleted_user is None
 
-    async def test_user_session(self, client: ChainlitClient):
+    async def test_user_session(self, client: LiteralClient):
         user_identifier = f"test_user_{secrets.token_hex()}"
         await client.api.create_user(identifier=user_identifier)
 
@@ -106,7 +106,7 @@ class Teste2e:
         assert deleted_user_session is None
         assert deleted_anon_user_session is None
 
-    async def test_thread(self, client: ChainlitClient):
+    async def test_thread(self, client: LiteralClient):
         """
         Warning: it does not test the list thread pagination
         FIXME update method is broken
@@ -132,7 +132,7 @@ class Teste2e:
         deleted_thread = await client.api.get_thread(id=thread.id)
         assert deleted_thread is None
 
-    async def test_step(self, client: ChainlitClient):
+    async def test_step(self, client: LiteralClient):
         thread = await client.api.create_thread()
         step = await client.api.create_step(
             thread_id=thread.id, metadata={"foo": "bar"}
@@ -154,7 +154,7 @@ class Teste2e:
 
         assert deleted_step is None
 
-    async def test_feedback(self, client: ChainlitClient):
+    async def test_feedback(self, client: LiteralClient):
         thread = await client.api.create_thread()
         step = await client.api.create_step(
             thread_id=thread.id, metadata={"foo": "bar"}
@@ -174,7 +174,7 @@ class Teste2e:
         assert updated_feedback.value == 2
         assert updated_feedback.comment == "hello"
 
-    async def test_attachment(self, client: ChainlitClient):
+    async def test_attachment(self, client: LiteralClient):
         attachment_url = (
             "https://upload.wikimedia.org/wikipedia/commons/8/8f/Example_image.svg"
         )
@@ -210,19 +210,28 @@ class Teste2e:
         deleted_attachment = await client.api.get_attachment(id=attachment.id)
         assert deleted_attachment is None
 
-    async def test_ingestion(self, client: ChainlitClient):
+    async def test_ingestion(self, client: LiteralClient):
         with client.thread():
             with client.step(name="test_ingestion") as step:
                 step.metadata = {"foo": "bar"}
                 assert client.event_processor.event_queue._qsize() == 0
-                stack = chainlit_client.context.active_steps_var.get()
+                stack = literalai.context.active_steps_var.get()
                 assert len(stack) == 1
 
         assert client.event_processor.event_queue._qsize() == 1
-        stack = chainlit_client.context.active_steps_var.get()
+        stack = literalai.context.active_steps_var.get()
         assert len(stack) == 0
 
-    async def test_thread_decorator(self, client: ChainlitClient):
+    @pytest.mark.timeout(5)
+    async def test_thread_decorator(self, client: LiteralClient):
+        async def assert_delete(thread_id: str):
+            while True:
+                thread = await client.api.get_thread(thread_id)
+                if thread is not None:
+                    break
+                await asyncio.sleep(1)
+            assert await client.api.delete_thread(thread_id) is True
+
         @client.thread(tags=["foo"], metadata={"async": "False"})
         def thread_decorated():
             t = client.get_current_thread()
@@ -232,7 +241,7 @@ class Teste2e:
             return t.id
 
         id = thread_decorated()
-        assert await client.api.delete_thread(id) is True
+        await assert_delete(id)
 
         @client.thread(tags=["foo"], metadata={"async": True})
         async def a_thread_decorated():
@@ -243,10 +252,10 @@ class Teste2e:
             return t.id
 
         id = await a_thread_decorated()
-        assert await client.api.delete_thread(id) is True
+        await assert_delete(id)
 
     @pytest.mark.timeout(5)
-    async def test_step_decorator(self, client: ChainlitClient):
+    async def test_step_decorator(self, client: LiteralClient):
         async def assert_delete(thread_id: str, step_id: str):
             while True:
                 step = await client.api.get_step(step_id)

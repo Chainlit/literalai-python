@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
 
 from pydantic.dataclasses import dataclass
 
-from chainlit_client.context import active_thread_var
-from chainlit_client.my_types import User
-from chainlit_client.step import Step
+from literalai.context import active_thread_var
+from literalai.my_types import User
+from literalai.step import Step
 
 if TYPE_CHECKING:
-    from chainlit_client.client import ChainlitClient
+    from literalai.client import LiteralClient
 
 
 class Thread:
@@ -45,7 +45,7 @@ class Thread:
             "tags": self.tags,
             "steps": [step.to_dict() for step in self.steps] if self.steps else [],
             "participant": self.user.to_dict() if self.user else None,
-            "createdAt": self.created_at,
+            "createdAt": getattr(self, "created_at", None),
         }
 
     @classmethod
@@ -70,7 +70,7 @@ class Thread:
 class ThreadContextManager:
     def __init__(
         self,
-        client: "ChainlitClient",
+        client: "LiteralClient",
         thread_id: "Optional[str]" = None,
         **kwargs,
     ):
@@ -103,7 +103,10 @@ class ThreadContextManager:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if (thread := active_thread_var.get()) and thread.needs_upsert:
-            asyncio.run(self.upsert())
+            if asyncio.get_event_loop().is_running():
+                asyncio.create_task(self.upsert())
+            else:
+                asyncio.run(self.upsert())
         active_thread_var.set(None)
 
     async def __aenter__(self):
@@ -117,7 +120,7 @@ class ThreadContextManager:
 
 
 def thread_decorator(
-    client: "ChainlitClient",
+    client: "LiteralClient",
     func: Callable,
     thread_id: Optional[str] = None,
     ctx_manager: Optional[ThreadContextManager] = None,

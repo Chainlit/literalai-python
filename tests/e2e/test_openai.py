@@ -6,16 +6,16 @@ import pytest
 from openai import AsyncOpenAI, AzureOpenAI, OpenAI
 from pytest_httpx import HTTPXMock
 
-from chainlit_client import ChainlitClient
-from chainlit_client.my_types import ChatGeneration, CompletionGeneration
+from literalai import LiteralClient
+from literalai.my_types import ChatGeneration, CompletionGeneration
 
 
 @pytest.fixture
 def non_mocked_hosts() -> list:
     non_mocked_hosts = []
 
-    # Always skip mocking the Chainlit API
-    url = os.getenv("CHAINLIT_API_URL", None)
+    # Always skip mocking API
+    url = os.getenv("LITERAL_API_URL", None)
     if url is not None:
         parsed = urllib.parse.urlparse(url)
         non_mocked_hosts.append(parsed.hostname)
@@ -23,7 +23,7 @@ def non_mocked_hosts() -> list:
     return non_mocked_hosts
 
 
-async def wait_until_queue_empty(client: "ChainlitClient"):
+async def wait_until_queue_empty(client: "LiteralClient"):
     # we can't call client.wait_until_queue_empty() because it will join the event_processor thread,
     # this would work only once and then the thread would be dead
     while not client.event_processor.event_queue.empty():
@@ -36,16 +36,16 @@ class TestOpenAI:
         scope="class"
     )  # Feel free to move this fixture up for further testing
     def client(self):
-        url = os.getenv("CHAINLIT_API_URL", None)
-        api_key = os.getenv("CHAINLIT_API_KEY", None)
+        url = os.getenv("LITERAL_API_URL", None)
+        api_key = os.getenv("LITERAL_API_KEY", None)
         assert url is not None and api_key is not None, "Missing environment variables"
 
-        client = ChainlitClient(batch_size=1, url=url, api_key=api_key)
+        client = LiteralClient(batch_size=1, url=url, api_key=api_key)
         client.instrument_openai()
 
         return client
 
-    async def test_chat(self, client: "ChainlitClient", httpx_mock: "HTTPXMock"):
+    async def test_chat(self, client: "LiteralClient", httpx_mock: "HTTPXMock"):
         # https://platform.openai.com/docs/api-reference/chat/object
         httpx_mock.add_response(
             json={
@@ -111,7 +111,7 @@ class TestOpenAI:
         assert step.generation.settings is not None
         assert step.generation.settings.get("model") == "gpt-3.5-turbo"
 
-    async def test_completion(self, client: "ChainlitClient", httpx_mock: "HTTPXMock"):
+    async def test_completion(self, client: "LiteralClient", httpx_mock: "HTTPXMock"):
         # https://platform.openai.com/docs/api-reference/completions/object
         httpx_mock.add_response(
             json={
@@ -171,7 +171,7 @@ class TestOpenAI:
         assert step.generation.token_count == 12
         assert step.generation.formatted == "Tell me a funny joke."
 
-    async def test_async_chat(self, client: "ChainlitClient", httpx_mock: "HTTPXMock"):
+    async def test_async_chat(self, client: "LiteralClient", httpx_mock: "HTTPXMock"):
         # https://platform.openai.com/docs/api-reference/chat/object
         httpx_mock.add_response(
             json={
@@ -238,7 +238,7 @@ class TestOpenAI:
         assert step.generation.settings.get("model") == "gpt-3.5-turbo"
 
     async def test_async_completion(
-        self, client: "ChainlitClient", httpx_mock: "HTTPXMock"
+        self, client: "LiteralClient", httpx_mock: "HTTPXMock"
     ):
         # https://platform.openai.com/docs/api-reference/completions/object
         httpx_mock.add_response(
@@ -300,7 +300,7 @@ class TestOpenAI:
         assert step.generation.formatted == "Tell me a funny joke."
 
     async def test_azure_completion(
-        self, client: "ChainlitClient", httpx_mock: "HTTPXMock"
+        self, client: "LiteralClient", httpx_mock: "HTTPXMock"
     ):
         # https://platform.openai.com/docs/api-reference/completions/object
         httpx_mock.add_response(
