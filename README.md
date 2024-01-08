@@ -1,28 +1,28 @@
-# Chainlit Observability SDK
-This SDK provides tools for LLM observability in Python applications.
+# Literal AI client
 
 ## Installation
+
 ```bash
-pip install chainlit-client
+pip install literalai
 ```
 
 ## Usage
 
-The full documentation is available at https://docs.plat.chainlit.io/python-client/get-started/introduction.
+The full documentation is available [here](https://docs.getliteral.ai/python-client).
 
-Create a `.env` file with the `CHAINLIT_API_KEY` environment variable set to your API key.
+Create a `.env` file with the `LITERAL_API_KEY` environment variable set to your API key.
 
 ```python
-from chainlit_client import ChainlitClient
+from literalai import LiteralClient
 from dotenv import load_dotenv
 
 load_dotenv()
 
-client = ChainlitClient()
+client = LiteralClient()
 
 @client.step(type="run")
 def my_step(input):
-    return f"World" 
+    return f"World"
 
 
 @client.thread
@@ -38,6 +38,7 @@ print("Done")
 ## Development
 
 ### Setup
+
 ```bash
 pip install -r requirements-dev.txt
 ```

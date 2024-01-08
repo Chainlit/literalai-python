@@ -2,12 +2,12 @@ import asyncio
 
 from dotenv import load_dotenv
 
-from chainlit_client import ChainlitClient
+from literalai import LiteralClient
 
 load_dotenv()
 
 
-sdk = ChainlitClient(batch_size=2)
+sdk = LiteralClient(batch_size=2)
 
 
 async def main():

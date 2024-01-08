@@ -2,19 +2,19 @@ import json
 import logging
 from typing import TYPE_CHECKING, Dict
 
-from chainlit_client.requirements import check_all_requirements
+from literalai.requirements import check_all_requirements
 
 if TYPE_CHECKING:
-    from chainlit_client.client import ChainlitClient
-    from chainlit_client.step import Step
+    from literalai.client import LiteralClient
+    from literalai.step import Step
 
-from chainlit_client.my_types import (
+from literalai.my_types import (
     ChatGeneration,
     CompletionGeneration,
     GenerationMessage,
     GenerationType,
 )
-from chainlit_client.wrappers import AfterContext, BeforeContext, wrap_all
+from literalai.wrappers import AfterContext, BeforeContext, wrap_all
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ TO_WRAP = [
 ]
 
 
-def instrument_openai(client: "ChainlitClient"):
+def instrument_openai(client: "LiteralClient"):
     if not check_all_requirements(REQUIREMENTS):
         raise Exception(f"Instrumentation requirements not satisfied: {REQUIREMENTS}")
 

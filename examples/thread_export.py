@@ -2,13 +2,13 @@ import asyncio
 
 from dotenv import load_dotenv
 
-from chainlit_client import ChainlitClient
-from chainlit_client.thread import DateTimeFilter, NumberListFilter, ThreadFilter
+from literalai import LiteralClient
+from literalai.thread import DateTimeFilter, NumberListFilter, ThreadFilter
 
 load_dotenv()
 
 
-sdk = ChainlitClient()
+sdk = LiteralClient()
 
 
 async def main():

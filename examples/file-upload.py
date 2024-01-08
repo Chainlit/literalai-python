@@ -1,15 +1,15 @@
 import asyncio
-
-from dotenv import load_dotenv
 import mimetypes
 from pathlib import Path
 
-from chainlit_client import ChainlitClient
+from dotenv import load_dotenv
+
+from literalai import LiteralClient
 
 load_dotenv()
 
 
-sdk = ChainlitClient(batch_size=2)
+sdk = LiteralClient(batch_size=2)
 
 
 async def main():

@@ -15,11 +15,11 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from chainlit_client.client import ChainlitClient
-    from chainlit_client.event_processor import EventProcessor
+    from literalai.client import LiteralClient
+    from literalai.event_processor import EventProcessor
 
-from chainlit_client.context import active_steps_var, active_thread_var
-from chainlit_client.my_types import (
+from literalai.context import active_steps_var, active_thread_var
+from literalai.my_types import (
     Attachment,
     AttachmentDict,
     BaseGeneration,
@@ -200,7 +200,7 @@ class Step:
 class StepContextManager:
     def __init__(
         self,
-        client: "ChainlitClient",
+        client: "LiteralClient",
         name: str = "",
         type: TrueStepType = "undefined",
         id: Optional[str] = None,
@@ -249,7 +249,7 @@ class StepContextManager:
 
 
 def step_decorator(
-    client: "ChainlitClient",
+    client: "LiteralClient",
     func: Callable,
     type: TrueStepType = "undefined",
     name: str = "",

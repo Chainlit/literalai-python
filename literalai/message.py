@@ -3,11 +3,11 @@ import uuid
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 if TYPE_CHECKING:
-    from chainlit_client.event_processor import EventProcessor
+    from literalai.event_processor import EventProcessor
 
-from chainlit_client.context import active_steps_var, active_thread_var
-from chainlit_client.my_types import Attachment, Feedback
-from chainlit_client.step import MessageStepType, StepDict
+from literalai.context import active_steps_var, active_thread_var
+from literalai.my_types import Attachment, Feedback
+from literalai.step import MessageStepType, StepDict
 
 
 class Message:

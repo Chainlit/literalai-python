@@ -9,15 +9,15 @@ if TYPE_CHECKING:
 
 import httpx
 
-from chainlit_client.my_types import (
+from literalai.my_types import (
     Attachment,
     Feedback,
     FeedbackStrategy,
     PaginatedResponse,
     User,
 )
-from chainlit_client.step import Step, StepDict, StepType
-from chainlit_client.thread import Thread, ThreadFilter
+from literalai.step import Step, StepDict, StepType
+from literalai.thread import Thread, ThreadFilter
 
 logger = logging.getLogger(__name__)
 
@@ -179,20 +179,20 @@ class API:
         self.url = url
 
         if self.api_key is None:
-            raise Exception("CHAINLIT_API_KEY not set")
+            raise Exception("LITERAL_API_KEY not set")
         if self.url is None:
-            raise Exception("CHAINLIT_API_URL not set")
+            raise Exception("LITERAL_API_URL not set")
 
         self.graphql_endpoint = self.url + "/api/graphql"
 
     @property
     def headers(self):
-        from chainlit_client.version import __version__
+        from literalai.version import __version__
 
         return {
             "Content-Type": "application/json",
             "x-api-key": self.api_key,
-            "x-client-name": "python-chainlit-client",
+            "x-client-name": "py-literal-client",
             "x-client-version": __version__,
         }
 

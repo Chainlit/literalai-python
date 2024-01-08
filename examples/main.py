@@ -4,13 +4,13 @@ import json
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from chainlit_client import ChainlitClient
+from literalai import LiteralClient
 
 load_dotenv()
 
 client = OpenAI()
 
-sdk = ChainlitClient(batch_size=2)
+sdk = LiteralClient(batch_size=2)
 sdk.instrument_openai()
 
 thread_id = None
