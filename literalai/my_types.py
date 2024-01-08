@@ -114,9 +114,9 @@ class GenerationMessage:
             template=message_dict.get("template"),
             formatted=message_dict.get("formatted"),
             placeholder_size=message_dict.get("placeholderSize"),
-            template_format=message_dict.get("templateFormat", "f-string"),
+            template_format=message_dict.get("templateFormat") or "f-string",
             name=message_dict.get("name"),
-            role=message_dict.get("role", "assistant"),
+            role=message_dict.get("role") or "assistant",
         )
 
 
@@ -170,7 +170,7 @@ class CompletionGeneration(BaseGeneration):
         return CompletionGeneration(
             template=generation_dict.get("template"),
             formatted=generation_dict.get("formatted"),
-            template_format=generation_dict.get("templateFormat", "f-string"),
+            template_format=generation_dict.get("templateFormat") or "f-string",
             provider=generation_dict.get("provider"),
             completion=generation_dict.get("completion"),
             settings=generation_dict.get("settings"),
