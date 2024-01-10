@@ -13,18 +13,17 @@ sdk = LiteralClient()
 
 async def main():
     result = await sdk.api.export_threads()
-    print(result)
 
-    print("threads fetched", len(result.data))
+    print("threads fetched 1", len(result.data))
     # save the fetched threads somewhere
 
     filters = ThreadFilter(
-        createdAt=DateTimeFilter(operator="gt", value="2023-12-14"),
+        createdAt=DateTimeFilter(operator="gt", value="2022-12-14"),
     )
 
     result = await sdk.api.export_threads(filters=filters)
 
-    print("threads fetched", len(result.data))
+    print("threads fetched 2", len(result.data))
     # save the fetched threads somewhere
 
 

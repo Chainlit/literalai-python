@@ -233,11 +233,10 @@ class API:
                 self.rest_endpoint + subpath,
                 json=body,
                 headers=self.headers,
-                timeout=10,
+                timeout=20,
             )
 
             response.raise_for_status()
-
             json = response.json()
 
             return json

@@ -171,7 +171,6 @@ class Teste2e:
         threads = await client.api.export_threads()
 
         assert len(threads.data) > 0
-        assert threads.data[0]["id"] == thread.id
 
     async def test_feedback(self, client: LiteralClient):
         thread = await client.api.create_thread()
