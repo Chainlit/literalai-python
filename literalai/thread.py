@@ -233,9 +233,9 @@ class ThreadFilter:
     beforeCreatedAt: Optional[DateTimeFilter] = None
     # duration: Optional[NumberFilter] = None
     environment: Optional[StringFilter] = None
-    # feedbacksValue: Optional[NumberListFilter] = None
+    feedbacksValue: Optional[NumberListFilter] = None
     participantsIdentifier: Optional[StringListFilter] = None
-    # search: Optional[StringFilter] = None
+    search: Optional[StringFilter] = None
     # tokenCount: Optional[NumberFilter] = None
 
     def to_dict(self):
@@ -252,12 +252,12 @@ class ThreadFilter:
             else None,
             # "duration": self.duration.to_dict() if self.duration else None,
             "environment": self.environment.to_dict() if self.environment else None,
-            # "feedbacksValue": self.feedbacksValue.to_dict()
-            # if self.feedbacksValue
-            # else None,
+            "feedbacksValue": self.feedbacksValue.to_dict()
+            if self.feedbacksValue
+            else None,
             "participantsIdentifier": self.participantsIdentifier.to_dict()
             if self.participantsIdentifier
             else None,
-            # "search": self.search.to_dict() if self.search else None,
+            "search": self.search.to_dict() if self.search else None,
             # "tokenCount": self.tokenCount.to_dict() if self.tokenCount else None,
         }
