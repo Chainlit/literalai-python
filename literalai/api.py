@@ -570,7 +570,7 @@ class API:
 
         result = await self.make_api_call("get thread", query, variables)
 
-        thread = result["data"]["thread"]
+        thread = result["data"]["threadDetail"]
 
         return Thread.from_dict(thread) if thread else None
 
