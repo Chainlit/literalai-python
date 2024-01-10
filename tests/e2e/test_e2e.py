@@ -7,6 +7,7 @@ import pytest
 
 import literalai
 from literalai import LiteralClient
+from literalai.thread import DateTimeFilter, ThreadFilter
 
 """
 End to end tests for the SDK
@@ -153,6 +154,24 @@ class Teste2e:
         deleted_step = await client.api.get_step(id=step.id)
 
         assert deleted_step is None
+
+    async def test_thread_export(self, client: LiteralClient):
+        thread = await client.api.create_thread(metadata={"foo": "bar"}, tags=["hello"])
+        assert thread.id is not None
+
+        filters = ThreadFilter(
+            createdAt=DateTimeFilter(
+                operator="gt", value=datetime.datetime.utcnow().isoformat()
+            )
+        )
+
+        threads = await client.api.export_threads(filters=filters)
+        assert len(threads.data) == 0
+
+        threads = await client.api.export_threads()
+
+        assert len(threads.data) > 0
+        assert threads.data[0]["id"] == thread.id
 
     async def test_feedback(self, client: LiteralClient):
         thread = await client.api.create_thread()

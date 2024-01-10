@@ -14,10 +14,11 @@ from literalai.my_types import (
     Feedback,
     FeedbackStrategy,
     PaginatedResponse,
+    PaginatedRestResponse,
     User,
 )
 from literalai.step import Step, StepDict, StepType
-from literalai.thread import Thread, ThreadFilter
+from literalai.thread import Thread, ThreadDict, ThreadFilter
 
 logger = logging.getLogger(__name__)
 
@@ -184,6 +185,7 @@ class API:
             raise Exception("LITERAL_API_URL not set")
 
         self.graphql_endpoint = self.url + "/api/graphql"
+        self.rest_endpoint = self.url + "/api"
 
     @property
     def headers(self):
@@ -219,11 +221,26 @@ class API:
             if json.get("errors"):
                 raise_error(json["errors"])
 
-            return response.json()
+            return json
 
         # This should not be reached, exceptions should be thrown beforehands
         # Added because of mypy
         raise Exception("Unkown error")
+
+    async def make_rest_api_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                self.rest_endpoint + subpath,
+                json=body,
+                headers=self.headers,
+                timeout=10,
+            )
+
+            response.raise_for_status()
+
+            json = response.json()
+
+            return json
 
     # User API
 
@@ -386,55 +403,24 @@ class API:
 
     async def export_threads(
         self,
-        after: Optional[str] = None,
+        page: Optional[int] = None,
         filters: Optional[ThreadFilter] = None,
-    ) -> PaginatedResponse:
-        query = (
-            """
-        query ExportThreads(
-            $after: ID,
-            $filters: ExportThreadFiltersInput,
-            ) {
-            exportThreads(
-                after: $after,
-                filters: $filters,
-                ) {
-                pageInfo {
-                    startCursor
-                    endCursor
-                    hasNextPage
-                    hasPreviousPage
-                }
-                totalCount
-                edges {
-                    cursor
-                    node {
-"""
-            + thread_fields
-            + """
-                    }
-                }
-            }
-        }
-    """
-        )
+        cursor_anchor: Optional[str] = None,
+    ) -> PaginatedRestResponse[ThreadDict]:
+        body: Dict[str, Any] = {}
 
-        variables: Dict[str, Any] = {}
+        if cursor_anchor:
+            body["cursorAnchor"] = cursor_anchor
 
-        if after:
-            variables["after"] = after
+        if page:
+            body["page"] = page
+
         if filters:
-            variables["filters"] = filters.to_dict()
+            body["filters"] = filters.to_dict()
 
-        result = await self.make_api_call("export threads", query, variables)
+        result = await self.make_rest_api_call(subpath="/export/threads", body=body)
 
-        response = result["data"]["exportThreads"]
-
-        response["data"] = list(map(lambda x: x["node"], response["edges"]))
-
-        del response["edges"]
-
-        return PaginatedResponse[Thread].from_dict(response, Thread)
+        return PaginatedRestResponse(**result)
 
     async def create_thread(
         self,
@@ -571,7 +557,7 @@ class API:
         query = (
             """
         query GetThread($id: String!) {
-            thread(id: $id) {
+            threadDetail(id: $id) {
 """
             + thread_fields
             + """

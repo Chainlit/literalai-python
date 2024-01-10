@@ -72,6 +72,15 @@ class PaginatedResponse(Generic[T]):
         return cls(pageInfo=pageInfo, data=data)
 
 
+@dataclass
+class PaginatedRestResponse(Generic[T]):
+    totalCount: int
+    totalPage: int
+    hasNextPage: bool
+    hasPreviousPage: bool
+    data: List[T]
+
+
 @unique
 class GenerationType(Enum):
     CHAT = "CHAT"
@@ -318,6 +327,13 @@ class Attachment:
         return attachment
 
 
+class UserDict(TypedDict, total=False):
+    id: Optional[str]
+    metadata: Optional[Dict]
+    identifier: Optional[str]
+    createdAt: Optional[str]
+
+
 @dataclass
 class User:
     id: Optional[str] = None
@@ -325,7 +341,7 @@ class User:
     identifier: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     metadata: Dict = Field(default_factory=lambda: {})
 
-    def to_dict(self):
+    def to_dict(self) -> UserDict:
         return {
             "id": self.id,
             "identifier": self.identifier,
