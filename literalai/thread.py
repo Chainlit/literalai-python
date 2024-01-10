@@ -2,16 +2,25 @@ import asyncio
 import inspect
 import uuid
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional, TypedDict
 
 from pydantic.dataclasses import dataclass
 
 from literalai.context import active_thread_var
-from literalai.my_types import User
-from literalai.step import Step
+from literalai.my_types import User, UserDict
+from literalai.step import Step, StepDict
 
 if TYPE_CHECKING:
     from literalai.client import LiteralClient
+
+
+class ThreadDict(TypedDict, total=False):
+    id: Optional[str]
+    metadata: Optional[Dict]
+    tags: Optional[List[str]]
+    createdAt: Optional[str]
+    steps: Optional[List[StepDict]]
+    participant: Optional[UserDict]
 
 
 class Thread:
@@ -38,7 +47,7 @@ class Thread:
         self.user = user
         self.needs_upsert = bool(metadata or tags or user)
 
-    def to_dict(self):
+    def to_dict(self) -> ThreadDict:
         return {
             "id": self.id,
             "metadata": self.metadata,
@@ -218,22 +227,22 @@ class DateTimeFilter:
 
 @dataclass
 class ThreadFilter:
-    attachmentsName: Optional[StringListFilter] = None
+    # attachmentsName: Optional[StringListFilter] = None
     createdAt: Optional[DateTimeFilter] = None
     afterCreatedAt: Optional[DateTimeFilter] = None
     beforeCreatedAt: Optional[DateTimeFilter] = None
-    duration: Optional[NumberFilter] = None
+    # duration: Optional[NumberFilter] = None
     environment: Optional[StringFilter] = None
-    feedbacksValue: Optional[NumberListFilter] = None
+    # feedbacksValue: Optional[NumberListFilter] = None
     participantsIdentifier: Optional[StringListFilter] = None
-    search: Optional[StringFilter] = None
-    tokenCount: Optional[NumberFilter] = None
+    # search: Optional[StringFilter] = None
+    # tokenCount: Optional[NumberFilter] = None
 
     def to_dict(self):
         return {
-            "attachmentsName": self.attachmentsName.to_dict()
-            if self.attachmentsName
-            else None,
+            # "attachmentsName": self.attachmentsName.to_dict()
+            # if self.attachmentsName
+            # else None,
             "createdAt": self.createdAt.to_dict() if self.createdAt else None,
             "afterCreatedAt": self.afterCreatedAt.to_dict()
             if self.afterCreatedAt
@@ -241,14 +250,14 @@ class ThreadFilter:
             "beforeCreatedAt": self.beforeCreatedAt.to_dict()
             if self.beforeCreatedAt
             else None,
-            "duration": self.duration.to_dict() if self.duration else None,
+            # "duration": self.duration.to_dict() if self.duration else None,
             "environment": self.environment.to_dict() if self.environment else None,
-            "feedbacksValue": self.feedbacksValue.to_dict()
-            if self.feedbacksValue
-            else None,
+            # "feedbacksValue": self.feedbacksValue.to_dict()
+            # if self.feedbacksValue
+            # else None,
             "participantsIdentifier": self.participantsIdentifier.to_dict()
             if self.participantsIdentifier
             else None,
-            "search": self.search.to_dict() if self.search else None,
-            "tokenCount": self.tokenCount.to_dict() if self.tokenCount else None,
+            # "search": self.search.to_dict() if self.search else None,
+            # "tokenCount": self.tokenCount.to_dict() if self.tokenCount else None,
         }
