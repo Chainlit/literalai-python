@@ -148,5 +148,9 @@ class LiteralClient:
     def get_current_thread(self):
         return active_thread_var.get()
 
+    def reset_context(self):
+        active_steps_var.set([])
+        active_thread_var.set(None)
+
     def wait_until_queue_empty(self):
         self.event_processor.wait_until_queue_empty()
