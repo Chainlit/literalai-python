@@ -398,8 +398,13 @@ def get_langchain_callback():
                 # so we can re-attach a kept child to the right parent id
                 self.parent_id_map[str(run.id)] = parent_id
 
-            ignore_by_name = run.name in self.to_ignore
+            ignore_by_name = False
             ignore_by_parent = parent_id in self.ignored_runs
+
+            for filter in self.to_ignore:
+                if filter in run.name:
+                    ignore_by_name = True
+                    break
 
             ignore = ignore_by_name or ignore_by_parent
 
