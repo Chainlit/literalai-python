@@ -269,6 +269,8 @@ def step_decorator(
             parent_id=parent_id,
             thread_id=thread_id,
         )
+    else:
+        ctx_manager.step_name = name
     # Handle async decorator
     if inspect.iscoroutinefunction(func):
 
