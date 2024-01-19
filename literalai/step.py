@@ -218,6 +218,7 @@ class StepContextManager:
         return step_decorator(
             self.client,
             func=func,
+            name=self.step_name,
             ctx_manager=self,
         )
 
