@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from literalai.client import LiteralClient
     from literalai.step import Step
 
+from literalai.context import active_thread_var
 from literalai.my_types import (
     ChatGeneration,
     CompletionGeneration,
@@ -136,6 +137,8 @@ def instrument_openai(client: "LiteralClient"):
 
     def before_wrapper(metadata: Dict):
         def before(context: BeforeContext, *args, **kwargs):
+            if not active_thread_var.get():
+                return
             step = client.start_step(name=context["original_func"].__name__, type="llm")
 
             generation_type = metadata["type"]
@@ -148,6 +151,9 @@ def instrument_openai(client: "LiteralClient"):
 
     def async_before_wrapper(metadata: Dict):
         async def before(context: BeforeContext, *args, **kwargs):
+            if not active_thread_var.get():
+                return
+
             step = client.start_step(name=context["original_func"].__name__, type="llm")
 
             generation_type = metadata["type"]
@@ -183,7 +189,9 @@ def instrument_openai(client: "LiteralClient"):
         def after(result, context: AfterContext, *args, **kwargs):
             generation_type = metadata["type"]
 
-            step = context["step"]
+            step = context.get("step")
+            if not step:
+                return result
 
             if isinstance(result, Stream):
                 return streaming_response(step, generation_type, result)
@@ -222,7 +230,12 @@ def instrument_openai(client: "LiteralClient"):
         async def after(result, context: AfterContext, *args, **kwargs):
             generation_type = metadata["type"]
 
-            step = context["step"]
+            step = context.get("step")
+            if not step:
+                return result
+
+            if step.thread_id is None:
+                return result
 
             if isinstance(result, AsyncStream):
                 return async_streaming_response(step, generation_type, result)

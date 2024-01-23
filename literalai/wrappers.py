@@ -13,7 +13,7 @@ class BeforeContext(TypedDict):
 
 class AfterContext(TypedDict):
     original_func: Callable
-    step: "Step"
+    step: Optional["Step"]
 
 
 def sync_wrapper(before_func=None, after_func=None):
