@@ -84,8 +84,6 @@ class ThreadContextManager:
         **kwargs,
     ):
         self.client = client
-        if thread_id is None:
-            thread_id = str(uuid.uuid4())
         self.thread_id = thread_id
         self.kwargs = kwargs
 
@@ -107,7 +105,8 @@ class ThreadContextManager:
         return thread_decorator(self.client, func=func, ctx_manager=self)
 
     def __enter__(self) -> "Optional[Thread]":
-        active_thread_var.set(Thread(id=self.thread_id, **self.kwargs))
+        thread_id = self.thread_id if self.thread_id else str(uuid.uuid4())
+        active_thread_var.set(Thread(id=thread_id, **self.kwargs))
         return active_thread_var.get()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -119,7 +118,8 @@ class ThreadContextManager:
         active_thread_var.set(None)
 
     async def __aenter__(self):
-        active_thread_var.set(Thread(id=self.thread_id, **self.kwargs))
+        thread_id = self.thread_id if self.thread_id else str(uuid.uuid4())
+        active_thread_var.set(Thread(id=thread_id, **self.kwargs))
         return active_thread_var.get()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
