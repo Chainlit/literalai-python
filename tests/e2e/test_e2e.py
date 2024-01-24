@@ -320,3 +320,23 @@ class Teste2e:
 
         thread_id, step_id = await a_thread_decorated()
         await assert_delete(thread_id, step_id)
+
+    async def test_parallel_requests(self, client: LiteralClient):
+        ids = []
+
+        @client.thread
+        def request():
+            t = client.get_current_thread()
+            ids.append(t.id)
+
+        @client.thread
+        async def async_request():
+            t = client.get_current_thread()
+            ids.append(t.id)
+
+        request()
+        request()
+        await async_request()
+        await async_request()
+
+        assert len(ids) == len(set(ids))
