@@ -227,13 +227,15 @@ class API:
         # Added because of mypy
         raise Exception("Unkown error")
 
-    async def make_rest_api_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
+    async def make_rest_api_call(
+        self, subpath: str, body: Dict[str, Any], timeout=20
+    ) -> Dict:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 self.rest_endpoint + subpath,
                 json=body,
                 headers=self.headers,
-                timeout=20,
+                timeout=timeout,
             )
 
             response.raise_for_status()
@@ -417,7 +419,9 @@ class API:
         if filters:
             body["filters"] = filters.to_dict()
 
-        result = await self.make_rest_api_call(subpath="/export/threads", body=body)
+        result = await self.make_rest_api_call(
+            subpath="/export/threads", body=body, timeout=20 * 60
+        )  # 20 minutes timeout
 
         return PaginatedRestResponse(**result)
 
