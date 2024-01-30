@@ -5,4 +5,4 @@ python-dotenv
 ruff
 mypy
 langchain
-pytest_httpx
+pytest_httpx==0.22.0
