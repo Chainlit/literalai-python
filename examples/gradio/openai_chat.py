@@ -2,12 +2,12 @@ import gradio as gr
 from openai import AsyncClient
 from dotenv import load_dotenv
 import os
-from chainlit_client import ChainlitClient
+from literalai import LiteralClient
 
 load_dotenv()
 
 async_client = AsyncClient(api_key=os.environ.get("OPENAI_KEY"))
-sdk = ChainlitClient()
+sdk = LiteralClient()
 sdk.instrument_openai()
 
 
