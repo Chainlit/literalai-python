@@ -43,6 +43,7 @@ class StepDict(TypedDict, total=False):
     name: Optional[str]
     type: Optional[StepType]
     threadId: Optional[str]
+    error: Optional[str]
     input: Optional[str]
     output: Optional[str]
     metadata: Optional[Dict]
@@ -65,6 +66,7 @@ class Step:
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     created_at: Optional[str] = None
+    error: Optional[str] = None
     input: Optional[str] = None
     output: Optional[str] = None
     tags: Optional[List[str]] = None
@@ -148,6 +150,7 @@ class Step:
             "endTime": self.end_time,
             "type": self.type,
             "threadId": self.thread_id,
+            "error": self.error,
             "input": self.input,
             "output": self.output,
             "generation": self.generation.to_dict()
@@ -169,6 +172,7 @@ class Step:
 
         step.id = step_dict.get("id")
         step.input = step_dict.get("input", None)
+        step.error = step_dict.get("error", None)
         step.output = step_dict.get("output", None)
         step.metadata = step_dict.get("metadata", {})
         step.tags = step_dict.get("tags", [])
@@ -233,6 +237,8 @@ class StepContextManager:
         return self.step
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            self.step.error = str(exc_val)
         self.step.end()
 
     def __enter__(self) -> Step:
@@ -246,6 +252,8 @@ class StepContextManager:
         return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            self.step.error = str(exc_val)
         self.step.end()
 
 

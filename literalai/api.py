@@ -30,6 +30,7 @@ step_fields = """
         endTime
         createdAt
         type
+        error
         input
         output
         metadata
@@ -134,6 +135,7 @@ def query_variables_builder(steps):
         $type_{id}: StepType
         $startTime_{id}: DateTime
         $endTime_{id}: DateTime
+        $error_{id}: String
         $input_{id}: String
         $output_{id}:String
         $metadata_{id}: Json
@@ -156,6 +158,7 @@ def ingest_steps_builder(steps):
         startTime: $startTime_{id}
         endTime: $endTime_{id}
         type: $type_{id}
+        error: $error_{id}
         input: $input_{id}
         output: $output_{id}
         metadata: $metadata_{id}
