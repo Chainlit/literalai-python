@@ -40,16 +40,26 @@ step_fields = """
         }
         tags
         generation {
-            type
-            provider
-            settings
-            inputs
-            completion
-            templateFormat
-            template
-            formatted
-            messages
-            tokenCount
+tags
+          prompt
+          completion
+          createdAt
+          provider
+          model
+          variables
+          messages
+          messageCompletion
+          tools
+          settings
+          stepId
+          tokenCount              
+          inputTokenCount         
+          outputTokenCount        
+          ttFirstToken          
+          duration                
+          tokenThroughputInSeconds
+          error
+          type
         }
         name
         attachments {

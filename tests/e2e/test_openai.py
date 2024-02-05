@@ -109,7 +109,7 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == ChatGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
 
     async def test_completion(self, client: "LiteralClient", httpx_mock: "HTTPXMock"):
         # https://platform.openai.com/docs/api-reference/completions/object
@@ -166,10 +166,10 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == CompletionGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
         assert step.generation.completion == "\n\nThis is indeed a test"
         assert step.generation.token_count == 12
-        assert step.generation.formatted == "Tell me a funny joke."
+        assert step.generation.prompt == "Tell me a funny joke."
 
     async def test_async_chat(self, client: "LiteralClient", httpx_mock: "HTTPXMock"):
         # https://platform.openai.com/docs/api-reference/chat/object
@@ -235,7 +235,7 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == ChatGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
 
     async def test_async_completion(
         self, client: "LiteralClient", httpx_mock: "HTTPXMock"
@@ -294,10 +294,10 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == CompletionGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
         assert step.generation.completion == "\n\nThis is indeed a test"
         assert step.generation.token_count == 12
-        assert step.generation.formatted == "Tell me a funny joke."
+        assert step.generation.prompt == "Tell me a funny joke."
 
     async def test_azure_completion(
         self, client: "LiteralClient", httpx_mock: "HTTPXMock"
@@ -360,7 +360,7 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == CompletionGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
         assert step.generation.completion == "\n\nThis is indeed a test"
         assert step.generation.token_count == 12
-        assert step.generation.formatted == "Tell me a funny joke."
+        assert step.generation.prompt == "Tell me a funny joke."

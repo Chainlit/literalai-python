@@ -31,7 +31,6 @@ class LiteralClient:
                 raise Exception("LITERAL_API_KEY not provided")
         if not url:
             url = os.getenv("LITERAL_API_URL", "https://cloud.getliteral.ai")
-
         self.api = API(api_key=api_key, url=url)
         self.event_processor = EventProcessor(
             api=self.api,
