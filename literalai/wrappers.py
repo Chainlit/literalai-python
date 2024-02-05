@@ -56,7 +56,7 @@ def async_wrapper(before_func=None, after_func=None):
 
             context["start"] = time.time()
             try:
-                result = original_func(*args, **kwargs)
+                result = await original_func(*args, **kwargs)
             except Exception as e:
                 context["step"].generation.error = str(e)
                 raise e
