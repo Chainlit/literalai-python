@@ -198,14 +198,54 @@ def instrument_openai(client: "LiteralClient"):
                     "arguments"
                 ] += new_delta.function_call.arguments
             return True
+        elif new_delta.tool_calls:
+            if not message_completion["tool_calls"]:
+                message_completion["tool_calls"] = []
+            delta_tool_call = new_delta.tool_calls[0]
+            delta_function = delta_tool_call.function
+            if not delta_function:
+                return False
+            if delta_function.name:
+                message_completion["tool_calls"].append(  # type: ignore
+                    {
+                        "id": delta_tool_call.id,
+                        "type": "function",
+                        "function": {
+                            "name": delta_function.name,
+                            "arguments": "",
+                        },
+                    }
+                )
+            if delta_function.arguments:
+                message_completion["tool_calls"][delta_tool_call.index]["function"][  # type: ignore
+                    "arguments"
+                ] += delta_function.arguments
+
+            return True
         elif new_delta.content:
             if isinstance(message_completion["content"], str):
                 message_completion["content"] += new_delta.content
                 return True
-        elif new_delta.tool_calls:
-            pass
         else:
             return False
+
+    def json_load_args(message: GenerationMessage):
+        if message["function_call"]:
+            try:
+                message["function_call"]["arguments"] = json.loads(
+                    message["function_call"]["arguments"]
+                )
+            except json.JSONDecodeError:
+                pass
+
+        if message["tool_calls"]:
+            try:
+                for tool_call in message["tool_calls"]:
+                    tool_call["function"]["arguments"] = json.loads(
+                        tool_call["function"]["arguments"]
+                    )
+            except json.JSONDecodeError:
+                pass
 
     def streaming_response(step: "Step", result, context: AfterContext):
         completion = ""
@@ -222,6 +262,7 @@ def instrument_openai(client: "LiteralClient"):
                 if len(chunk.choices) > 0:
                     ok = process_delta(chunk.choices[0].delta, message_completion)
                     if not ok:
+                        yield chunk
                         continue
                     if step.generation.tt_first_token is None:
                         step.generation.tt_first_token = (
@@ -238,6 +279,8 @@ def instrument_openai(client: "LiteralClient"):
                     token_count += 1
                     completion += chunk.choices[0].text
                 yield chunk
+
+        json_load_args(message_completion)
 
         if step.generation:
             step.generation.duration = time.time() - context["start"]
@@ -267,7 +310,6 @@ def instrument_openai(client: "LiteralClient"):
                 step.generation.duration = time.time() - context["start"]
             update_step_after(step, result)
             step.end()
-
             return result
 
         return after
@@ -303,6 +345,8 @@ def instrument_openai(client: "LiteralClient"):
                     token_count += 1
                     completion += chunk.choices[0].text
                 yield chunk
+
+        json_load_args(message_completion)
 
         if step.generation:
             step.generation.duration = time.time() - context["start"]
