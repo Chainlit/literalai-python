@@ -203,6 +203,7 @@ def get_langchain_callback():
         ) -> None:
             BaseTracer.__init__(self, **kwargs)
             GenerationHelper.__init__(self)
+
             self.client = client
             self.steps = {}
             self.parent_id_map = {}
@@ -382,6 +383,9 @@ def get_langchain_callback():
                 step_type = "tool"
             elif run.run_type == "embedding":
                 step_type = "embedding"
+
+            if not self.steps:
+                step_type = "run"
 
             step = self.client.start_step(
                 id=str(run.id), name=run.name, type=step_type, parent_id=parent_id

@@ -41,7 +41,7 @@ step_fields = """
         }
         tags
         generation {
-tags
+          tags
           prompt
           completion
           createdAt

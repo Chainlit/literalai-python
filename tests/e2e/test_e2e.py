@@ -243,11 +243,7 @@ class Teste2e:
     @pytest.mark.timeout(5)
     async def test_thread_decorator(self, client: LiteralClient):
         async def assert_delete(thread_id: str):
-            while True:
-                thread = await client.api.get_thread(thread_id)
-                if thread is not None:
-                    break
-                await asyncio.sleep(1)
+            await asyncio.sleep(1)
             assert await client.api.delete_thread(thread_id) is True
 
         @client.thread(tags=["foo"], metadata={"async": "False"})
@@ -275,18 +271,8 @@ class Teste2e:
     @pytest.mark.timeout(5)
     async def test_step_decorator(self, client: LiteralClient):
         async def assert_delete(thread_id: str, step_id: str):
-            while True:
-                step = await client.api.get_step(step_id)
-                if step is not None:
-                    break
-                await asyncio.sleep(1)
+            await asyncio.sleep(1)
             assert await client.api.delete_step(step_id) is True
-
-            while True:
-                thread = await client.api.get_thread(thread_id)
-                if thread is not None:
-                    break
-                await asyncio.sleep(1)
             assert await client.api.delete_thread(thread_id) is True
 
         @client.thread
