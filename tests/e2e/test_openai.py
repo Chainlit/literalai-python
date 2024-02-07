@@ -96,8 +96,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = main().id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None
@@ -153,8 +152,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = main().id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None
@@ -222,8 +220,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = (await main()).id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None
@@ -281,8 +278,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = (await main()).id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None
@@ -347,8 +343,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = main().id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None

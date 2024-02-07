@@ -159,6 +159,8 @@ class Teste2e:
         thread = await client.api.create_thread(metadata={"foo": "bar"}, tags=["hello"])
         assert thread.id is not None
 
+        await asyncio.sleep(1)
+
         filters = ThreadFilter(
             createdAt=DateTimeFilter(
                 operator="gt", value=datetime.datetime.utcnow().isoformat()
