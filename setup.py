@@ -10,6 +10,6 @@ setup(
     install_requires=[
         "packaging>=23.0",
         "httpx>=0.23.0,<0.25.0",
-        "pydantic>=1,<2.6.0",
+        "pydantic>=1,<3",
     ],
 )
