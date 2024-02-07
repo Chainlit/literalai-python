@@ -14,20 +14,6 @@ if TYPE_CHECKING:
     from literalai.step import TrueStepType
 
 
-def stringify_function_call(function_call):
-    if isinstance(function_call, dict):
-        _function_call = function_call.copy()
-    else:
-        _function_call = {
-            "arguments": function_call.arguments,
-            "name": function_call.name,
-        }
-
-    if "arguments" in _function_call and isinstance(_function_call["arguments"], str):
-        _function_call["arguments"] = json.loads(_function_call["arguments"])
-    return json.dumps(_function_call, indent=4, ensure_ascii=False)
-
-
 def process_content(content: Any) -> Tuple[str, Optional[str]]:
     if content is None:
         return "", None
@@ -103,6 +89,8 @@ def get_langchain_callback():
                 return "system"
             elif "function" in role.lower():
                 return "function"
+            elif "tool" in role.lower():
+                return "tool"
             else:
                 return "assistant"
 
@@ -173,7 +161,8 @@ def get_langchain_callback():
 
             # make sure there is no api key specification
             settings = {k: v for k, v in merged.items() if not k.endswith("_api_key")}
-            model = settings["model"] if "model" in settings else settings["model_name"]
+            model_keys = ["model", "model_name", "deployment", "deployment_name"]
+            model = next((settings[k] for k in model_keys if k in settings), None)
             tools = None
             if "functions" in settings:
                 tools = [
@@ -294,7 +283,10 @@ def get_langchain_callback():
             parent_run_id: Optional["UUID"] = None,
             **kwargs: Any,
         ) -> Run:
-            start = self.chat_generations[str(run_id)]
+            if isinstance(chunk, ChatGenerationChunk):
+                start = self.chat_generations[str(run_id)]
+            else:
+                start = self.completion_generations[str(run_id)]  # type: ignore
             start["token_count"] += 1
             if "tt_first_token" not in start:
                 start["tt_first_token"] = (time.time() - start["start"]) * 1000
