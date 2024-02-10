@@ -157,7 +157,7 @@ def get_langchain_callback():
 
             # make sure there is no api key specification
             settings = {k: v for k, v in merged.items() if not k.endswith("_api_key")}
-            model_keys = ["model", "model_name", "deployment", "deployment_name"]
+            model_keys = ["azure_deployment", "deployment_name", "model", "model_name"]
             model = next((settings[k] for k in model_keys if k in settings), None)
             tools = None
             if "functions" in settings:
