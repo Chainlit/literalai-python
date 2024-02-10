@@ -1,10 +1,10 @@
 import datetime
 import inspect
-import json
 import uuid
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     List,
@@ -43,8 +43,9 @@ class StepDict(TypedDict, total=False):
     name: Optional[str]
     type: Optional[StepType]
     threadId: Optional[str]
-    input: Optional[str]
-    output: Optional[str]
+    error: Optional[str]
+    input: Optional[Dict]
+    output: Optional[Dict]
     metadata: Optional[Dict]
     tags: Optional[List[str]]
     parentId: Optional[str]
@@ -65,8 +66,9 @@ class Step:
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     created_at: Optional[str] = None
-    input: Optional[str] = None
-    output: Optional[str] = None
+    error: Optional[str] = None
+    input: Optional[Dict[str, Any]] = None
+    output: Optional[Dict[str, Any]] = None
     tags: Optional[List[str]] = None
     thread_id: Optional[str] = None
 
@@ -113,9 +115,6 @@ class Step:
             if active_thread := active_thread_var.get():
                 self.thread_id = active_thread.id
 
-        if not self.thread_id:
-            raise Exception("Step must be initialized with a thread_id.")
-
         active_steps.append(self)
         active_steps_var.set(active_steps)
 
@@ -148,11 +147,10 @@ class Step:
             "endTime": self.end_time,
             "type": self.type,
             "threadId": self.thread_id,
+            "error": self.error,
             "input": self.input,
             "output": self.output,
-            "generation": self.generation.to_dict()
-            if self.generation and self.type == "llm"
-            else None,
+            "generation": self.generation.to_dict() if self.generation else None,
             "name": self.name,
             "tags": self.tags,
             "feedback": self.feedback.to_dict() if self.feedback else None,
@@ -169,6 +167,7 @@ class Step:
 
         step.id = step_dict.get("id")
         step.input = step_dict.get("input", None)
+        step.error = step_dict.get("error", None)
         step.output = step_dict.get("output", None)
         step.metadata = step_dict.get("metadata", {})
         step.tags = step_dict.get("tags", [])
@@ -233,6 +232,8 @@ class StepContextManager:
         return self.step
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            self.step.error = str(exc_val)
         self.step.end()
 
     def __enter__(self) -> Step:
@@ -246,6 +247,8 @@ class StepContextManager:
         return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            self.step.error = str(exc_val)
         self.step.end()
 
 
@@ -279,13 +282,16 @@ def step_decorator(
         async def async_wrapper(*args, **kwargs):
             with ctx_manager as step:
                 try:
-                    step.input = json.dumps({"args": args, "kwargs": kwargs})
+                    step.input = {"args": args, "kwargs": kwargs}
                 except Exception:
                     pass
                 result = await func(*args, **kwargs)
                 try:
                     if step.output is None:
-                        step.output = json.dumps(result)
+                        if isinstance(result, dict):
+                            step.output = result
+                        else:
+                            step.output = {"content": result}
                 except Exception:
                     pass
                 return result
@@ -297,13 +303,16 @@ def step_decorator(
         def sync_wrapper(*args, **kwargs):
             with ctx_manager as step:
                 try:
-                    step.input = json.dumps({"args": args, "kwargs": kwargs})
+                    step.input = {"args": args, "kwargs": kwargs}
                 except Exception:
                     pass
                 result = func(*args, **kwargs)
                 try:
                     if step.output is None:
-                        step.output = json.dumps(result)
+                        if isinstance(result, dict):
+                            step.output = result
+                        else:
+                            step.output = {"content": result}
                 except Exception:
                     pass
                 return result

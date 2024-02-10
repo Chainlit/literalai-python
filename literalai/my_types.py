@@ -1,16 +1,12 @@
+import sys
 import uuid
 from enum import Enum, unique
-from typing import (
-    Dict,
-    Generic,
-    List,
-    Literal,
-    Optional,
-    Protocol,
-    TypedDict,
-    TypeVar,
-    Union,
-)
+from typing import Dict, Generic, List, Literal, Optional, Protocol, TypeVar, Union
+
+if sys.version_info < (3, 12):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 from pydantic.dataclasses import Field, dataclass
 
@@ -87,56 +83,39 @@ class GenerationType(Enum):
     COMPLETION = "COMPLETION"
 
 
-@dataclass
-class GenerationMessage:
-    template: Optional[str] = None
-    formatted: Optional[str] = None
-    # This is used for Langchain's MessagesPlaceholder
-    placeholder_size: Optional[int] = None
-    # This is used for OpenAI's function message
-    name: Optional[str] = None
-    role: Optional[GenerationMessageRole] = None
-    template_format: str = "f-string"
+class TextContent(TypedDict, total=False):
+    type: Literal["text"]
+    text: str
 
-    def to_openai(self):
-        msg_dict = {"role": self.role, "content": self.formatted}
-        if self.role == "function":
-            msg_dict["name"] = self.name or ""
-        return msg_dict
 
-    def to_string(self):
-        return f"{self.role}: {self.formatted}"
+class ImageUrlContent(TypedDict, total=False):
+    type: Literal["image_url"]
+    image_url: str
 
-    def to_dict(self):
-        return {
-            "template": self.template,
-            "formatted": self.formatted,
-            "placeholderSize": self.placeholder_size,
-            "name": self.name,
-            "role": self.role if self.role else None,
-            "templateFormat": self.template_format,
-        }
 
-    @classmethod
-    def from_dict(self, message_dict: Dict):
-        return GenerationMessage(
-            template=message_dict.get("template"),
-            formatted=message_dict.get("formatted"),
-            placeholder_size=message_dict.get("placeholderSize"),
-            template_format=message_dict.get("templateFormat") or "f-string",
-            name=message_dict.get("name"),
-            role=message_dict.get("role") or "assistant",
-        )
+class GenerationMessage(TypedDict, total=False):
+    name: Optional[str]
+    role: Optional[GenerationMessageRole]
+    content: Union[str, List[Union[TextContent, ImageUrlContent]]]
+    function_call: Optional[Dict]
+    tool_calls: Optional[List[Dict]]
 
 
 @dataclass
 class BaseGeneration:
-    provider: Optional[str] = "Unknown"
-    inputs: Optional[Dict] = Field(default_factory=dict)
-    completion: Optional[str] = None
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    error: Optional[str] = None
     settings: Optional[Dict] = Field(default_factory=dict)
+    variables: Optional[Dict] = Field(default_factory=dict)
+    tags: Optional[List[str]] = Field(default_factory=list)
+    tools: Optional[List[Dict]] = None
     token_count: Optional[int] = None
-    functions: Optional[List[Dict]] = None
+    input_token_count: Optional[int] = None
+    output_token_count: Optional[int] = None
+    tt_first_token: Optional[float] = None
+    token_throughput_in_s: Optional[float] = None
+    duration: Optional[float] = None
 
     @classmethod
     def from_dict(
@@ -151,40 +130,58 @@ class BaseGeneration:
             raise ValueError(f"Unknown generation type: {type}")
 
     def to_dict(self):
-        raise NotImplementedError()
+        return {
+            "provider": self.provider,
+            "model": self.model,
+            "error": self.error,
+            "settings": self.settings,
+            "variables": self.variables,
+            "tags": self.tags,
+            "tools": self.tools,
+            "tokenCount": self.token_count,
+            "inputTokenCount": self.input_token_count,
+            "outputTokenCount": self.output_token_count,
+            "ttFirstToken": self.tt_first_token,
+            "tokenThroughputInSeconds": self.token_throughput_in_s,
+            "duration": self.duration,
+        }
 
 
 @dataclass
 class CompletionGeneration(BaseGeneration):
-    template: Optional[str] = None
-    formatted: Optional[str] = None
-    template_format: str = "f-string"
+    prompt: Optional[str] = None
+    completion: Optional[str] = None
     type = GenerationType.COMPLETION
 
     def to_dict(self):
-        return {
-            "template": self.template,
-            "formatted": self.formatted,
-            "templateFormat": self.template_format,
-            "provider": self.provider,
-            "inputs": self.inputs,
-            "completion": self.completion,
-            "settings": self.settings,
-            "tokenCount": self.token_count,
-            "type": self.type.value,
-        }
+        _dict = super().to_dict()
+        _dict.update(
+            {
+                "prompt": self.prompt,
+                "completion": self.completion,
+                "type": self.type.value,
+            }
+        )
+        return _dict
 
     @classmethod
     def from_dict(self, generation_dict: Dict) -> "CompletionGeneration":
         return CompletionGeneration(
-            template=generation_dict.get("template"),
-            formatted=generation_dict.get("formatted"),
-            template_format=generation_dict.get("templateFormat") or "f-string",
+            error=generation_dict.get("error"),
+            tags=generation_dict.get("tags"),
             provider=generation_dict.get("provider"),
-            completion=generation_dict.get("completion"),
+            model=generation_dict.get("model"),
+            variables=generation_dict.get("variables"),
+            tools=generation_dict.get("tools"),
             settings=generation_dict.get("settings"),
-            inputs=generation_dict.get("inputs", {}),
             token_count=generation_dict.get("tokenCount"),
+            input_token_count=generation_dict.get("inputTokenCount"),
+            output_token_count=generation_dict.get("outputTokenCount"),
+            tt_first_token=generation_dict.get("ttFirstToken"),
+            token_throughput_in_s=generation_dict.get("tokenThroughputInSeconds"),
+            duration=generation_dict.get("duration"),
+            prompt=generation_dict.get("prompt"),
+            completion=generation_dict.get("completion"),
         )
 
 
@@ -192,30 +189,37 @@ class CompletionGeneration(BaseGeneration):
 class ChatGeneration(BaseGeneration):
     messages: List[GenerationMessage] = Field(default_factory=list)
     type = GenerationType.CHAT
+    message_completion: Optional[GenerationMessage] = None
 
     def to_dict(self):
-        return {
-            "messages": [m.to_dict() for m in self.messages],
-            "provider": self.provider,
-            "inputs": self.inputs,
-            "completion": self.completion,
-            "settings": self.settings,
-            "tokenCount": self.token_count,
-            "type": self.type.value,
-        }
+        _dict = super().to_dict()
+        _dict.update(
+            {
+                "messages": self.messages,
+                "messageCompletion": self.message_completion,
+                "type": self.type.value,
+            }
+        )
+        return _dict
 
     @classmethod
     def from_dict(self, generation_dict: Dict) -> "ChatGeneration":
         return ChatGeneration(
-            messages=[
-                GenerationMessage.from_dict(m)
-                for m in generation_dict.get("messages", [])
-            ],
-            inputs=generation_dict.get("inputs", {}),
+            error=generation_dict.get("error"),
+            tags=generation_dict.get("tags"),
             provider=generation_dict.get("provider"),
-            completion=generation_dict.get("completion"),
+            model=generation_dict.get("model"),
+            variables=generation_dict.get("variables"),
+            tools=generation_dict.get("tools"),
             settings=generation_dict.get("settings"),
             token_count=generation_dict.get("tokenCount"),
+            input_token_count=generation_dict.get("inputTokenCount"),
+            output_token_count=generation_dict.get("outputTokenCount"),
+            tt_first_token=generation_dict.get("ttFirstToken"),
+            token_throughput_in_s=generation_dict.get("tokenThroughputInSeconds"),
+            duration=generation_dict.get("duration"),
+            messages=generation_dict.get("messages", []),
+            message_completion=generation_dict.get("message_completion"),
         )
 
 

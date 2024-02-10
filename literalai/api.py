@@ -1,4 +1,3 @@
-import datetime
 import logging
 import mimetypes
 import uuid
@@ -30,6 +29,7 @@ step_fields = """
         endTime
         createdAt
         type
+        error
         input
         output
         metadata
@@ -40,16 +40,26 @@ step_fields = """
         }
         tags
         generation {
-            type
-            provider
-            settings
-            inputs
-            completion
-            templateFormat
-            template
-            formatted
-            messages
-            tokenCount
+          tags
+          prompt
+          completion
+          createdAt
+          provider
+          model
+          variables
+          messages
+          messageCompletion
+          tools
+          settings
+          stepId
+          tokenCount              
+          inputTokenCount         
+          outputTokenCount        
+          ttFirstToken          
+          duration                
+          tokenThroughputInSeconds
+          error
+          type
         }
         name
         attachments {
@@ -65,6 +75,7 @@ step_fields = """
 thread_fields = (
     """
         id
+        name
         metadata
         tags
         createdAt
@@ -82,6 +93,7 @@ thread_fields = (
 
 shallow_thread_fields = """
         id
+        name
         metadata
         tags
         createdAt
@@ -120,12 +132,13 @@ def query_variables_builder(steps):
     generated = ""
     for id in range(len(steps)):
         generated += f"""$id_{id}: String!
-        $threadId_{id}: String!
+        $threadId_{id}: String
         $type_{id}: StepType
         $startTime_{id}: DateTime
         $endTime_{id}: DateTime
-        $input_{id}: String
-        $output_{id}:String
+        $error_{id}: String
+        $input_{id}: Json
+        $output_{id}: Json
         $metadata_{id}: Json
         $parentId_{id}: String
         $name_{id}: String
@@ -146,6 +159,7 @@ def ingest_steps_builder(steps):
         startTime: $startTime_{id}
         endTime: $endTime_{id}
         type: $type_{id}
+        error: $error_{id}
         input: $input_{id}
         output: $output_{id}
         metadata: $metadata_{id}
@@ -226,6 +240,35 @@ class API:
         # This should not be reached, exceptions should be thrown beforehands
         # Added because of mypy
         raise Exception("Unkown error")
+
+    def make_api_call_sync(
+        self, description: str, query: str, variables: Dict[str, Any]
+    ) -> Dict:
+        def raise_error(error):
+            logger.error(f"Failed to {description}: {error}")
+            raise Exception(error)
+
+        with httpx.Client() as client:
+            response = client.post(
+                self.graphql_endpoint,
+                json={"query": query, "variables": variables},
+                headers=self.headers,
+                timeout=10,
+            )
+
+            if response.status_code >= 400:
+                raise_error(response.text)
+
+            json_response = response.json()
+
+            if json_response.get("errors"):
+                raise_error(json_response["errors"])
+
+            return json_response
+
+        # This should not be reached, exceptions should be thrown beforehands
+        # Added because of mypy
+        raise Exception("Unknown error")
 
     async def make_rest_api_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
         async with httpx.AsyncClient() as client:
@@ -423,6 +466,7 @@ class API:
 
     async def create_thread(
         self,
+        name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
         environment: Optional[str] = None,
@@ -431,12 +475,14 @@ class API:
         query = (
             """
         mutation CreateThread(
+            $name: String,
             $metadata: Json,
             $participantId: String,
             $environment: String,
             $tags: [String!],
         ) {
             createThread(
+                name: $name
                 metadata: $metadata
                 participantId: $participantId
                 environment: $environment
@@ -450,6 +496,7 @@ class API:
 """
         )
         variables = {
+            "name": name,
             "metadata": metadata,
             "participantId": participant_id,
             "environment": environment,
@@ -463,6 +510,7 @@ class API:
     async def upsert_thread(
         self,
         thread_id: str,
+        name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
         environment: Optional[str] = None,
@@ -472,6 +520,7 @@ class API:
             """
         mutation UpsertThread(
             $id: String!,
+            $name: String,
             $metadata: Json,
             $participantId: String,
             $environment: String,
@@ -479,6 +528,7 @@ class API:
         ) {
             upsertThread(
                 id: $id
+                name: $name
                 metadata: $metadata
                 participantId: $participantId
                 environment: $environment
@@ -493,6 +543,7 @@ class API:
         )
         variables = {
             "id": thread_id,
+            "name": name,
             "metadata": metadata,
             "participantId": participant_id,
             "environment": environment,
@@ -501,14 +552,61 @@ class API:
 
         # remove None values to prevent the API from removing existing values
         variables = {k: v for k, v in variables.items() if v is not None}
-
         thread = await self.make_api_call("upsert thread", query, variables)
+        return Thread.from_dict(thread["data"]["upsertThread"])
 
+    def upsert_thread_sync(
+        self,
+        thread_id: str,
+        name: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+        participant_id: Optional[str] = None,
+        environment: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ) -> Thread:
+        query = (
+            """
+        mutation UpsertThread(
+            $id: String!,
+            $name: String,
+            $metadata: Json,
+            $participantId: String,
+            $environment: String,
+            $tags: [String!],
+        ) {
+            upsertThread(
+                id: $id
+                name: $name
+                metadata: $metadata
+                participantId: $participantId
+                environment: $environment
+                tags: $tags
+            ) {
+"""
+            + shallow_thread_fields
+            + """
+            }
+        }
+"""
+        )
+        variables = {
+            "id": thread_id,
+            "name": name,
+            "metadata": metadata,
+            "participantId": participant_id,
+            "environment": environment,
+            "tags": tags,
+        }
+
+        # remove None values to prevent the API from removing existing values
+        variables = {k: v for k, v in variables.items() if v is not None}
+        thread = self.make_api_call_sync("upsert thread", query, variables)
         return Thread.from_dict(thread["data"]["upsertThread"])
 
     async def update_thread(
         self,
         id: str,
+        name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
         environment: Optional[str] = None,
@@ -518,6 +616,7 @@ class API:
             """
         mutation UpdateThread(
             $id: String!,
+            $name: String,
             $metadata: Json,
             $participantId: String,
             $environment: String,
@@ -525,6 +624,7 @@ class API:
         ) {
             updateThread(
                 id: $id
+                name: $name
                 metadata: $metadata
                 participantId: $participantId
                 environment: $environment
@@ -539,6 +639,7 @@ class API:
         )
         variables = {
             "id": id,
+            "name": name,
             "metadata": metadata,
             "participantId": participant_id,
             "environment": environment,
@@ -587,146 +688,6 @@ class API:
         result = await self.make_api_call("delete thread", query, variables)
         deleted = bool(result["data"]["deleteThread"])
         return deleted
-
-    # User Session API
-
-    async def create_user_session(
-        self,
-        id: Optional[str] = None,
-        started_at: Optional[str] = None,
-        is_interactive: Optional[bool] = None,
-        ended_at: Optional[str] = None,
-        anon_participant_identifier: Optional[str] = None,
-        participant_identifier: Optional[str] = None,
-        metadata: Optional[Dict] = None,
-    ):
-        query = """
-        mutation CreateParticipantSession(
-            $id: String, 
-            $isInteractive: Boolean, 
-            $startedAt: DateTime!, 
-            $endedAt: DateTime, 
-            $anonParticipantIdentifier: String, 
-            $participantIdentifier: String, 
-            $metadata: Json, 
-        ) {
-            createParticipantSession(
-                id: $id, 
-                isInteractive: $isInteractive, 
-                startedAt: $startedAt, 
-                endedAt: $endedAt, 
-                anonParticipantIdentifier: $anonParticipantIdentifier, 
-                participantIdentifier: $participantIdentifier, 
-                metadata: $metadata, 
-            ) {
-                id
-                isInteractive
-                startedAt
-                endedAt
-                anonParticipantIdentifier
-                participantIdentifier
-                metadata
-            }
-        }
-        """
-
-        variables = {
-            "id": id,
-            "isInteractive": is_interactive,
-            "startedAt": started_at or datetime.datetime.utcnow().isoformat(),
-            "endedAt": ended_at if ended_at else None,
-            "anonParticipantIdentifier": anon_participant_identifier,
-            "participantIdentifier": participant_identifier,
-            "metadata": metadata,
-        }
-
-        participant_session = await self.make_api_call(
-            "create participant session", query, variables
-        )
-
-        return participant_session["data"]["createParticipantSession"]
-
-    async def update_user_session(
-        self,
-        id: str,
-        is_interactive: Optional[bool] = None,
-        ended_at: Optional[str] = None,
-        metadata: Optional[Dict] = None,
-    ):
-        query = """
-        mutation UpdateParticipantSession(
-            $id: String!,
-            $isInteractive: Boolean,
-            $endedAt: DateTime,
-            $metadata: Json,
-        ) {
-            updateParticipantSession(
-                id: $id,
-                isInteractive: $isInteractive,
-                endedAt: $endedAt,
-                metadata: $metadata,
-            ) {
-                id
-                isInteractive
-                endedAt
-                metadata
-            }
-        }
-        """
-        variables = {
-            "id": id,
-            "isInteractive": is_interactive,
-            "endedAt": ended_at,
-            "metadata": metadata,
-        }
-
-        # remove None values to prevent the API from removing existing values
-        variables = {k: v for k, v in variables.items() if v is not None}
-
-        session = await self.make_api_call(
-            "update participant session", query, variables
-        )
-
-        return session["data"]["updateParticipantSession"]
-
-    async def get_user_session(self, id: str) -> Optional[Dict]:
-        query = """
-        query GetParticipantSession($id: String!) {
-            participantSession(id: $id) {
-                id
-                isInteractive
-                startedAt
-                endedAt
-                anonParticipantIdentifier
-                participantIdentifier
-                metadata
-            }
-        }"""
-
-        variables = {"id": id}
-
-        result = await self.make_api_call("get user session", query, variables)
-
-        user_session = result["data"]["participantSession"]
-
-        return user_session
-
-    async def delete_user_session(self, id: str) -> str:
-        query = """
-        mutation DeleteParticipantSession($id: String!) {
-            deleteParticipantSession(id: $id) {
-                id
-            }
-        }
-        """
-
-        variables = {"id": id}
-
-        result = await self.make_api_call(
-            "delete participant session", query, variables
-        )
-
-        return result["data"]["deleteParticipantSession"]["id"]
 
     # Feedback API
 
@@ -994,7 +955,7 @@ class API:
 
     async def create_step(
         self,
-        thread_id: str,
+        thread_id: Optional[str] = None,
         type: Optional[StepType] = "undefined",
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
@@ -1008,12 +969,12 @@ class API:
         query = (
             """
         mutation CreateStep(
-            $threadId: String!,
+            $threadId: String,
             $type: StepType,
             $startTime: DateTime,
             $endTime: DateTime,
-            $input: String,
-            $output: String,
+            $input: Json,
+            $output: Json,
             $metadata: Json,
             $parentId: String,
             $name: String,
@@ -1072,8 +1033,8 @@ class API:
         mutation UpdateStep(
             $id: String!,
             $type: StepType,
-            $input: String,
-            $output: String,
+            $input: Json,
+            $output: Json,
             $metadata: Json,
             $name: String,
             $startTime: DateTime,

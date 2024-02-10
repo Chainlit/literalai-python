@@ -55,58 +55,6 @@ class Teste2e:
         deleted_user = await client.api.get_user(id=user.id)
         assert deleted_user is None
 
-    async def test_user_session(self, client: LiteralClient):
-        user_identifier = f"test_user_{secrets.token_hex()}"
-        await client.api.create_user(identifier=user_identifier)
-
-        user_session = await client.api.create_user_session(
-            participant_identifier=user_identifier,
-        )
-
-        anon_user_session = await client.api.create_user_session(
-            anon_participant_identifier="foobar",
-        )
-
-        assert user_session["startedAt"] is not None
-        assert user_session["endedAt"] is None
-
-        assert anon_user_session["startedAt"] is not None
-        assert anon_user_session["endedAt"] is None
-
-        ended_at = datetime.datetime.utcnow().isoformat()
-
-        updated_user_session = await client.api.update_user_session(
-            id=user_session["id"], is_interactive=True, ended_at=ended_at
-        )
-        updated_anon_user_session = await client.api.update_user_session(
-            id=anon_user_session["id"], ended_at=ended_at
-        )
-
-        assert updated_user_session["endedAt"] is not None
-        assert updated_user_session["isInteractive"] is True
-
-        assert updated_anon_user_session["endedAt"] is not None
-        assert updated_anon_user_session["isInteractive"] is False
-
-        fetched_user_session = await client.api.get_user_session(id=user_session["id"])
-        fetched_anon_user_session = await client.api.get_user_session(
-            id=anon_user_session["id"]
-        )
-
-        assert fetched_user_session and fetched_user_session["id"] is not None
-        assert fetched_anon_user_session and fetched_anon_user_session["id"] is not None
-
-        await client.api.delete_user_session(id=user_session["id"])
-        await client.api.delete_user_session(id=anon_user_session["id"])
-
-        deleted_user_session = await client.api.get_user_session(id=user_session["id"])
-        deleted_anon_user_session = await client.api.get_user_session(
-            id=anon_user_session["id"]
-        )
-
-        assert deleted_user_session is None
-        assert deleted_anon_user_session is None
-
     async def test_thread(self, client: LiteralClient):
         """
         Warning: it does not test the list thread pagination
@@ -158,6 +106,8 @@ class Teste2e:
     async def test_thread_export(self, client: LiteralClient):
         thread = await client.api.create_thread(metadata={"foo": "bar"}, tags=["hello"])
         assert thread.id is not None
+
+        await asyncio.sleep(1)
 
         filters = ThreadFilter(
             createdAt=DateTimeFilter(
@@ -243,11 +193,7 @@ class Teste2e:
     @pytest.mark.timeout(5)
     async def test_thread_decorator(self, client: LiteralClient):
         async def assert_delete(thread_id: str):
-            while True:
-                thread = await client.api.get_thread(thread_id)
-                if thread is not None:
-                    break
-                await asyncio.sleep(1)
+            await asyncio.sleep(1)
             assert await client.api.delete_thread(thread_id) is True
 
         @client.thread(tags=["foo"], metadata={"async": "False"})
@@ -261,12 +207,13 @@ class Teste2e:
         id = thread_decorated()
         await assert_delete(id)
 
-        @client.thread(tags=["foo"], metadata={"async": True})
+        @client.thread(tags=["foo"], name="test", metadata={"async": True})
         async def a_thread_decorated():
             t = client.get_current_thread()
             assert t is not None
             assert t.tags == ["foo"]
             assert t.metadata == {"async": True}
+            assert t.name == "test"
             return t.id
 
         id = await a_thread_decorated()
@@ -275,18 +222,8 @@ class Teste2e:
     @pytest.mark.timeout(5)
     async def test_step_decorator(self, client: LiteralClient):
         async def assert_delete(thread_id: str, step_id: str):
-            while True:
-                step = await client.api.get_step(step_id)
-                if step is not None:
-                    break
-                await asyncio.sleep(1)
+            await asyncio.sleep(1)
             assert await client.api.delete_step(step_id) is True
-
-            while True:
-                thread = await client.api.get_thread(thread_id)
-                if thread is not None:
-                    break
-                await asyncio.sleep(1)
             assert await client.api.delete_thread(thread_id) is True
 
         @client.thread
@@ -320,6 +257,25 @@ class Teste2e:
 
         thread_id, step_id = await a_thread_decorated()
         await assert_delete(thread_id, step_id)
+
+    @pytest.mark.timeout(5)
+    async def test_run_decorator(self, client: LiteralClient):
+        async def assert_delete(step_id: str):
+            await asyncio.sleep(1)
+            step = await client.api.get_step(step_id)
+            assert step and step.output is not None
+            assert await client.api.delete_step(step_id) is True
+
+        @client.run(name="foo")
+        def step_decorated():
+            s = client.get_current_step()
+            assert s is not None
+            assert s.name == "foo"
+            assert s.type == "run"
+            return s.id
+
+        step_id = step_decorated()
+        await assert_delete(step_id)
 
     async def test_parallel_requests(self, client: LiteralClient):
         ids = []

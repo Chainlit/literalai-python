@@ -1,6 +1,6 @@
-import json
+import time
 from importlib.metadata import version
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypedDict, Union
 
 from literalai.context import active_steps_var, active_thread_var
 from literalai.my_types import ChatGeneration, CompletionGeneration, GenerationMessage
@@ -13,32 +13,15 @@ if TYPE_CHECKING:
     from literalai.step import TrueStepType
 
 
-def stringify_function_call(function_call):
-    if isinstance(function_call, dict):
-        _function_call = function_call.copy()
-    else:
-        _function_call = {
-            "arguments": function_call.arguments,
-            "name": function_call.name,
-        }
-
-    if "arguments" in _function_call and isinstance(_function_call["arguments"], str):
-        _function_call["arguments"] = json.loads(_function_call["arguments"])
-    return json.dumps(_function_call, indent=4, ensure_ascii=False)
-
-
-def process_content(content: Any) -> Tuple[str, Optional[str]]:
+def process_content(content: Any) -> Tuple[Dict, Optional[str]]:
     if content is None:
-        return "", None
+        return {}, None
     if isinstance(content, dict):
-        try:
-            return json.dumps(content, indent=4, ensure_ascii=False), "json"
-        except TypeError:
-            return str(content), "text"
+        return content, "json"
     elif isinstance(content, str):
-        return content, "text"
+        return {"content": content}, "text"
     else:
-        return str(content), "text"
+        return {"content": str(content)}, "text"
 
 
 def get_langchain_callback():
@@ -53,16 +36,47 @@ def get_langchain_callback():
     from langchain.callbacks.tracers.base import BaseTracer
     from langchain.callbacks.tracers.schemas import Run
     from langchain.schema import BaseMessage
+    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+
+    class ChatGenerationStart(TypedDict):
+        input_messages: List[BaseMessage]
+        start: float
+        token_count: int
+        tt_first_token: Optional[float]
+
+    class CompletionGenerationStart(TypedDict):
+        prompt: str
+        start: float
+        token_count: int
+        tt_first_token: Optional[float]
 
     class GenerationHelper:
-        generation_sequence: List[Union[ChatGeneration, CompletionGeneration]]
+        chat_generations: Dict[str, ChatGenerationStart]
+        completion_generations: Dict[str, CompletionGenerationStart]
+        generation_inputs: Dict[str, Dict]
 
         def __init__(self) -> None:
-            self.generation_sequence = []
+            self.chat_generations = {}
+            self.completion_generations = {}
+            self.generation_inputs = {}
 
-        @property
-        def current_generation(self):
-            return self.generation_sequence[-1] if self.generation_sequence else None
+        def ensure_values_serializable(self, data):
+            """
+            Recursively ensures that all values in the input (dict or list) are JSON serializable.
+            """
+            if isinstance(data, dict):
+                return {
+                    key: self.ensure_values_serializable(value)
+                    for key, value in data.items()
+                }
+            elif isinstance(data, list):
+                return [self.ensure_values_serializable(item) for item in data]
+            elif isinstance(data, (str, int, float, bool, type(None))):
+                return data
+            elif isinstance(data, (tuple, set)):
+                return list(data)  # Convert tuples and sets to lists
+            else:
+                return str(data)  # Fallback: convert other types to string
 
         def _convert_message_role(self, role: str):
             if "human" in role.lower():
@@ -71,233 +85,53 @@ def get_langchain_callback():
                 return "system"
             elif "function" in role.lower():
                 return "function"
+            elif "tool" in role.lower():
+                return "tool"
             else:
                 return "assistant"
 
         def _convert_message_dict(
             self,
             message: Dict,
-            template: Optional[str] = None,
-            template_format: str = "f-string",
         ):
             class_name = message["id"][-1]
             kwargs = message.get("kwargs", {})
             function_call = kwargs.get("additional_kwargs", {}).get("function_call")
-            if function_call:
-                content = stringify_function_call(function_call)
-            else:
-                content = kwargs.get("content", "")
-            return GenerationMessage(
+
+            msg = GenerationMessage(
                 name=kwargs.get("name"),
                 role=self._convert_message_role(class_name),
-                template=template,
-                template_format=template_format,
-                formatted=content,
+                content="",
             )
+
+            if function_call:
+                msg["function_call"] = function_call
+            else:
+                msg["content"] = kwargs.get("content", "")
+
+            return msg
 
         def _convert_message(
             self,
             message: Union[Dict, BaseMessage],
-            template: Optional[str] = None,
-            template_format: str = "f-string",
         ):
             if isinstance(message, dict):
                 return self._convert_message_dict(
                     message,
                 )
             function_call = message.additional_kwargs.get("function_call")
-            if function_call:
-                content = stringify_function_call(function_call)
-            else:
-                content = message.content
-            return GenerationMessage(
+            msg = GenerationMessage(
                 name=getattr(message, "name", None),
                 role=self._convert_message_role(message.type),
-                template=template,
-                template_format=template_format,
-                formatted=content,
+                content="",
             )
 
-        def _get_messages(self, serialized: Dict):
-            # In LCEL prompts messages are not at the same place
-            lcel_messages = serialized.get("kwargs", {}).get(
-                "messages", []
-            )  # type: List[Dict]
-            if lcel_messages:
-                return lcel_messages
+            if function_call:
+                msg["function_call"] = function_call
             else:
-                # For chains
-                prompt_params = (
-                    serialized.get("kwargs", {}).get("prompt", {}).get("kwargs", {})
-                )
-                chain_messages = prompt_params.get("messages", [])  # type: List[Dict]
+                msg["content"] = message.content  # type: ignore
 
-                return chain_messages
-
-        def _build_generation(self, serialized: Dict, inputs: Dict):
-            messages = self._get_messages(serialized)
-            if messages:
-                # If prompt is chat, the formatted values will be added in on_chat_model_start
-                self._build_chat_template_generation(messages, inputs)
-            else:
-                # For completion prompt everything is done here
-                self._build_completion_generation(serialized, inputs)
-
-        def _build_completion_generation(self, serialized: Dict, inputs: Dict):
-            if not serialized:
-                return
-            kwargs = serialized.get("kwargs", {})
-            template = kwargs.get("template")
-            template_format = kwargs.get("template_format")
-            stringified_inputs = {k: str(v) for (k, v) in inputs.items()}
-
-            if not template:
-                return
-
-            self.generation_sequence.append(
-                CompletionGeneration(
-                    template=template,
-                    template_format=template_format,
-                    inputs=stringified_inputs,
-                )
-            )
-
-        def _build_default_generation(
-            self,
-            run: Run,
-            generation_type: str,
-            provider: str,
-            llm_settings: Dict,
-            completion: str,
-        ):
-            """Build a prompt once an LLM has been executed if no current prompt exists (without template)"""
-            if "chat" in generation_type.lower():
-                return ChatGeneration(
-                    provider=provider,
-                    settings=llm_settings,
-                    completion=completion,
-                    messages=[
-                        GenerationMessage(
-                            formatted=formatted_prompt,
-                            role=self._convert_message_role(
-                                formatted_prompt.split(":")[0]
-                            ),
-                        )
-                        for formatted_prompt in run.inputs.get("prompts", [])
-                    ],
-                )
-            else:
-                return CompletionGeneration(
-                    provider=provider,
-                    settings=llm_settings,
-                    completion=completion,
-                    formatted=run.inputs.get("prompts", [])[0],
-                )
-
-        def _build_chat_template_generation(
-            self, lc_messages: List[Dict], inputs: Dict
-        ):
-            def build_template_messages() -> List[GenerationMessage]:
-                template_messages = []  # type: List[GenerationMessage]
-
-                if not lc_messages:
-                    return template_messages
-
-                for lc_message in lc_messages:
-                    message_kwargs = lc_message.get("kwargs", {})
-                    class_name = lc_message["id"][-1]  # type: str
-                    prompt = message_kwargs.get("prompt", {})
-                    prompt_kwargs = prompt.get("kwargs", {})
-                    template = prompt_kwargs.get("template")
-                    template_format = prompt_kwargs.get("template_format")
-
-                    if "placeholder" in class_name.lower():
-                        variable_name = lc_message.get(
-                            "variable_name"
-                        ) or message_kwargs.get(
-                            "variable_name"
-                        )  # type: Optional[str]
-                        variable = inputs.get(variable_name, [])
-                        placeholder_size = len(variable)
-
-                        if placeholder_size:
-                            template_messages += [
-                                GenerationMessage(placeholder_size=placeholder_size)
-                            ]
-                    else:
-                        template_messages += [
-                            GenerationMessage(
-                                template=template,
-                                template_format=template_format,
-                                role=self._convert_message_role(class_name),
-                            )
-                        ]
-                return template_messages
-
-            template_messages = build_template_messages()
-
-            if not template_messages:
-                return
-
-            stringified_inputs = {k: str(v) for (k, v) in inputs.items()}
-            self.generation_sequence.append(
-                ChatGeneration(messages=template_messages, inputs=stringified_inputs)
-            )
-
-        def _build_chat_formatted_generation(
-            self, lc_messages: Union[List[BaseMessage], List[dict]]
-        ):
-            if not self.current_generation:
-                return
-
-            formatted_messages = []  # type: List[GenerationMessage]
-            if self.current_generation.messages:
-                # This is needed to compute the correct message index to read
-                placeholder_offset = 0
-                # The final list of messages
-                formatted_messages = []
-                # Looping the messages built in build_prompt
-                # They only contain the template
-                for template_index, template_message in enumerate(
-                    self.current_generation.messages
-                ):
-                    # If a message has a placeholder size, we need to replace it
-                    # With the N following messages, where N is the placeholder size
-                    if template_message.placeholder_size:
-                        for _ in range(template_message.placeholder_size):
-                            lc_message = lc_messages[
-                                template_index + placeholder_offset
-                            ]
-                            formatted_messages += [self._convert_message(lc_message)]
-                            # Increment the placeholder offset
-                            placeholder_offset += 1
-                        # Finally, decrement the placeholder offset by one
-                        # Because the message representing the placeholder is now consumed
-                        placeholder_offset -= 1
-                    # The current message is not a placeholder
-                    else:
-                        lc_message = lc_messages[template_index + placeholder_offset]
-                        # Update the role and formatted value, keep the template
-                        formatted_messages += [
-                            self._convert_message(
-                                lc_message,
-                                template=template_message.template,
-                                template_format=template_message.template_format,
-                            )
-                        ]
-                # If the chat llm has more message than the initial chain prompt, append them
-                # Typically happens with function agents
-                if len(lc_messages) > len(formatted_messages):
-                    formatted_messages += [
-                        self._convert_message(m)
-                        for m in lc_messages[len(formatted_messages) :]
-                    ]
-            else:
-                formatted_messages = [
-                    self._convert_message(lc_message) for lc_message in lc_messages
-                ]
-
-            self.current_generation.messages = formatted_messages
+            return msg
 
         def _build_llm_settings(
             self,
@@ -323,8 +157,16 @@ def get_langchain_callback():
 
             # make sure there is no api key specification
             settings = {k: v for k, v in merged.items() if not k.endswith("_api_key")}
-
-            return provider, settings
+            model_keys = ["model", "model_name", "deployment", "deployment_name"]
+            model = next((settings[k] for k in model_keys if k in settings), None)
+            tools = None
+            if "functions" in settings:
+                tools = [
+                    {"type": "function", "function": f} for f in settings["functions"]
+                ]
+            if "tools" in settings:
+                tools = settings["tools"]
+            return provider, model, tools, settings
 
     DEFAULT_TO_IGNORE = ["RunnableSequence", "RunnableParallel", "<lambda>"]
     DEFAULT_TO_KEEP = ["retriever", "llm", "agent", "chain", "tool"]
@@ -346,6 +188,7 @@ def get_langchain_callback():
         ) -> None:
             BaseTracer.__init__(self, **kwargs)
             GenerationHelper.__init__(self)
+
             self.client = client
             self.steps = {}
             self.parent_id_map = {}
@@ -353,11 +196,6 @@ def get_langchain_callback():
 
             self.step_context = active_steps_var.get()
             self.thread_context = active_thread_var.get()
-
-            if self.thread_context is None:
-                raise Exception(
-                    "No thread context found, please use the thread decorator"
-                )
 
             if to_ignore is None:
                 self.to_ignore = DEFAULT_TO_IGNORE
@@ -368,6 +206,88 @@ def get_langchain_callback():
                 self.to_keep = DEFAULT_TO_KEEP
             else:
                 self.to_keep = to_keep
+
+        def on_chat_model_start(
+            self,
+            serialized: Dict[str, Any],
+            messages: List[List[BaseMessage]],
+            *,
+            run_id: "UUID",
+            parent_run_id: Optional["UUID"] = None,
+            tags: Optional[List[str]] = None,
+            metadata: Optional[Dict[str, Any]] = None,
+            **kwargs: Any,
+        ) -> Any:
+            lc_messages = messages[0]
+            self.chat_generations[str(run_id)] = {
+                "input_messages": lc_messages,
+                "start": time.time(),
+                "token_count": 0,
+                "tt_first_token": None,
+            }
+
+            return super().on_chat_model_start(
+                serialized,
+                messages,
+                run_id=run_id,
+                parent_run_id=parent_run_id,
+                tags=tags,
+                metadata=metadata,
+                **kwargs,
+            )
+
+        def on_llm_start(
+            self,
+            serialized: Dict[str, Any],
+            prompts: List[str],
+            *,
+            run_id: "UUID",
+            tags: Optional[List[str]] = None,
+            parent_run_id: Optional["UUID"] = None,
+            metadata: Optional[Dict[str, Any]] = None,
+            name: Optional[str] = None,
+            **kwargs: Any,
+        ) -> Run:
+            self.completion_generations[str(run_id)] = {
+                "prompt": prompts[0],
+                "start": time.time(),
+                "token_count": 0,
+                "tt_first_token": None,
+            }
+            return super().on_llm_start(
+                serialized,
+                prompts,
+                run_id=run_id,
+                parent_run_id=parent_run_id,
+                tags=tags,
+                metadata=metadata,
+                name=name,
+                **kwargs,
+            )
+
+        def on_llm_new_token(
+            self,
+            token: str,
+            *,
+            chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+            run_id: "UUID",
+            parent_run_id: Optional["UUID"] = None,
+            **kwargs: Any,
+        ) -> Run:
+            if isinstance(chunk, ChatGenerationChunk):
+                start = self.chat_generations[str(run_id)]
+            else:
+                start = self.completion_generations[str(run_id)]  # type: ignore
+            start["token_count"] += 1
+            if "tt_first_token" not in start:
+                start["tt_first_token"] = (time.time() - start["start"]) * 1000
+
+            return super().on_llm_new_token(
+                token,
+                chunk=chunk,
+                run_id=run_id,
+                parent_run_id=parent_run_id,
+            )
 
         def _persist_run(self, run: Run) -> None:
             pass
@@ -417,69 +337,27 @@ def get_langchain_callback():
                     self.ignored_runs.add(str(run.id))
                 return ignore, parent_id
 
-        def _get_completion(self, generation: Dict):
-            if message := generation.get("message"):
-                kwargs = message.get("kwargs", {})
-                if function_call := kwargs.get("additional_kwargs", {}).get(
-                    "function_call"
-                ):
-                    return stringify_function_call(function_call), "json"
-                else:
-                    return kwargs.get("content", ""), None
-            else:
-                return generation.get("text", ""), None
-
-        def on_chat_model_start(
-            self,
-            serialized: Dict[str, Any],
-            messages: List[List[BaseMessage]],
-            *,
-            run_id: "UUID",
-            parent_run_id: Optional["UUID"] = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
-        ) -> Any:
-            """Adding formatted content and new message to the previously built template prompt"""
-            lc_messages = messages[0]
-            if not self.current_generation:
-                self.generation_sequence.append(
-                    ChatGeneration(
-                        messages=[self._convert_message(m) for m in lc_messages]
-                    )
-                )
-            else:
-                self._build_chat_formatted_generation(lc_messages)
-
-            super().on_chat_model_start(
-                serialized,
-                messages,
-                run_id=run_id,
-                parent_run_id=parent_run_id,
-                tags=tags,
-                metadata=metadata,
-                **kwargs,
-            )
-
         def _start_trace(self, run: Run) -> None:
             super()._start_trace(run)
 
             active_thread_var.set(self.thread_context)
             active_steps_var.set(self.step_context)
 
-            if run.run_type in ["chain", "prompt"]:
-                # Prompt templates are contained in chains or prompts (lcel)
-                self._build_generation(run.serialized or {}, run.inputs)
-
             ignore, parent_id = self._should_ignore_run(run)
+
+            if run.run_type in ["chain", "prompt"]:
+                self.generation_inputs[str(run.id)] = self.ensure_values_serializable(
+                    run.inputs
+                )
 
             if ignore:
                 return
 
             step_type: "TrueStepType" = "undefined"
-
-            if run.run_type in ["agent", "chain"]:
+            if run.run_type == "agent":
                 step_type = "run"
+            elif run.run_type == "chain":
+                pass
             elif run.run_type == "llm":
                 step_type = "llm"
             elif run.run_type == "retriever":
@@ -488,6 +366,9 @@ def get_langchain_callback():
                 step_type = "tool"
             elif run.run_type == "embedding":
                 step_type = "embedding"
+
+            if not self.steps:
+                step_type = "run"
 
             step = self.client.start_step(
                 id=str(run.id), name=run.name, type=step_type, parent_id=parent_id
@@ -510,41 +391,62 @@ def get_langchain_callback():
 
             current_step = self.steps.get(str(run.id), None)
 
-            if run.run_type in ["chain"]:
-                if self.generation_sequence:
-                    self.generation_sequence.pop()
-
-            if run.run_type == "llm":
-                provider, llm_settings = self._build_llm_settings(
+            if run.run_type == "llm" and current_step:
+                provider, model, tools, llm_settings = self._build_llm_settings(
                     (run.serialized or {}), (run.extra or {}).get("invocation_params")
                 )
+
                 generations = (run.outputs or {}).get("generations", [])
-                llm_output = (run.outputs or {}).get("llm_output")
-                completion, language = self._get_completion(generations[0][0])
-                current_generation = (
-                    self.generation_sequence.pop() if self.generation_sequence else None
-                )
-
-                if current_generation:
-                    current_generation.provider = provider
-                    current_generation.settings = llm_settings
-                    current_generation.completion = completion
-                else:
-                    generation_type = generations[0][0].get("type", "")
-                    current_generation = self._build_default_generation(
-                        run, generation_type, provider, llm_settings, completion
+                generation = generations[0][0]
+                variables = self.generation_inputs.get(str(run.parent_run_id), {})
+                if message := generation.get("message"):
+                    chat_start = self.chat_generations[str(run.id)]
+                    duration = time.time() - chat_start["start"]
+                    if duration and chat_start["token_count"]:
+                        throughput = chat_start["token_count"] / duration
+                    else:
+                        throughput = None
+                    message_completion = self._convert_message(message)
+                    current_step.generation = ChatGeneration(
+                        provider=provider,
+                        model=model,
+                        tools=tools,
+                        variables=variables,
+                        settings=llm_settings,
+                        duration=duration,
+                        token_throughput_in_s=throughput,
+                        tt_first_token=chat_start.get("tt_first_token"),
+                        messages=[
+                            self._convert_message(m)
+                            for m in chat_start["input_messages"]
+                        ],
+                        message_completion=message_completion,
                     )
-
-                if llm_output and current_generation:
-                    token_count = llm_output.get("token_usage", {}).get("total_tokens")
-                    current_generation.token_count = token_count
+                    current_step.output = message_completion
+                else:
+                    completion_start = self.completion_generations[str(run.id)]
+                    duration = time.time() - completion_start["start"]
+                    if duration and completion_start["token_count"]:
+                        throughput = completion_start["token_count"] / duration
+                    else:
+                        throughput = None
+                    completion = generation.get("text", "")
+                    current_step.generation = CompletionGeneration(
+                        provider=provider,
+                        model=model,
+                        settings=llm_settings,
+                        variables=variables,
+                        duration=duration,
+                        token_throughput_in_s=throughput,
+                        tt_first_token=completion_start.get("tt_first_token"),
+                        prompt=completion_start["prompt"],
+                        completion=completion,
+                    )
+                    current_step.output = completion
 
                 if current_step:
-                    current_step.output = completion
                     if current_step.metadata is None:
                         current_step.metadata = {}
-                    current_step.metadata["language"] = language
-                    current_step.generation = current_generation
                     current_step.end()
 
                 return
@@ -563,8 +465,7 @@ def get_langchain_callback():
             if current_step := self.steps.get(str(run_id), None):
                 if current_step.metadata is None:
                     current_step.metadata = {}
-                current_step.metadata["is_error"] = True
-                current_step.output = str(error)
+                current_step.error = str(error)
                 current_step.end()
 
         on_llm_error = _on_error

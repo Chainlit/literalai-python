@@ -1,3 +1,4 @@
+import time
 from functools import wraps
 from importlib import import_module
 from typing import TYPE_CHECKING, Callable, Optional, TypedDict
@@ -9,11 +10,13 @@ if TYPE_CHECKING:
 class BeforeContext(TypedDict):
     original_func: Callable
     step: Optional["Step"]
+    start: float
 
 
 class AfterContext(TypedDict):
     original_func: Callable
     step: Optional["Step"]
+    start: float
 
 
 def sync_wrapper(before_func=None, after_func=None):
@@ -24,9 +27,13 @@ def sync_wrapper(before_func=None, after_func=None):
             # If a before_func is provided, call it with the shared context.
             if before_func:
                 before_func(context, *args, **kwargs)
+            context["start"] = time.time()
 
-            result = original_func(*args, **kwargs)
-
+            try:
+                result = original_func(*args, **kwargs)
+            except Exception as e:
+                context["step"].generation.error = str(e)
+                raise e
             # If an after_func is provided, call it with the result and the shared context.
             if after_func:
                 result = after_func(result, context, *args, **kwargs)
@@ -47,7 +54,12 @@ def async_wrapper(before_func=None, after_func=None):
             if before_func:
                 await before_func(context, *args, **kwargs)
 
-            result = await original_func(*args, **kwargs)
+            context["start"] = time.time()
+            try:
+                result = await original_func(*args, **kwargs)
+            except Exception as e:
+                context["step"].generation.error = str(e)
+                raise e
 
             # If an after_func is provided, call it with the result and the shared context.
             if after_func:

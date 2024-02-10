@@ -1,4 +1,3 @@
-import asyncio
 import inspect
 import uuid
 from functools import wraps
@@ -16,6 +15,7 @@ if TYPE_CHECKING:
 
 class ThreadDict(TypedDict, total=False):
     id: Optional[str]
+    name: Optional[str]
     metadata: Optional[Dict]
     tags: Optional[List[str]]
     createdAt: Optional[str]
@@ -25,6 +25,7 @@ class ThreadDict(TypedDict, total=False):
 
 class Thread:
     id: str
+    name: Optional[str]
     metadata: Optional[Dict]
     tags: Optional[List[str]]
     steps: Optional[List[Step]]
@@ -36,22 +37,25 @@ class Thread:
         self,
         id: str,
         steps: Optional[List[Step]] = [],
+        name: Optional[str] = None,
         metadata: Optional[Dict] = {},
         tags: Optional[List[str]] = [],
         user: Optional["User"] = None,
     ):
         self.id = id
         self.steps = steps
+        self.name = name
         self.metadata = metadata
         self.tags = tags
         self.user = user
-        self.needs_upsert = bool(metadata or tags or user)
+        self.needs_upsert = bool(metadata or tags or user or name)
 
     def to_dict(self) -> ThreadDict:
         return {
             "id": self.id,
             "metadata": self.metadata,
             "tags": self.tags,
+            "name": self.name,
             "steps": [step.to_dict() for step in self.steps] if self.steps else [],
             "participant": self.user.to_dict() if self.user else None,
             "createdAt": getattr(self, "created_at", None),
@@ -60,6 +64,7 @@ class Thread:
     @classmethod
     def from_dict(cls, thread_dict: Dict) -> "Thread":
         id = thread_dict.get("id", "")
+        name = thread_dict.get("name", None)
         metadata = thread_dict.get("metadata", {})
         tags = thread_dict.get("tags", [])
         steps = [Step.from_dict(step) for step in thread_dict.get("steps", [])]
@@ -69,7 +74,9 @@ class Thread:
         if user:
             user = User.from_dict(user)
 
-        thread = cls(id=id, steps=steps, metadata=metadata, tags=tags, user=user)
+        thread = cls(
+            id=id, steps=steps, name=name, metadata=metadata, tags=tags, user=user
+        )
 
         thread.created_at = created_at
 
@@ -81,17 +88,20 @@ class ThreadContextManager:
         self,
         client: "LiteralClient",
         thread_id: "Optional[str]" = None,
+        name: "Optional[str]" = None,
         **kwargs,
     ):
         self.client = client
         self.thread_id = thread_id
+        self.name = name
         self.kwargs = kwargs
 
-    async def upsert(self):
+    def upsert(self):
         thread = active_thread_var.get()
         thread_data = thread.to_dict()
         thread_data_to_upsert = {
             "thread_id": thread_data["id"],
+            "name": thread_data["name"],
         }
         if metadata := thread_data.get("metadata"):
             thread_data_to_upsert["metadata"] = metadata
@@ -99,32 +109,31 @@ class ThreadContextManager:
             thread_data_to_upsert["tags"] = tags
         if user := thread_data.get("user"):
             thread_data_to_upsert["participant_id"] = user
-        await self.client.api.upsert_thread(**thread_data_to_upsert)
+        self.client.api.upsert_thread_sync(**thread_data_to_upsert)
 
     def __call__(self, func):
-        return thread_decorator(self.client, func=func, ctx_manager=self)
+        return thread_decorator(
+            self.client, func=func, name=self.name, ctx_manager=self
+        )
 
     def __enter__(self) -> "Optional[Thread]":
         thread_id = self.thread_id if self.thread_id else str(uuid.uuid4())
-        active_thread_var.set(Thread(id=thread_id, **self.kwargs))
+        active_thread_var.set(Thread(id=thread_id, name=self.name, **self.kwargs))
         return active_thread_var.get()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if (thread := active_thread_var.get()) and thread.needs_upsert:
-            if asyncio.get_event_loop().is_running():
-                asyncio.create_task(self.upsert())
-            else:
-                asyncio.run(self.upsert())
+            self.upsert()
         active_thread_var.set(None)
 
     async def __aenter__(self):
         thread_id = self.thread_id if self.thread_id else str(uuid.uuid4())
-        active_thread_var.set(Thread(id=thread_id, **self.kwargs))
+        active_thread_var.set(Thread(id=thread_id, name=self.name, **self.kwargs))
         return active_thread_var.get()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if (thread := active_thread_var.get()) and thread.needs_upsert:
-            await self.upsert()
+            self.upsert()
         active_thread_var.set(None)
 
 
@@ -132,12 +141,13 @@ def thread_decorator(
     client: "LiteralClient",
     func: Callable,
     thread_id: Optional[str] = None,
+    name: Optional[str] = None,
     ctx_manager: Optional[ThreadContextManager] = None,
     **decorator_kwargs,
 ):
     if not ctx_manager:
         ctx_manager = ThreadContextManager(
-            client, thread_id=thread_id, **decorator_kwargs
+            client, thread_id=thread_id, name=name, **decorator_kwargs
         )
     if inspect.iscoroutinefunction(func):
 

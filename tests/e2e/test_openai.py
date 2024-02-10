@@ -96,8 +96,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = main().id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None
@@ -109,7 +108,7 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == ChatGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
 
     async def test_completion(self, client: "LiteralClient", httpx_mock: "HTTPXMock"):
         # https://platform.openai.com/docs/api-reference/completions/object
@@ -153,8 +152,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = main().id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None
@@ -166,10 +164,10 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == CompletionGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
         assert step.generation.completion == "\n\nThis is indeed a test"
         assert step.generation.token_count == 12
-        assert step.generation.formatted == "Tell me a funny joke."
+        assert step.generation.prompt == "Tell me a funny joke."
 
     async def test_async_chat(self, client: "LiteralClient", httpx_mock: "HTTPXMock"):
         # https://platform.openai.com/docs/api-reference/chat/object
@@ -222,8 +220,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = (await main()).id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None
@@ -235,7 +232,7 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == ChatGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
 
     async def test_async_completion(
         self, client: "LiteralClient", httpx_mock: "HTTPXMock"
@@ -281,8 +278,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = (await main()).id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None
@@ -294,10 +290,10 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == CompletionGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
         assert step.generation.completion == "\n\nThis is indeed a test"
         assert step.generation.token_count == 12
-        assert step.generation.formatted == "Tell me a funny joke."
+        assert step.generation.prompt == "Tell me a funny joke."
 
     async def test_azure_completion(
         self, client: "LiteralClient", httpx_mock: "HTTPXMock"
@@ -347,8 +343,7 @@ class TestOpenAI:
             return client.get_current_thread()
 
         thread_id = main().id
-        await wait_until_queue_empty(client)
-
+        await sleep(2)
         thread = await client.api.get_thread(id=thread_id)
         assert thread is not None
         assert thread.steps is not None
@@ -360,7 +355,7 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == CompletionGeneration
         assert step.generation.settings is not None
-        assert step.generation.settings.get("model") == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo"
         assert step.generation.completion == "\n\nThis is indeed a test"
         assert step.generation.token_count == 12
-        assert step.generation.formatted == "Tell me a funny joke."
+        assert step.generation.prompt == "Tell me a funny joke."
