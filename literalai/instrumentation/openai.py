@@ -107,7 +107,7 @@ def instrument_openai(client: "LiteralClient"):
                 messages=messages,
             )
             if messages:
-                step.input = json.dumps(messages)
+                step.input = {"content": messages}
 
         elif generation_type == GenerationType.COMPLETION:
             settings = {
@@ -128,7 +128,7 @@ def instrument_openai(client: "LiteralClient"):
                 "top_p": kwargs.get("top_p"),
             }
             settings = {k: v for k, v in settings.items() if v is not None}
-            step.input = kwargs.get("prompt")
+            step.input = {"content": kwargs.get("prompt")}
             step.generation = CompletionGeneration(
                 provider="openai",
                 model=model,
@@ -138,10 +138,10 @@ def instrument_openai(client: "LiteralClient"):
 
     def update_step_after(step: "Step", result):
         if step.generation and isinstance(step.generation, ChatGeneration):
-            step.output = result.choices[0].message.content
+            step.output = result.choices[0].message.model_dump()
             step.generation.message_completion = result.choices[0].message.model_dump()
         elif step.generation and isinstance(step.generation, CompletionGeneration):
-            step.output = result.choices[0].text
+            step.output = {"content": result.choices[0].text}
             if step.generation and step.generation.type == GenerationType.COMPLETION:
                 step.generation.completion = result.choices[0].text
 
@@ -289,11 +289,12 @@ def instrument_openai(client: "LiteralClient"):
                     token_count / step.generation.duration
                 )
             if isinstance(step.generation, ChatGeneration):
-                step.output = json.dumps(message_completion)
+                step.output = message_completion  # type: ignore
                 step.generation.message_completion = message_completion
             else:
-                step.output = completion
+                step.output = {"content": completion}
                 step.generation.completion = completion
+
         step.end()
 
     def after_wrapper(metadata: Dict):
@@ -355,10 +356,10 @@ def instrument_openai(client: "LiteralClient"):
                     token_count / step.generation.duration
                 )
             if isinstance(step.generation, ChatGeneration):
-                step.output = json.dumps(message_completion)
+                step.output = message_completion  # type: ignore
                 step.generation.message_completion = message_completion
             else:
-                step.output = completion
+                step.output = {"content": completion}
                 step.generation.completion = completion
         step.end()
 

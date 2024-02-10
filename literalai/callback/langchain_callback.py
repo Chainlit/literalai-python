@@ -1,4 +1,3 @@
-import json
 import time
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypedDict, Union
@@ -14,18 +13,15 @@ if TYPE_CHECKING:
     from literalai.step import TrueStepType
 
 
-def process_content(content: Any) -> Tuple[str, Optional[str]]:
+def process_content(content: Any) -> Tuple[Dict, Optional[str]]:
     if content is None:
-        return "", None
+        return {}, None
     if isinstance(content, dict):
-        try:
-            return json.dumps(content, indent=4, ensure_ascii=False), "json"
-        except TypeError:
-            return str(content), "text"
+        return content, "json"
     elif isinstance(content, str):
-        return content, "text"
+        return {"content": content}, "text"
     else:
-        return str(content), "text"
+        return {"content": str(content)}, "text"
 
 
 def get_langchain_callback():
@@ -200,11 +196,6 @@ def get_langchain_callback():
 
             self.step_context = active_steps_var.get()
             self.thread_context = active_thread_var.get()
-
-            if self.thread_context is None:
-                raise Exception(
-                    "No thread context found, please use the thread decorator"
-                )
 
             if to_ignore is None:
                 self.to_ignore = DEFAULT_TO_IGNORE
@@ -431,9 +422,14 @@ def get_langchain_callback():
                         ],
                         message_completion=message_completion,
                     )
-                    current_step.output = json.dumps(message_completion)
+                    current_step.output = message_completion
                 else:
                     completion_start = self.completion_generations[str(run.id)]
+                    duration = time.time() - completion_start["start"]
+                    if duration and completion_start["token_count"]:
+                        throughput = completion_start["token_count"] / duration
+                    else:
+                        throughput = None
                     completion = generation.get("text", "")
                     current_step.generation = CompletionGeneration(
                         provider=provider,
@@ -469,8 +465,7 @@ def get_langchain_callback():
             if current_step := self.steps.get(str(run_id), None):
                 if current_step.metadata is None:
                     current_step.metadata = {}
-                current_step.metadata["is_error"] = True
-                current_step.output = str(error)
+                current_step.error = str(error)
                 current_step.end()
 
         on_llm_error = _on_error

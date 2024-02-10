@@ -97,7 +97,9 @@ class Message:
             "endTime": self.timestamp,  # startTime = endTime in Message
             "type": self.type,
             "threadId": self.thread_id,
-            "output": self.content,  # no input, output = content in Message
+            "output": {
+                "content": self.content
+            },  # no input, output = content in Message
             "name": self.name,
             "tags": self.tags,
             "feedback": self.feedback.to_dict() if self.feedback else None,

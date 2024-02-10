@@ -12,7 +12,7 @@ client = LiteralClient()
 chat_model = ChatOpenAI()
 
 
-@client.thread
+@client.thread(name="main")
 async def main():
     text = "What would be a good company name for a company that makes colorful socks?"
     messages = [HumanMessage(content=text)]
@@ -29,31 +29,8 @@ async def main():
         ).content
     )
 
-    print(
-        chat_model.batch(
-            [messages], config={"callbacks": [client.langchain_callback()]}
-        )
-    )
-
-    print(
-        await chat_model.abatch(
-            [messages], config={"callbacks": [client.langchain_callback()]}
-        )
-    )
-
-    for chunk in chat_model.stream(
-        messages, config={"callbacks": [client.langchain_callback()]}
-    ):
-        print(chunk.content, end="", flush=True)
-    print("")
-
-    async for chunk in chat_model.astream(
-        messages, config={"callbacks": [client.langchain_callback()]}
-    ):
-        print(chunk.content, end="", flush=True)
-    print("")
-
 
 asyncio.run(main())
 client.wait_until_queue_empty()
+
 print("Done")

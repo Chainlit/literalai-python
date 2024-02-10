@@ -55,14 +55,19 @@ class LiteralClient:
         )
 
     def thread(
-        self, original_function=None, *, thread_id: Optional[str] = None, **kwargs
+        self,
+        original_function=None,
+        *,
+        thread_id: Optional[str] = None,
+        name: Optional[str] = None,
+        **kwargs,
     ):
         if original_function:
             return thread_decorator(
-                self, func=original_function, thread_id=thread_id, **kwargs
+                self, func=original_function, thread_id=thread_id, name=name, **kwargs
             )
         else:
-            return ThreadContextManager(self, thread_id=thread_id, **kwargs)
+            return ThreadContextManager(self, thread_id=thread_id, name=name, **kwargs)
 
     def step(
         self,
@@ -93,6 +98,24 @@ class LiteralClient:
                 parent_id=parent_id,
                 thread_id=thread_id,
             )
+
+    def run(
+        self,
+        original_function=None,
+        *,
+        name: str = "",
+        id: Optional[str] = None,
+        parent_id: Optional[str] = None,
+        thread_id: Optional[str] = None,
+    ):
+        return self.step(
+            original_function=original_function,
+            name=name,
+            type="run",
+            id=id,
+            parent_id=parent_id,
+            thread_id=thread_id,
+        )
 
     def message(
         self,
