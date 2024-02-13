@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Optional
 
 from literalai.requirements import check_all_requirements
 
@@ -140,6 +140,8 @@ def instrument_openai(client: "LiteralClient"):
         if step.generation and isinstance(step.generation, ChatGeneration):
             step.output = result.choices[0].message.model_dump()
             step.generation.message_completion = result.choices[0].message.model_dump()
+            json_load_args(step.generation.message_completion)
+
         elif step.generation and isinstance(step.generation, CompletionGeneration):
             step.output = {"content": result.choices[0].text}
             if step.generation and step.generation.type == GenerationType.COMPLETION:
@@ -229,7 +231,9 @@ def instrument_openai(client: "LiteralClient"):
         else:
             return False
 
-    def json_load_args(message: GenerationMessage):
+    def json_load_args(message: Optional[GenerationMessage] = None):
+        if not message:
+            return
         if message["function_call"]:
             try:
                 message["function_call"]["arguments"] = json.loads(
