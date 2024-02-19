@@ -123,12 +123,16 @@ def variables_builder(steps: List[Union[StepDict, "Step"]]):
     for i in range(len(steps)):
         step = steps[i]
         if isinstance(step, Step):
-            step.input = ensure_values_serializable(step.input)
-            step.output = ensure_values_serializable(step.output)
+            if step.input:
+                step.input = ensure_values_serializable(step.input)
+            if step.output:
+                step.output = ensure_values_serializable(step.output)
             variables.update(serialize_step(step.to_dict(), i))
         else:
-            step["input"] = ensure_values_serializable(step["input"])
-            step["output"] = ensure_values_serializable(step["output"])
+            if step.get("input"):
+                step["input"] = ensure_values_serializable(step["input"])
+            if step.get("output"):
+                step["output"] = ensure_values_serializable(step["output"])
             variables.update(serialize_step(step, i))
     return variables
 

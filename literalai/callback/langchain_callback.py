@@ -262,7 +262,7 @@ def get_langchain_callback():
             else:
                 start = self.completion_generations[str(run_id)]  # type: ignore
             start["token_count"] += 1
-            if "tt_first_token" not in start:
+            if start["tt_first_token"] is None:
                 start["tt_first_token"] = (time.time() - start["start"]) * 1000
 
             return super().on_llm_new_token(
