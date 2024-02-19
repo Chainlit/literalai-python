@@ -1,7 +1,6 @@
-import json
 import logging
 import time
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 from literalai.requirements import check_all_requirements
 
@@ -140,7 +139,6 @@ def instrument_openai(client: "LiteralClient"):
         if step.generation and isinstance(step.generation, ChatGeneration):
             step.output = result.choices[0].message.model_dump()
             step.generation.message_completion = result.choices[0].message.model_dump()
-            json_load_args(step.generation.message_completion)
 
         elif step.generation and isinstance(step.generation, CompletionGeneration):
             step.output = {"content": result.choices[0].text}
@@ -226,26 +224,6 @@ def instrument_openai(client: "LiteralClient"):
         else:
             return False
 
-    def json_load_args(message: Optional[GenerationMessage] = None):
-        if not message:
-            return
-        if message["function_call"]:
-            try:
-                message["function_call"]["arguments"] = json.loads(
-                    message["function_call"]["arguments"]
-                )
-            except json.JSONDecodeError:
-                pass
-
-        if message["tool_calls"]:
-            try:
-                for tool_call in message["tool_calls"]:
-                    tool_call["function"]["arguments"] = json.loads(
-                        tool_call["function"]["arguments"]
-                    )
-            except json.JSONDecodeError:
-                pass
-
     def streaming_response(step: "Step", result, context: AfterContext):
         completion = ""
         message_completion = {
@@ -275,8 +253,6 @@ def instrument_openai(client: "LiteralClient"):
                     token_count += 1
                     completion += chunk.choices[0].text
                 yield chunk
-
-        json_load_args(message_completion)
 
         if step.generation:
             step.generation.duration = time.time() - context["start"]
@@ -339,8 +315,6 @@ def instrument_openai(client: "LiteralClient"):
                     token_count += 1
                     completion += chunk.choices[0].text
                 yield chunk
-
-        json_load_args(message_completion)
 
         if step.generation:
             step.generation.duration = time.time() - context["start"]
