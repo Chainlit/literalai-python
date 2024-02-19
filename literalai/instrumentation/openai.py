@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from literalai.client import LiteralClient
     from literalai.step import Step
 
-from literalai.context import active_thread_var
+from literalai.helper import ensure_values_serializable
 from literalai.my_types import (
     ChatGeneration,
     CompletionGeneration,
@@ -80,7 +80,7 @@ def instrument_openai(client: "LiteralClient"):
         tools = kwargs.get("tools")
         step.name = model or "openai"
         if generation_type == GenerationType.CHAT:
-            messages = kwargs.get("messages")
+            messages = ensure_values_serializable(kwargs.get("messages"))
             settings = {
                 "model": model,
                 "frequency_penalty": kwargs.get("frequency_penalty"),
@@ -154,8 +154,6 @@ def instrument_openai(client: "LiteralClient"):
 
     def before_wrapper(metadata: Dict):
         def before(context: BeforeContext, *args, **kwargs):
-            if not active_thread_var.get():
-                return
             step = client.start_step(name=context["original_func"].__name__, type="llm")
 
             generation_type = metadata["type"]
@@ -169,9 +167,6 @@ def instrument_openai(client: "LiteralClient"):
 
     def async_before_wrapper(metadata: Dict):
         async def before(context: BeforeContext, *args, **kwargs):
-            if not active_thread_var.get():
-                return
-
             step = client.start_step(name=context["original_func"].__name__, type="llm")
 
             generation_type = metadata["type"]
@@ -256,9 +251,6 @@ def instrument_openai(client: "LiteralClient"):
         message_completion = {
             "role": "assistant",
             "content": "",
-            "name": None,
-            "function_call": None,
-            "tool_calls": None,
         }  # type: GenerationMessage
         token_count = 0
         for chunk in result:
@@ -324,9 +316,6 @@ def instrument_openai(client: "LiteralClient"):
         message_completion = {
             "role": "assistant",
             "content": "",
-            "name": None,
-            "function_call": None,
-            "tool_calls": None,
         }  # type: GenerationMessage
         token_count = 0
         async for chunk in result:
@@ -370,10 +359,8 @@ def instrument_openai(client: "LiteralClient"):
     def async_after_wrapper(metadata: Dict):
         async def after(result, context: AfterContext, *args, **kwargs):
             step = context.get("step")
-            if not step:
-                return result
 
-            if step.thread_id is None:
+            if not step:
                 return result
 
             if isinstance(result, AsyncStream):
