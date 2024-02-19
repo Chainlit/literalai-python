@@ -32,7 +32,8 @@ def sync_wrapper(before_func=None, after_func=None):
             try:
                 result = original_func(*args, **kwargs)
             except Exception as e:
-                context["step"].generation.error = str(e)
+                if "step" in context:
+                    context["step"].generation.error = str(e)
                 raise e
             # If an after_func is provided, call it with the result and the shared context.
             if after_func:
@@ -58,7 +59,8 @@ def async_wrapper(before_func=None, after_func=None):
             try:
                 result = await original_func(*args, **kwargs)
             except Exception as e:
-                context["step"].generation.error = str(e)
+                if "step" in context:
+                    context["step"].generation.error = str(e)
                 raise e
 
             # If an after_func is provided, call it with the result and the shared context.

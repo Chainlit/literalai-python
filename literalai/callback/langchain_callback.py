@@ -3,6 +3,7 @@ from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypedDict, Union
 
 from literalai.context import active_steps_var, active_thread_var
+from literalai.helper import ensure_values_serializable
 from literalai.my_types import ChatGeneration, CompletionGeneration, GenerationMessage
 from literalai.step import Step
 
@@ -59,24 +60,6 @@ def get_langchain_callback():
             self.chat_generations = {}
             self.completion_generations = {}
             self.generation_inputs = {}
-
-        def ensure_values_serializable(self, data):
-            """
-            Recursively ensures that all values in the input (dict or list) are JSON serializable.
-            """
-            if isinstance(data, dict):
-                return {
-                    key: self.ensure_values_serializable(value)
-                    for key, value in data.items()
-                }
-            elif isinstance(data, list):
-                return [self.ensure_values_serializable(item) for item in data]
-            elif isinstance(data, (str, int, float, bool, type(None))):
-                return data
-            elif isinstance(data, (tuple, set)):
-                return list(data)  # Convert tuples and sets to lists
-            else:
-                return str(data)  # Fallback: convert other types to string
 
         def _convert_message_role(self, role: str):
             if "human" in role.lower():
@@ -346,7 +329,7 @@ def get_langchain_callback():
             ignore, parent_id = self._should_ignore_run(run)
 
             if run.run_type in ["chain", "prompt"]:
-                self.generation_inputs[str(run.id)] = self.ensure_values_serializable(
+                self.generation_inputs[str(run.id)] = ensure_values_serializable(
                     run.inputs
                 )
 

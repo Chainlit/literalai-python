@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 
 import httpx
 
+from literalai.helper import ensure_values_serializable
 from literalai.my_types import (
     Attachment,
     Feedback,
@@ -122,8 +123,12 @@ def variables_builder(steps: List[Union[StepDict, "Step"]]):
     for i in range(len(steps)):
         step = steps[i]
         if isinstance(step, Step):
+            step.input = ensure_values_serializable(step.input)
+            step.output = ensure_values_serializable(step.output)
             variables.update(serialize_step(step.to_dict(), i))
         else:
+            step["input"] = ensure_values_serializable(step["input"])
+            step["output"] = ensure_values_serializable(step["output"])
             variables.update(serialize_step(step, i))
     return variables
 
@@ -1115,7 +1120,6 @@ class API:
     async def send_steps(self, steps: List[Union[StepDict, "Step"]]) -> "Dict":
         query = query_builder(steps)
         variables = variables_builder(steps)
-
         return await self.make_api_call("send steps", query, variables)
 
     # Upload API
