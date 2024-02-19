@@ -99,6 +99,7 @@ class GenerationMessage(TypedDict, total=False):
     content: Union[str, List[Union[TextContent, ImageUrlContent]]]
     function_call: Optional[Dict]
     tool_calls: Optional[List[Dict]]
+    tool_call_id: Optional[str]
 
 
 @dataclass
