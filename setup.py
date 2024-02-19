@@ -9,7 +9,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "packaging>=23.0",
-        "httpx>=0.23.0,<0.3",
+        "httpx>=0.23.0",
         "pydantic>=1,<3",
     ],
 )
