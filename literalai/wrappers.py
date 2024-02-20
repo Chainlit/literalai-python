@@ -1,20 +1,22 @@
 import time
 from functools import wraps
 from importlib import import_module
-from typing import TYPE_CHECKING, Callable, Optional, TypedDict
+from typing import TYPE_CHECKING, Callable, Optional, TypedDict, Union
 
 if TYPE_CHECKING:
-    from literalai.step import Step
+    from literalai.step import ChatGeneration, CompletionGeneration, Step
 
 
 class BeforeContext(TypedDict):
     original_func: Callable
+    generation: Optional[Union["ChatGeneration", "CompletionGeneration"]]
     step: Optional["Step"]
     start: float
 
 
 class AfterContext(TypedDict):
     original_func: Callable
+    generation: Optional[Union["ChatGeneration", "CompletionGeneration"]]
     step: Optional["Step"]
     start: float
 
@@ -32,8 +34,8 @@ def sync_wrapper(before_func=None, after_func=None):
             try:
                 result = original_func(*args, **kwargs)
             except Exception as e:
-                if "step" in context:
-                    context["step"].generation.error = str(e)
+                if "generation" in context:
+                    context["generation"].error = str(e)
                 raise e
             # If an after_func is provided, call it with the result and the shared context.
             if after_func:
@@ -59,8 +61,9 @@ def async_wrapper(before_func=None, after_func=None):
             try:
                 result = await original_func(*args, **kwargs)
             except Exception as e:
-                if "step" in context:
-                    context["step"].generation.error = str(e)
+                if "generation" in context:
+                    context["generation"].error = str(e)
+
                 raise e
 
             # If an after_func is provided, call it with the result and the shared context.
