@@ -1,13 +1,13 @@
 import logging
 import time
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Union
 
 from literalai.requirements import check_all_requirements
 
 if TYPE_CHECKING:
     from literalai.client import LiteralClient
-    from literalai.step import Step
 
+from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import ensure_values_serializable
 from literalai.my_types import (
     ChatGeneration,
@@ -74,10 +74,10 @@ def instrument_openai(client: "LiteralClient"):
     from openai import AsyncStream, Stream
     from openai.types.chat.chat_completion_chunk import ChoiceDelta
 
-    def update_step_before(step: "Step", generation_type: "GenerationType", kwargs):
+    def init_generation(generation_type: "GenerationType", kwargs):
         model = kwargs.get("model")
         tools = kwargs.get("tools")
-        step.name = model or "openai"
+
         if generation_type == GenerationType.CHAT:
             messages = ensure_values_serializable(kwargs.get("messages"))
             settings = {
@@ -98,15 +98,13 @@ def instrument_openai(client: "LiteralClient"):
                 "tool_choice": kwargs.get("tool_choice"),
             }
             settings = {k: v for k, v in settings.items() if v is not None}
-            step.generation = ChatGeneration(
+            return ChatGeneration(
                 provider="openai",
                 model=model,
                 tools=tools,
                 settings=settings,
                 messages=messages,
             )
-            if messages:
-                step.input = {"content": messages}
 
         elif generation_type == GenerationType.COMPLETION:
             settings = {
@@ -127,51 +125,70 @@ def instrument_openai(client: "LiteralClient"):
                 "top_p": kwargs.get("top_p"),
             }
             settings = {k: v for k, v in settings.items() if v is not None}
-            step.input = {"content": kwargs.get("prompt")}
-            step.generation = CompletionGeneration(
+            return CompletionGeneration(
                 provider="openai",
                 model=model,
                 settings=settings,
                 prompt=kwargs.get("prompt"),
             )
 
-    def update_step_after(step: "Step", result):
-        if step.generation and isinstance(step.generation, ChatGeneration):
-            step.output = result.choices[0].message.model_dump()
-            step.generation.message_completion = result.choices[0].message.model_dump()
+    def update_step_after(
+        generation: Union[ChatGeneration, CompletionGeneration], result
+    ):
+        if generation and isinstance(generation, ChatGeneration):
+            generation.message_completion = result.choices[0].message.model_dump()
 
-        elif step.generation and isinstance(step.generation, CompletionGeneration):
-            step.output = {"content": result.choices[0].text}
-            if step.generation and step.generation.type == GenerationType.COMPLETION:
-                step.generation.completion = result.choices[0].text
+        elif generation and isinstance(generation, CompletionGeneration):
+            if generation and generation.type == GenerationType.COMPLETION:
+                generation.completion = result.choices[0].text
 
-        if step.generation:
-            step.generation.input_token_count = result.usage.prompt_tokens
-            step.generation.output_token_count = result.usage.completion_tokens
-            step.generation.token_count = result.usage.total_tokens
+        if generation:
+            generation.input_token_count = result.usage.prompt_tokens
+            generation.output_token_count = result.usage.completion_tokens
+            generation.token_count = result.usage.total_tokens
 
     def before_wrapper(metadata: Dict):
         def before(context: BeforeContext, *args, **kwargs):
-            step = client.start_step(name=context["original_func"].__name__, type="llm")
+            active_thread = active_thread_var.get()
+            active_steps = active_steps_var.get()
+            generation = init_generation(metadata["type"], kwargs)
 
-            generation_type = metadata["type"]
+            if active_thread or active_steps:
+                step = client.start_step(
+                    name=context["original_func"].__name__, type="llm"
+                )
+                step.name = generation.model or "openai"
+                if isinstance(generation, ChatGeneration):
+                    step.input = {"content": generation.messages}
+                else:
+                    step.input = {"content": generation.prompt}
 
-            update_step_before(step, generation_type, kwargs)
+                context["step"] = step
 
-            context["step"] = step
+            context["generation"] = generation
             context["start"] = time.time()
 
         return before
 
     def async_before_wrapper(metadata: Dict):
         async def before(context: BeforeContext, *args, **kwargs):
-            step = client.start_step(name=context["original_func"].__name__, type="llm")
+            active_thread = active_thread_var.get()
+            active_steps = active_steps_var.get()
+            generation = init_generation(metadata["type"], kwargs)
 
-            generation_type = metadata["type"]
+            if active_thread or active_steps:
+                step = client.start_step(
+                    name=context["original_func"].__name__, type="llm"
+                )
+                step.name = generation.model or "openai"
+                if isinstance(generation, ChatGeneration):
+                    step.input = {"content": generation.messages}
+                else:
+                    step.input = {"content": generation.prompt}
 
-            update_step_before(step, generation_type, kwargs)
+                context["step"] = step
 
-            context["step"] = step
+            context["generation"] = generation
             context["start"] = time.time()
 
         return before
@@ -194,7 +211,7 @@ def instrument_openai(client: "LiteralClient"):
                 ] += new_delta.function_call.arguments
             return True
         elif new_delta.tool_calls:
-            if not message_completion["tool_calls"]:
+            if "tool_calls" not in message_completion:
                 message_completion["tool_calls"] = []
             delta_tool_call = new_delta.tool_calls[0]
             delta_function = delta_tool_call.function
@@ -224,7 +241,11 @@ def instrument_openai(client: "LiteralClient"):
         else:
             return False
 
-    def streaming_response(step: "Step", result, context: AfterContext):
+    def streaming_response(
+        generation: Union[ChatGeneration, CompletionGeneration],
+        result,
+        context: AfterContext,
+    ):
         completion = ""
         message_completion = {
             "role": "assistant",
@@ -232,62 +253,81 @@ def instrument_openai(client: "LiteralClient"):
         }  # type: GenerationMessage
         token_count = 0
         for chunk in result:
-            if step.generation and isinstance(step.generation, ChatGeneration):
+            if generation and isinstance(generation, ChatGeneration):
                 if len(chunk.choices) > 0:
                     ok = process_delta(chunk.choices[0].delta, message_completion)
                     if not ok:
                         yield chunk
                         continue
-                    if step.generation.tt_first_token is None:
-                        step.generation.tt_first_token = (
+                    if generation.tt_first_token is None:
+                        generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
                 yield chunk
-            elif step.generation and isinstance(step.generation, CompletionGeneration):
+            elif generation and isinstance(generation, CompletionGeneration):
                 if len(chunk.choices) > 0 and chunk.choices[0].text is not None:
-                    if step.generation.tt_first_token is None:
-                        step.generation.tt_first_token = (
+                    if generation.tt_first_token is None:
+                        generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
                     completion += chunk.choices[0].text
                 yield chunk
 
-        if step.generation:
-            step.generation.duration = time.time() - context["start"]
-            if step.generation.duration and token_count:
-                step.generation.token_throughput_in_s = (
-                    token_count / step.generation.duration
-                )
-            if isinstance(step.generation, ChatGeneration):
-                step.output = message_completion  # type: ignore
-                step.generation.message_completion = message_completion
+        if generation:
+            generation.duration = time.time() - context["start"]
+            if generation.duration and token_count:
+                generation.token_throughput_in_s = token_count / generation.duration
+            if isinstance(generation, ChatGeneration):
+                generation.message_completion = message_completion
             else:
-                step.output = {"content": completion}
-                step.generation.completion = completion
+                generation.completion = completion
 
-        step.end()
+        step = context.get("step")
+        if step:
+            if isinstance(generation, ChatGeneration):
+                step.output = generation.message_completion  # type: ignore
+            else:
+                step.output = {"content": generation.completion}
+            step.generation = generation
+            step.end()
+        else:
+            client.api.create_generation_sync(generation)
 
     def after_wrapper(metadata: Dict):
         # Needs to be done in a separate function to avoid transforming all returned data into generators
         def after(result, context: AfterContext, *args, **kwargs):
             step = context.get("step")
-            if not step:
-                return result
+            generation = context.get("generation")
+
+            if not generation:
+                return
 
             if isinstance(result, Stream):
-                return streaming_response(step, result, context)
+                return streaming_response(generation, result, context)
+            else:
+                generation.duration = time.time() - context["start"]
+                update_step_after(generation, result)
 
-            if step.generation:
-                step.generation.duration = time.time() - context["start"]
-            update_step_after(step, result)
-            step.end()
+            if step:
+                if isinstance(generation, ChatGeneration):
+                    step.output = generation.message_completion  # type: ignore
+                else:
+                    step.output = {"content": generation.completion}
+                step.generation = generation
+                step.end()
+            else:
+                client.api.create_generation_sync(generation)
             return result
 
         return after
 
-    async def async_streaming_response(step: "Step", result, context: AfterContext):
+    async def async_streaming_response(
+        generation: Union[ChatGeneration, CompletionGeneration],
+        result,
+        context: AfterContext,
+    ):
         completion = ""
         message_completion = {
             "role": "assistant",
@@ -295,57 +335,70 @@ def instrument_openai(client: "LiteralClient"):
         }  # type: GenerationMessage
         token_count = 0
         async for chunk in result:
-            if step.generation and isinstance(step.generation, ChatGeneration):
+            if generation and isinstance(generation, ChatGeneration):
                 if len(chunk.choices) > 0:
                     ok = process_delta(chunk.choices[0].delta, message_completion)
                     if not ok:
                         continue
-                    if step.generation.tt_first_token is None:
-                        step.generation.tt_first_token = (
+                    if generation.tt_first_token is None:
+                        generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
                 yield chunk
-            elif step.generation and isinstance(step.generation, CompletionGeneration):
+            elif generation and isinstance(generation, CompletionGeneration):
                 if len(chunk.choices) > 0 and chunk.choices[0].text is not None:
-                    if step.generation.tt_first_token is None:
-                        step.generation.tt_first_token = (
+                    if generation.tt_first_token is None:
+                        generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
                     completion += chunk.choices[0].text
                 yield chunk
 
-        if step.generation:
-            step.generation.duration = time.time() - context["start"]
-            if step.generation.duration and token_count:
-                step.generation.token_throughput_in_s = (
-                    token_count / step.generation.duration
-                )
-            if isinstance(step.generation, ChatGeneration):
-                step.output = message_completion  # type: ignore
-                step.generation.message_completion = message_completion
+        if generation:
+            generation.duration = time.time() - context["start"]
+            if generation.duration and token_count:
+                generation.token_throughput_in_s = token_count / generation.duration
+            if isinstance(generation, ChatGeneration):
+                generation.message_completion = message_completion
             else:
-                step.output = {"content": completion}
-                step.generation.completion = completion
-        step.end()
+                generation.completion = completion
+
+        step = context.get("step")
+        if step:
+            if isinstance(generation, ChatGeneration):
+                step.output = generation.message_completion  # type: ignore
+            else:
+                step.output = {"content": generation.completion}
+            step.generation = generation
+            step.end()
+        else:
+            await client.api.create_generation(generation)
 
     def async_after_wrapper(metadata: Dict):
         async def after(result, context: AfterContext, *args, **kwargs):
             step = context.get("step")
+            generation = context.get("generation")
 
-            if not step:
+            if not generation:
                 return result
 
             if isinstance(result, AsyncStream):
-                return async_streaming_response(step, result, context)
+                return async_streaming_response(generation, result, context)
+            else:
+                generation.duration = time.time() - context["start"]
+                update_step_after(generation, result)
 
-            if step.generation:
-                step.generation.duration = time.time() - context["start"]
-
-            update_step_after(step, result)
-            step.end()
-
+            if step:
+                if isinstance(generation, ChatGeneration):
+                    step.output = generation.message_completion  # type: ignore
+                else:
+                    step.output = {"content": generation.completion}
+                step.generation = generation
+                step.end()
+            else:
+                await client.api.create_generation(generation)
             return result
 
         return after

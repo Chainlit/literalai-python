@@ -11,6 +11,8 @@ import httpx
 from literalai.helper import ensure_values_serializable
 from literalai.my_types import (
     Attachment,
+    ChatGeneration,
+    CompletionGeneration,
     Feedback,
     FeedbackStrategy,
     PaginatedResponse,
@@ -1125,6 +1127,46 @@ class API:
         query = query_builder(steps)
         variables = variables_builder(steps)
         return await self.make_api_call("send steps", query, variables)
+
+    # Generation API
+
+    async def create_generation(
+        self, generation: Union[ChatGeneration, CompletionGeneration]
+    ):
+        mutation = """
+        mutation CreateGeneration($generation: GenerationPayloadInput!) {
+            createGeneration(generation: $generation) {
+                id
+            }
+        }
+        """
+
+        variables = {
+            "generation": generation.to_dict(),
+        }
+
+        result = await self.make_api_call("create generation", mutation, variables)
+
+        return result["data"]["createGeneration"]
+
+    def create_generation_sync(
+        self, generation: Union[ChatGeneration, CompletionGeneration]
+    ):
+        mutation = """
+        mutation CreateGeneration($generation: GenerationPayloadInput!) {
+            createGeneration(generation: $generation) {
+                id
+            }
+        }
+        """
+
+        variables = {
+            "generation": generation.to_dict(),
+        }
+
+        result = self.make_api_call_sync("create generation", mutation, variables)
+
+        return result["data"]["createGeneration"]
 
     # Upload API
 
