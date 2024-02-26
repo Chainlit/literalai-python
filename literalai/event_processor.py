@@ -1,6 +1,7 @@
 import asyncio
 import queue
 import threading
+import time
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
@@ -81,8 +82,13 @@ class EventProcessor:
     def wait_until_queue_empty(self):
         self.flush_and_stop()
 
+    async def aflush(self):
+        while not self.event_queue.empty():
+            await asyncio.sleep(0.2)
+
     def flush(self):
-        self.processing_thread.join()
+        while not self.event_queue.empty():
+            time.sleep(0.2)
 
     def __del__(self):
         self.flush_and_stop()

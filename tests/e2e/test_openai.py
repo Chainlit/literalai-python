@@ -23,13 +23,6 @@ def non_mocked_hosts() -> list:
     return non_mocked_hosts
 
 
-async def wait_until_queue_empty(client: "LiteralClient"):
-    # we can't call client.wait_until_queue_empty() because it will join the event_processor thread,
-    # this would work only once and then the thread would be dead
-    while not client.event_processor.event_queue.empty():
-        await sleep(0.1)
-
-
 @pytest.mark.e2e
 class TestOpenAI:
     @pytest.fixture(
