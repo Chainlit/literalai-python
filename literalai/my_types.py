@@ -96,7 +96,7 @@ class ImageUrlContent(TypedDict, total=False):
 class GenerationMessage(TypedDict, total=False):
     name: Optional[str]
     role: Optional[GenerationMessageRole]
-    content: Union[str, List[Union[TextContent, ImageUrlContent]]]
+    content: Optional[Union[str, List[Union[TextContent, ImageUrlContent]]]]
     function_call: Optional[Dict]
     tool_calls: Optional[List[Dict]]
     tool_call_id: Optional[str]
