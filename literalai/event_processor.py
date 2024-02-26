@@ -73,9 +73,16 @@ class EventProcessor:
             )
             return
 
-    def wait_until_queue_empty(self):
+    def flush_and_stop(self):
         self.stop_event.set()
         self.processing_thread.join()
 
+    # Legacy
+    def wait_until_queue_empty(self):
+        self.flush_and_stop()
+
+    def flush(self):
+        self.processing_thread.join()
+
     def __del__(self):
-        self.wait_until_queue_empty()
+        self.flush_and_stop()

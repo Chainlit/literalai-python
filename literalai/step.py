@@ -1,6 +1,7 @@
 import datetime
 import inspect
 import uuid
+from copy import deepcopy
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
@@ -281,7 +282,7 @@ def step_decorator(
         async def async_wrapper(*args, **kwargs):
             with ctx_manager as step:
                 try:
-                    step.input = {"args": args, "kwargs": kwargs}
+                    step.input = {"args": deepcopy(args), "kwargs": deepcopy(kwargs)}
                 except Exception:
                     pass
                 result = await func(*args, **kwargs)
@@ -302,16 +303,16 @@ def step_decorator(
         def sync_wrapper(*args, **kwargs):
             with ctx_manager as step:
                 try:
-                    step.input = {"args": args, "kwargs": kwargs}
+                    step.input = {"args": deepcopy(args), "kwargs": deepcopy(kwargs)}
                 except Exception:
                     pass
                 result = func(*args, **kwargs)
                 try:
                     if step.output is None:
                         if isinstance(result, dict):
-                            step.output = result
+                            step.output = deepcopy(result)
                         else:
-                            step.output = {"content": result}
+                            step.output = {"content": deepcopy(result)}
                 except Exception:
                     pass
                 return result
