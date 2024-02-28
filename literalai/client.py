@@ -175,4 +175,13 @@ class LiteralClient:
         active_thread_var.set(None)
 
     def wait_until_queue_empty(self):
-        self.event_processor.wait_until_queue_empty()
+        self.event_processor.flush_and_stop()
+
+    def flush_and_stop(self):
+        self.event_processor.flush_and_stop()
+
+    def flush(self):
+        self.event_processor.flush()
+
+    async def aflush(self):
+        await self.event_processor.aflush()
