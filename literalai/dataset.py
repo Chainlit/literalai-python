@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional, TypedDict
 
+from literalai.dataset_item import DatasetItemDict
+
 
 class DatasetDict(TypedDict, total=False):
     id: str
@@ -8,7 +10,7 @@ class DatasetDict(TypedDict, total=False):
     metadata: Dict
     name: Optional[str]
     description: Optional[str]
-    items: Optional[List[Dict]]
+    items: Optional[List[DatasetItemDict]]
 
 
 @dataclass
@@ -18,7 +20,7 @@ class Dataset:
     metadata: Dict
     name: Optional[str] = None
     description: Optional[str] = None
-    items: Optional[List[Dict]] = None
+    items: Optional[List[DatasetItemDict]] = None
 
     def to_dict(self):
         return {
