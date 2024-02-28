@@ -1,4 +1,6 @@
 from .client import LiteralClient
+from .dataset import *  # noqa
+from .dataset_item import *  # noqa
 from .message import Message
 from .my_types import *  # noqa
 from .step import Step
