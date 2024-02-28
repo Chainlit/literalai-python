@@ -1,6 +1,6 @@
 from .client import LiteralClient
-from .dataset import *  # noqa
-from .dataset_item import *  # noqa
+from .dataset import Dataset
+from .dataset_item import DatasetItem
 from .message import Message
 from .my_types import *  # noqa
 from .step import Step
@@ -12,5 +12,7 @@ __all__ = [
     "Message",
     "Step",
     "Thread",
+    "Dataset",
+    "DatasetItem",
     "__version__",
 ]
