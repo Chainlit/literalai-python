@@ -289,9 +289,9 @@ def step_decorator(
                 try:
                     if step.output is None:
                         if isinstance(result, dict):
-                            step.output = result
+                            step.output = deepcopy(result)
                         else:
-                            step.output = {"content": result}
+                            step.output = {"content": deepcopy(result)}
                 except Exception:
                     pass
                 return result
