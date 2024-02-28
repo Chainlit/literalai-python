@@ -987,8 +987,8 @@ class API:
         type: Optional[StepType] = "undefined",
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
-        input: Optional[str] = None,
-        output: Optional[str] = None,
+        input: Optional[Dict] = None,
+        output: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
@@ -1610,3 +1610,63 @@ class API:
         result = self.make_api_call_sync("delete dataset item", query, variables)
 
         return DatasetItem.from_dict(result["data"]["deleteDatasetItem"])
+
+    async def add_step_to_dataset(self, dataset_id: str, step_id: str) -> DatasetItem:
+        query = """
+            mutation AddStepToDataset(
+                $datasetId: String!
+                $stepId: String!
+            ) {
+                addStepToDataset(
+                    datasetId: $datasetId
+                    stepId: $stepId
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    output
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "stepId": step_id,
+        }
+        result = await self.make_api_call("add step to dataset", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["addStepToDataset"])
+
+    def add_step_to_dataset_sync(
+        self,
+        dataset_id: str,
+        step_id: str,
+    ) -> DatasetItem:
+        query = """
+            mutation AddStepToDataset(
+                $datasetId: String!
+                $stepId: String!
+            ) {
+                addStepToDataset(
+                    datasetId: $datasetId
+                    stepId: $stepId
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    output
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "stepId": step_id,
+        }
+        result = self.make_api_call_sync("add step to dataset", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["addStepToDataset"])

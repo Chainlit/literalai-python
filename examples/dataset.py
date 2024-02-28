@@ -9,6 +9,18 @@ load_dotenv()
 sdk = LiteralClient(batch_size=2)
 
 
+async def init():
+    thread = await sdk.api.create_thread()
+    return await sdk.api.create_step(
+        thread_id=thread.id,
+        input={"content": "hello world!"},
+        output={"content": "hello back!"},
+    )
+
+
+step = asyncio.run(init())
+
+
 async def main_async():
     # Create a dataset
     dataset = await sdk.api.create_dataset(
@@ -48,6 +60,13 @@ async def main_async():
 
     assert dataset.items is not None
     assert len(dataset.items) == 2
+
+    # Add step to dataset
+    assert step.id is not None
+    step_item = await sdk.api.add_step_to_dataset(dataset.id, step.id)
+
+    assert step_item.input == {"content": "hello world!"}
+    assert step_item.output == {"content": "hello back!"}
 
     # Delete a dataset item
     await sdk.api.delete_dataset_item(id=items[0].id)
@@ -95,6 +114,13 @@ def main_sync():
 
     assert dataset.items is not None
     assert len(dataset.items) == 2
+
+    # Add step to dataset
+    assert step.id is not None
+    step_item = sdk.api.add_step_to_dataset_sync(dataset.id, step.id)
+
+    assert step_item.input == {"content": "hello world!"}
+    assert step_item.output == {"content": "hello back!"}
 
     # Delete a dataset item
     sdk.api.delete_dataset_item_sync(id=items[0].id)
