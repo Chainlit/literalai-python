@@ -321,7 +321,7 @@ class Teste2e:
         assert dataset.description == "bar"
 
         # Create dataset items
-        items = [
+        inputs = [
             {
                 "input": {"content": "What is literal?"},
                 "expected_output": {"content": "Literal is an observability solution."},
@@ -332,7 +332,7 @@ class Teste2e:
             },
         ]
 
-        items = [await dataset.create_item(**item) for item in items]
+        [await dataset.create_item(**input) for input in inputs]
 
         for item in dataset.items:
             assert item["datasetId"] == dataset.id
@@ -380,7 +380,7 @@ class Teste2e:
         assert dataset.description == "bar"
 
         # Create dataset items
-        items = [
+        inputs = [
             {
                 "input": {"content": "What is literal?"},
                 "expected_output": {"content": "Literal is an observability solution."},
@@ -390,9 +390,9 @@ class Teste2e:
                 "expected_output": {"content": "pip install literalai"},
             },
         ]
-        items = [dataset.create_item_sync(**item) for item in items]
+        [dataset.create_item_sync(**input) for input in inputs]
 
-        for item in items:
+        for item in dataset.items:
             assert item["datasetId"] == dataset.id
             assert item["input"] is not None
             assert item["expectedOutput"] is not None
