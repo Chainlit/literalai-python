@@ -1286,7 +1286,7 @@ class API:
         }
         result = await self.make_api_call("create dataset", query, variables)
 
-        return Dataset.from_dict(result["data"]["createDataset"])
+        return Dataset.from_dict(self, result["data"]["createDataset"])
 
     def create_dataset_sync(
         self,
@@ -1320,21 +1320,21 @@ class API:
         }
         result = self.make_api_call_sync("create dataset", query, variables)
 
-        return Dataset.from_dict(result["data"]["createDataset"])
+        return Dataset.from_dict(self, result["data"]["createDataset"])
 
     async def get_dataset(self, id: str) -> Dataset:
         result = await self.make_rest_api_call(
             subpath="/export/dataset", body={"id": id}
         )
 
-        return Dataset.from_dict(result["data"])
+        return Dataset.from_dict(self, result["data"])
 
     def get_dataset_sync(self, id: str) -> Dataset:
         result = self.make_rest_api_call_sync(
             subpath="/export/dataset", body={"id": id}
         )
 
-        return Dataset.from_dict(result["data"])
+        return Dataset.from_dict(self, result["data"])
 
     async def update_dataset(
         self,
@@ -1372,7 +1372,7 @@ class API:
         }
         result = await self.make_api_call("update dataset", query, variables)
 
-        return Dataset.from_dict(result["data"]["updateDataset"])
+        return Dataset.from_dict(self, result["data"]["updateDataset"])
 
     def update_dataset_sync(
         self,
@@ -1410,7 +1410,7 @@ class API:
         }
         result = self.make_api_call_sync("update dataset", query, variables)
 
-        return Dataset.from_dict(result["data"]["updateDataset"])
+        return Dataset.from_dict(self, result["data"]["updateDataset"])
 
     async def delete_dataset(self, id: str):
         query = """
@@ -1431,7 +1431,7 @@ class API:
         variables = {"id": id}
         result = await self.make_api_call("delete dataset", query, variables)
 
-        return Dataset.from_dict(result["data"]["deleteDataset"])
+        return Dataset.from_dict(self, result["data"]["deleteDataset"])
 
     def delete_dataset_sync(self, id: str):
         query = """
@@ -1452,7 +1452,7 @@ class API:
         variables = {"id": id}
         result = self.make_api_call_sync("delete dataset", query, variables)
 
-        return Dataset.from_dict(result["data"]["deleteDataset"])
+        return Dataset.from_dict(self, result["data"]["deleteDataset"])
 
     # DatasetItem API
     async def create_dataset_item(

@@ -1,5 +1,8 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, TypedDict
+from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict
+
+if TYPE_CHECKING:
+    from literalai.api import API
 
 from literalai.dataset_item import DatasetItemDict
 
@@ -15,6 +18,7 @@ class DatasetDict(TypedDict, total=False):
 
 @dataclass
 class Dataset:
+    api: "API"
     id: str
     created_at: str
     metadata: Dict
@@ -33,8 +37,9 @@ class Dataset:
         }
 
     @classmethod
-    def from_dict(cls, dataset: DatasetDict) -> "Dataset":
+    def from_dict(cls, api: "API", dataset: DatasetDict) -> "Dataset":
         return cls(
+            api=api,
             id=dataset.get("id", ""),
             created_at=dataset.get("createdAt", ""),
             metadata=dataset.get("metadata", {}),
@@ -42,3 +47,94 @@ class Dataset:
             description=dataset.get("description"),
             items=dataset.get("items"),
         )
+
+    async def update(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ):
+        updated_dataset = await self.api.update_dataset(
+            self.id, name=name, description=description, metadata=metadata
+        )
+        self.name = updated_dataset.name
+        self.description = updated_dataset.description
+        self.metadata = updated_dataset.metadata
+
+    def update_sync(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ):
+        updated_dataset = self.api.update_dataset_sync(
+            self.id, name=name, description=description, metadata=metadata
+        )
+        self.name = updated_dataset.name
+        self.description = updated_dataset.description
+        self.metadata = updated_dataset.metadata
+
+    async def delete(self):
+        await self.api.delete_dataset(self.id)
+
+    def delete_sync(self):
+        self.api.delete_dataset_sync(self.id)
+
+    async def create_item(
+        self,
+        input: Dict,
+        output: Optional[Dict] = None,
+        metadata: Optional[Dict] = None,
+    ) -> DatasetItemDict:
+        """
+        Create a new dataset item and add it to this dataset.
+        :param input: The input data for the dataset item.
+        :param output: The output data for the dataset item (optional).
+        :param metadata: Metadata for the dataset item (optional).
+        :return: The created DatasetItem instance.
+        """
+        dataset_item = await self.api.create_dataset_item(
+            self.id, input, output, metadata
+        )
+        if self.items is None:
+            self.items = []
+        dataset_item_dict = dataset_item.to_dict()
+        self.items.append(dataset_item_dict)
+        return dataset_item_dict
+
+    def create_item_sync(
+        self,
+        input: Dict,
+        output: Optional[Dict] = None,
+        metadata: Optional[Dict] = None,
+    ) -> DatasetItemDict:
+        """
+        Synchronous version of the create_item method.
+        """
+        dataset_item = self.api.create_dataset_item_sync(
+            self.id, input, output, metadata
+        )
+        if self.items is None:
+            self.items = []
+
+        dataset_item_dict = dataset_item.to_dict()
+        self.items.append(dataset_item_dict)
+        return dataset_item_dict
+
+    async def delete_item(self, item_id: str):
+        """
+        Delete a dataset item from this dataset.
+        :param api: An instance of the DatasetAPI to make the call.
+        :param item_id: The ID of the dataset item to delete.
+        """
+        await self.api.delete_dataset_item(item_id)
+        if self.items is not None:
+            self.items = [item for item in self.items if item["id"] != item_id]
+
+    def delete_item_sync(self, item_id: str):
+        """
+        Synchronous version of the delete_item method.
+        """
+        self.api.delete_dataset_item_sync(item_id)
+        if self.items is not None:
+            self.items = [item for item in self.items if item["id"] != item_id]
