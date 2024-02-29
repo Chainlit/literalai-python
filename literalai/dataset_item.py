@@ -8,7 +8,7 @@ class DatasetItemDict(TypedDict, total=False):
     datasetId: str
     metadata: Dict
     input: Dict
-    output: Optional[Dict]
+    expectedOutput: Optional[Dict]
     intermediarySteps: Optional[List[Dict]]
 
 
@@ -19,7 +19,7 @@ class DatasetItem:
     dataset_id: str
     metadata: Dict
     input: Dict
-    output: Optional[Dict] = None
+    expected_output: Optional[Dict] = None
     intermediary_steps: Optional[List[Dict]] = None
 
     def to_dict(self):
@@ -29,7 +29,7 @@ class DatasetItem:
             "datasetId": self.dataset_id,
             "metadata": self.metadata,
             "input": self.input,
-            "output": self.output,
+            "expectedOutput": self.expected_output,
             "intermediarySteps": self.intermediary_steps,
         }
 
@@ -41,6 +41,6 @@ class DatasetItem:
             dataset_id=dataset_item.get("datasetId", ""),
             metadata=dataset_item.get("metadata", {}),
             input=dataset_item.get("input", {}),
-            output=dataset_item.get("output"),
+            expected_output=dataset_item.get("expectedOutput"),
             intermediary_steps=dataset_item.get("intermediarySteps"),
         )

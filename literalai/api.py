@@ -1459,20 +1459,20 @@ class API:
         self,
         dataset_id: str,
         input: Dict,
-        output: Optional[Dict] = None,
+        expected_output: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
     ) -> DatasetItem:
         query = """
             mutation CreateDatasetItem(
                 $datasetId: String!
                 $input: Json!
-                $output: Json
+                $expectedOutput: Json
                 $metadata: Json
             ) {
                 createDatasetItem(
                     datasetId: $datasetId
                     input: $input
-                    output: $output
+                    expectedOutput: $expectedOutput
                     metadata: $metadata
                 ) {
                     id
@@ -1480,7 +1480,7 @@ class API:
                     datasetId
                     metadata
                     input
-                    output
+                    expectedOutput
                     intermediarySteps
                 }
             }
@@ -1488,7 +1488,7 @@ class API:
         variables = {
             "datasetId": dataset_id,
             "input": input,
-            "output": output,
+            "expectedOutput": expected_output,
             "metadata": metadata,
         }
         result = await self.make_api_call("create dataset item", query, variables)
@@ -1499,20 +1499,20 @@ class API:
         self,
         dataset_id: str,
         input: Dict,
-        output: Optional[Dict] = None,
+        expected_output: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
     ) -> DatasetItem:
         query = """
             mutation CreateDatasetItem(
                 $datasetId: String!
                 $input: Json!
-                $output: Json
+                $expectedOutput: Json
                 $metadata: Json
             ) {
                 createDatasetItem(
                     datasetId: $datasetId
                     input: $input
-                    output: $output
+                    expectedOutput: $expectedOutput
                     metadata: $metadata
                 ) {
                     id
@@ -1520,7 +1520,7 @@ class API:
                     datasetId
                     metadata
                     input
-                    output
+                    expectedOutput
                     intermediarySteps
                 }
             }
@@ -1528,7 +1528,7 @@ class API:
         variables = {
             "datasetId": dataset_id,
             "input": input,
-            "output": output,
+            "expectedOutput": expected_output,
             "metadata": metadata,
         }
         result = self.make_api_call_sync("create dataset item", query, variables)
@@ -1544,7 +1544,7 @@ class API:
                     datasetId
                     metadata
                     input
-                    output
+                    expectedOutput
                     intermediarySteps
                 }
             }
@@ -1563,7 +1563,7 @@ class API:
                     datasetId
                     metadata
                     input
-                    output
+                    expectedOutput
                     intermediarySteps
                 }
             }
@@ -1582,7 +1582,7 @@ class API:
                     datasetId
                     metadata
                     input
-                    output
+                    expectedOutput
                     intermediarySteps
                 }
             }
@@ -1601,7 +1601,7 @@ class API:
                     datasetId
                     metadata
                     input
-                    output
+                    expectedOutput
                     intermediarySteps
                 }
             }
@@ -1611,22 +1611,26 @@ class API:
 
         return DatasetItem.from_dict(result["data"]["deleteDatasetItem"])
 
-    async def add_step_to_dataset(self, dataset_id: str, step_id: str) -> DatasetItem:
+    async def add_step_to_dataset(
+        self, dataset_id: str, step_id: str, metadata: Optional[Dict] = None
+    ) -> DatasetItem:
         query = """
             mutation AddStepToDataset(
                 $datasetId: String!
                 $stepId: String!
+                $metadata: Json
             ) {
                 addStepToDataset(
                     datasetId: $datasetId
                     stepId: $stepId
+                    metadata: $metadata
                 ) {
                     id
                     createdAt
                     datasetId
                     metadata
                     input
-                    output
+                    expectedOutput
                     intermediarySteps
                 }
             }
@@ -1634,6 +1638,7 @@ class API:
         variables = {
             "datasetId": dataset_id,
             "stepId": step_id,
+            "metadata": metadata,
         }
         result = await self.make_api_call("add step to dataset", query, variables)
 
@@ -1643,22 +1648,25 @@ class API:
         self,
         dataset_id: str,
         step_id: str,
+        metadata: Optional[Dict] = None,
     ) -> DatasetItem:
         query = """
             mutation AddStepToDataset(
                 $datasetId: String!
                 $stepId: String!
+                $metadata: Json
             ) {
                 addStepToDataset(
                     datasetId: $datasetId
                     stepId: $stepId
+                    metadata: $metadata
                 ) {
                     id
                     createdAt
                     datasetId
                     metadata
                     input
-                    output
+                    expectedOutput
                     intermediarySteps
                 }
             }
@@ -1666,6 +1674,7 @@ class API:
         variables = {
             "datasetId": dataset_id,
             "stepId": step_id,
+            "metadata": metadata,
         }
         result = self.make_api_call_sync("add step to dataset", query, variables)
 

@@ -38,11 +38,11 @@ async def main_async():
     items = [
         {
             "input": {"content": "What is literal?"},
-            "output": {"content": "Literal is an observability solution."},
+            "expected_output": {"content": "Literal is an observability solution."},
         },
         {
             "input": {"content": "How can I install the sdk?"},
-            "output": {"content": "pip install literalai"},
+            "expected_output": {"content": "pip install literalai"},
         },
     ]
     items = [
@@ -53,7 +53,7 @@ async def main_async():
     for item in items:
         assert item.dataset_id == dataset.id
         assert item.input is not None
-        assert item.output is not None
+        assert item.expected_output is not None
 
     # Get a dataset with items
     dataset = await sdk.api.get_dataset(id=dataset.id)
@@ -66,7 +66,7 @@ async def main_async():
     step_item = await sdk.api.add_step_to_dataset(dataset.id, step.id)
 
     assert step_item.input == {"content": "hello world!"}
-    assert step_item.output == {"content": "hello back!"}
+    assert step_item.expected_output == {"content": "hello back!"}
 
     # Delete a dataset item
     await sdk.api.delete_dataset_item(id=items[0].id)
@@ -92,11 +92,11 @@ def main_sync():
     items = [
         {
             "input": {"content": "What is literal?"},
-            "output": {"content": "Literal is an observability solution."},
+            "expected_output": {"content": "Literal is an observability solution."},
         },
         {
             "input": {"content": "How can I install the sdk?"},
-            "output": {"content": "pip install literalai"},
+            "expected_output": {"content": "pip install literalai"},
         },
     ]
     items = [
@@ -107,7 +107,7 @@ def main_sync():
     for item in items:
         assert item.dataset_id == dataset.id
         assert item.input is not None
-        assert item.output is not None
+        assert item.expected_output is not None
 
     # Get a dataset with items
     dataset = sdk.api.get_dataset_sync(id=dataset.id)
@@ -120,7 +120,7 @@ def main_sync():
     step_item = sdk.api.add_step_to_dataset_sync(dataset.id, step.id)
 
     assert step_item.input == {"content": "hello world!"}
-    assert step_item.output == {"content": "hello back!"}
+    assert step_item.expected_output == {"content": "hello back!"}
 
     # Delete a dataset item
     sdk.api.delete_dataset_item_sync(id=items[0].id)
