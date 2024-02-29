@@ -320,7 +320,7 @@ class Teste2e:
         assert dataset.name == "baz"
 
         # Create dataset items
-        items = [
+        inputs = [
             {
                 "input": {"content": "What is literal?"},
                 "expected_output": {"content": "Literal is an observability solution."},
@@ -331,8 +331,8 @@ class Teste2e:
             },
         ]
         items = [
-            await client.api.create_dataset_item(dataset_id=dataset.id, **item)
-            for item in items
+            await client.api.create_dataset_item(dataset_id=dataset.id, **input)
+            for input in inputs
         ]
 
         for item in items:
@@ -374,7 +374,7 @@ class Teste2e:
         assert dataset.name == "baz"
 
         # Create dataset items
-        items = [
+        inputs = [
             {
                 "input": {"content": "What is literal?"},
                 "expected_output": {"content": "Literal is an observability solution."},
@@ -385,8 +385,8 @@ class Teste2e:
             },
         ]
         items = [
-            client.api.create_dataset_item_sync(dataset_id=dataset.id, **item)
-            for item in items
+            client.api.create_dataset_item_sync(dataset_id=dataset.id, **input)
+            for input in inputs
         ]
 
         for item in items:
