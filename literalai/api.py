@@ -1322,19 +1322,29 @@ class API:
 
         return Dataset.from_dict(self, result["data"]["createDataset"])
 
-    async def get_dataset(self, id: str) -> Dataset:
+    async def get_dataset(self, id: str) -> Optional[Dataset]:
         result = await self.make_rest_api_call(
             subpath="/export/dataset", body={"id": id}
         )
 
-        return Dataset.from_dict(self, result["data"])
+        dataset_dict = result.get("data")
 
-    def get_dataset_sync(self, id: str) -> Dataset:
+        if dataset_dict is None:
+            return None
+
+        return Dataset.from_dict(self, dataset_dict)
+
+    def get_dataset_sync(self, id: str) -> Optional[Dataset]:
         result = self.make_rest_api_call_sync(
             subpath="/export/dataset", body={"id": id}
         )
 
-        return Dataset.from_dict(self, result["data"])
+        dataset_dict = result.get("data")
+
+        if dataset_dict is None:
+            return None
+
+        return Dataset.from_dict(self, dataset_dict)
 
     async def update_dataset(
         self,
@@ -1364,12 +1374,16 @@ class API:
                 }
             }
         """
-        variables = {
+        variables: Dict = {
             "id": id,
-            "name": name,
-            "description": description,
-            "metadata": metadata,
         }
+        if name is not None:
+            variables["name"] = name
+        if description is not None:
+            variables["description"] = description
+        if metadata is not None:
+            variables["metadata"] = metadata
+
         result = await self.make_api_call("update dataset", query, variables)
 
         return Dataset.from_dict(self, result["data"]["updateDataset"])
@@ -1402,12 +1416,16 @@ class API:
                 }
             }
         """
-        variables = {
+        variables: Dict = {
             "id": id,
-            "name": name,
-            "description": description,
-            "metadata": metadata,
         }
+        if name is not None:
+            variables["name"] = name
+        if description is not None:
+            variables["description"] = description
+        if metadata is not None:
+            variables["metadata"] = metadata
+
         result = self.make_api_call_sync("update dataset", query, variables)
 
         return Dataset.from_dict(self, result["data"]["updateDataset"])

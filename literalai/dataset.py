@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict
 
 if TYPE_CHECKING:
     from literalai.api import API
@@ -24,7 +24,7 @@ class Dataset:
     metadata: Dict
     name: Optional[str] = None
     description: Optional[str] = None
-    items: Optional[List[DatasetItemDict]] = None
+    items: List[DatasetItemDict] = field(default_factory=lambda: [])
 
     def to_dict(self):
         return {
@@ -37,7 +37,7 @@ class Dataset:
         }
 
     @classmethod
-    def from_dict(cls, api: "API", dataset: DatasetDict) -> "Dataset":
+    def from_dict(cls, api: Any, dataset: DatasetDict) -> "Dataset":
         return cls(
             api=api,
             id=dataset.get("id", ""),
@@ -45,7 +45,7 @@ class Dataset:
             metadata=dataset.get("metadata", {}),
             name=dataset.get("name"),
             description=dataset.get("description"),
-            items=dataset.get("items"),
+            items=dataset.get("items") or [],
         )
 
     async def update(
@@ -83,18 +83,18 @@ class Dataset:
     async def create_item(
         self,
         input: Dict,
-        output: Optional[Dict] = None,
+        expected_output: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
     ) -> DatasetItemDict:
         """
         Create a new dataset item and add it to this dataset.
         :param input: The input data for the dataset item.
-        :param output: The output data for the dataset item (optional).
+        :param expected_output: The output data for the dataset item (optional).
         :param metadata: Metadata for the dataset item (optional).
         :return: The created DatasetItem instance.
         """
         dataset_item = await self.api.create_dataset_item(
-            self.id, input, output, metadata
+            self.id, input, expected_output, metadata
         )
         if self.items is None:
             self.items = []
@@ -105,14 +105,14 @@ class Dataset:
     def create_item_sync(
         self,
         input: Dict,
-        output: Optional[Dict] = None,
+        expected_output: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
     ) -> DatasetItemDict:
         """
         Synchronous version of the create_item method.
         """
         dataset_item = self.api.create_dataset_item_sync(
-            self.id, input, output, metadata
+            self.id, input, expected_output, metadata
         )
         if self.items is None:
             self.items = []
@@ -138,3 +138,32 @@ class Dataset:
         self.api.delete_dataset_item_sync(item_id)
         if self.items is not None:
             self.items = [item for item in self.items if item["id"] != item_id]
+
+    async def add_step(
+        self, step_id: str, metadata: Optional[Dict] = None
+    ) -> DatasetItemDict:
+        """
+        Create a new dataset item based on a step and add it to this dataset.
+        :param step_id: The id of the step to add to the dataset.
+        :param metadata: Metadata for the dataset item (optional).
+        :return: The created DatasetItem instance.
+        """
+        dataset_item = await self.api.add_step_to_dataset(self.id, step_id, metadata)
+        if self.items is None:
+            self.items = []
+        dataset_item_dict = dataset_item.to_dict()
+        self.items.append(dataset_item_dict)
+        return dataset_item_dict
+
+    def add_step_sync(
+        self, step_id: str, metadata: Optional[Dict] = None
+    ) -> DatasetItemDict:
+        """
+        Synchronous version of the add_step method.
+        """
+        dataset_item = self.api.add_step_to_dataset_sync(self.id, step_id, metadata)
+        if self.items is None:
+            self.items = []
+        dataset_item_dict = dataset_item.to_dict()
+        self.items.append(dataset_item_dict)
+        return dataset_item_dict
