@@ -63,13 +63,23 @@ TO_WRAP = [
 is_instrumented = False
 
 
-def instrument_openai(client: "LiteralClient"):
+def instrument_openai(client: "LiteralClient", on_new_generation=None):
     global is_instrumented
     if is_instrumented:
         return
 
     if not check_all_requirements(REQUIREMENTS):
         raise Exception(f"Instrumentation requirements not satisfied: {REQUIREMENTS}")
+
+    import inspect
+    if callable(on_new_generation):
+        sig = inspect.signature(on_new_generation)
+        parameters = list(sig.parameters.values())
+        
+        if len(parameters) != 2:
+            raise ValueError(
+                "on_new_generation should take 2 parameters: generation and timing"
+            )
 
     from openai import AsyncStream, Stream
     from openai.types.chat.chat_completion_chunk import ChoiceDelta
@@ -153,7 +163,7 @@ def instrument_openai(client: "LiteralClient"):
             active_steps = active_steps_var.get()
             generation = init_generation(metadata["type"], kwargs)
 
-            if active_thread or active_steps:
+            if (active_thread or active_steps) and not callable(on_new_generation):
                 step = client.start_step(
                     name=context["original_func"].__name__, type="llm"
                 )
@@ -176,7 +186,7 @@ def instrument_openai(client: "LiteralClient"):
             active_steps = active_steps_var.get()
             generation = init_generation(metadata["type"], kwargs)
 
-            if active_thread or active_steps:
+            if (active_thread or active_steps) and not callable(on_new_generation):
                 step = client.start_step(
                     name=context["original_func"].__name__, type="llm"
                 )
@@ -285,7 +295,12 @@ def instrument_openai(client: "LiteralClient"):
                 generation.completion = completion
 
         step = context.get("step")
-        if step:
+        if callable(on_new_generation):
+            on_new_generation(generation, {
+                "start": context["start"],
+                "end": time.time(),
+            })
+        elif step:
             if isinstance(generation, ChatGeneration):
                 step.output = generation.message_completion  # type: ignore
             else:
@@ -310,7 +325,12 @@ def instrument_openai(client: "LiteralClient"):
                 generation.duration = time.time() - context["start"]
                 update_step_after(generation, result)
 
-            if step:
+            if callable(on_new_generation):
+                on_new_generation(generation, {
+                    "start": context["start"],
+                    "end": time.time(),
+                })
+            elif step:
                 if isinstance(generation, ChatGeneration):
                     step.output = generation.message_completion  # type: ignore
                 else:
@@ -366,7 +386,12 @@ def instrument_openai(client: "LiteralClient"):
                 generation.completion = completion
 
         step = context.get("step")
-        if step:
+        if callable(on_new_generation):
+            on_new_generation(generation, {
+                "start": context["start"],
+                "end": time.time(),
+            })
+        elif step:
             if isinstance(generation, ChatGeneration):
                 step.output = generation.message_completion  # type: ignore
             else:
@@ -390,7 +415,12 @@ def instrument_openai(client: "LiteralClient"):
                 generation.duration = time.time() - context["start"]
                 update_step_after(generation, result)
 
-            if step:
+            if callable(on_new_generation):
+                on_new_generation(generation, {
+                    "start": context["start"],
+                    "end": time.time(),
+                })
+            elif step:
                 if isinstance(generation, ChatGeneration):
                     step.output = generation.message_completion  # type: ignore
                 else:
