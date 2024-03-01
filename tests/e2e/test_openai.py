@@ -101,7 +101,7 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == ChatGeneration
         assert step.generation.settings is not None
-        assert step.generation.model == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo-0613"
 
     async def test_completion(self, client: "LiteralClient", httpx_mock: "HTTPXMock"):
         # https://platform.openai.com/docs/api-reference/completions/object
@@ -225,7 +225,7 @@ class TestOpenAI:
         assert step.generation is not None
         assert type(step.generation) == ChatGeneration
         assert step.generation.settings is not None
-        assert step.generation.model == "gpt-3.5-turbo"
+        assert step.generation.model == "gpt-3.5-turbo-0613"
 
     async def test_async_completion(
         self, client: "LiteralClient", httpx_mock: "HTTPXMock"

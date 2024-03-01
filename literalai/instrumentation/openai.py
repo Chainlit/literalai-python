@@ -98,13 +98,11 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
 
             for index, message in enumerate(messages):
                 orig_message = orig_messages[index]
-                if orig_message.__literal_prompt__:
-                    prompt_id = orig_message.__literal_prompt__.get("prompt_id")
-                    variables = orig_message.__literal_prompt__.get("variables")
-                    messages[index]["uuid"] = orig_message.__literal_prompt__.get(
-                        "uuid"
-                    )
-                    messages[index]["templated"] = True
+                if literal_prompt := getattr(orig_message, "__literal_prompt__", None):
+                    prompt_id = literal_prompt.get("prompt_id")
+                    variables = literal_prompt.get("variables")
+                    message["uuid"] = literal_prompt.get("uuid")
+                    message["templated"] = True
 
             settings = {
                 "model": model,
