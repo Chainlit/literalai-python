@@ -296,3 +296,125 @@ class Teste2e:
         await async_request()
 
         assert len(ids) == len(set(ids))
+
+    async def create_test_step(self, client: LiteralClient):
+        thread = await client.api.create_thread()
+        return await client.api.create_step(
+            thread_id=thread.id,
+            input={"content": "hello world!"},
+            output={"content": "hello back!"},
+        )
+
+    @pytest.mark.timeout(5)
+    async def test_dataset(self, client: LiteralClient):
+        step = await self.create_test_step(client)
+        dataset = await client.api.create_dataset(
+            name="foo", description="bar", metadata={"demo": True}
+        )
+        assert dataset.name == "foo"
+        assert dataset.description == "bar"
+        assert dataset.metadata == {"demo": True}
+
+        # Update a dataset
+        await dataset.update(name="baz")
+        assert dataset.name == "baz"
+        assert dataset.description == "bar"
+
+        # Create dataset items
+        inputs = [
+            {
+                "input": {"content": "What is literal?"},
+                "expected_output": {"content": "Literal is an observability solution."},
+            },
+            {
+                "input": {"content": "How can I install the sdk?"},
+                "expected_output": {"content": "pip install literalai"},
+            },
+        ]
+
+        [await dataset.create_item(**input) for input in inputs]
+
+        for item in dataset.items:
+            assert item["datasetId"] == dataset.id
+            assert item["input"] is not None
+            assert item["expectedOutput"] is not None
+
+        # Get a dataset with items
+        fetched_dataset = await client.api.get_dataset(id=dataset.id)
+
+        assert fetched_dataset is not None
+
+        assert len(fetched_dataset.items) == 2
+
+        # Add step to dataset
+        assert step.id is not None
+        step_item = await fetched_dataset.add_step(step.id)
+
+        assert step_item["input"] == {"content": "hello world!"}
+        assert step_item["expectedOutput"] == {"content": "hello back!"}
+
+        # Delete a dataset item
+        item_id = fetched_dataset.items[0]["id"]
+        await fetched_dataset.delete_item(item_id=item_id)
+
+        # Delete a dataset
+        await fetched_dataset.delete()
+
+        deleted_dataset = await client.api.get_dataset(id=dataset.id)
+
+        assert deleted_dataset is None
+
+    @pytest.mark.timeout(5)
+    async def test_dataset_sync(self, client: LiteralClient):
+        step = await self.create_test_step(client)
+        dataset = client.api.create_dataset_sync(
+            name="foo", description="bar", metadata={"demo": True}
+        )
+        assert dataset.name == "foo"
+        assert dataset.description == "bar"
+        assert dataset.metadata == {"demo": True}
+
+        # Update a dataset
+        dataset.update_sync(name="baz")
+        assert dataset.name == "baz"
+        assert dataset.description == "bar"
+
+        # Create dataset items
+        inputs = [
+            {
+                "input": {"content": "What is literal?"},
+                "expected_output": {"content": "Literal is an observability solution."},
+            },
+            {
+                "input": {"content": "How can I install the sdk?"},
+                "expected_output": {"content": "pip install literalai"},
+            },
+        ]
+        [dataset.create_item_sync(**input) for input in inputs]
+
+        for item in dataset.items:
+            assert item["datasetId"] == dataset.id
+            assert item["input"] is not None
+            assert item["expectedOutput"] is not None
+
+        # Get a dataset with items
+        fetched_dataset = client.api.get_dataset_sync(id=dataset.id)
+
+        assert fetched_dataset is not None
+        assert len(fetched_dataset.items) == 2
+
+        # Add step to dataset
+        assert step.id is not None
+        step_item = fetched_dataset.add_step_sync(step.id)
+
+        assert step_item["input"] == {"content": "hello world!"}
+        assert step_item["expectedOutput"] == {"content": "hello back!"}
+
+        # Delete a dataset item
+        item_id = fetched_dataset.items[0]["id"]
+        fetched_dataset.delete_item_sync(item_id=item_id)
+
+        # Delete a dataset
+        fetched_dataset.delete_sync()
+
+        assert client.api.get_dataset_sync(id=fetched_dataset.id) is None

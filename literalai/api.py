@@ -3,6 +3,9 @@ import mimetypes
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, TypedDict, Union
 
+from literalai.dataset import Dataset
+from literalai.dataset_item import DatasetItem
+
 if TYPE_CHECKING:
     from typing import Tuple  # noqa: F401
 
@@ -284,6 +287,20 @@ class API:
     async def make_rest_api_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
         async with httpx.AsyncClient() as client:
             response = await client.post(
+                self.rest_endpoint + subpath,
+                json=body,
+                headers=self.headers,
+                timeout=20,
+            )
+
+            response.raise_for_status()
+            json = response.json()
+
+            return json
+
+    def make_rest_api_call_sync(self, subpath: str, body: Dict[str, Any]) -> Dict:
+        with httpx.Client() as client:
+            response = client.post(
                 self.rest_endpoint + subpath,
                 json=body,
                 headers=self.headers,
@@ -970,8 +987,8 @@ class API:
         type: Optional[StepType] = "undefined",
         start_time: Optional[str] = None,
         end_time: Optional[str] = None,
-        input: Optional[str] = None,
-        output: Optional[str] = None,
+        input: Optional[Dict] = None,
+        output: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
@@ -1235,3 +1252,448 @@ class API:
             except Exception as e:
                 logger.error(f"Failed to upload file: {str(e)}")
                 return {"object_key": None, "url": None}
+
+    # Dataset API
+    async def create_dataset(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ) -> Dataset:
+        query = """
+            mutation createDataset(
+                $name: String
+                $description: String
+                $metadata: Json
+            ) {
+                createDataset(
+                    name: $name
+                    description: $description
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    name
+                    description
+                    metadata
+                }
+            }
+        """
+        variables = {
+            "name": name,
+            "description": description,
+            "metadata": metadata,
+        }
+        result = await self.make_api_call("create dataset", query, variables)
+
+        return Dataset.from_dict(self, result["data"]["createDataset"])
+
+    def create_dataset_sync(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ) -> Dataset:
+        query = """
+            mutation createDataset(
+                $name: String
+                $description: String
+                $metadata: Json
+            ) {
+                createDataset(
+                    name: $name
+                    description: $description
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    name
+                    description
+                    metadata
+                }
+            }
+        """
+        variables = {
+            "name": name,
+            "description": description,
+            "metadata": metadata,
+        }
+        result = self.make_api_call_sync("create dataset", query, variables)
+
+        return Dataset.from_dict(self, result["data"]["createDataset"])
+
+    async def get_dataset(self, id: str) -> Optional[Dataset]:
+        result = await self.make_rest_api_call(
+            subpath="/export/dataset", body={"id": id}
+        )
+
+        dataset_dict = result.get("data")
+
+        if dataset_dict is None:
+            return None
+
+        return Dataset.from_dict(self, dataset_dict)
+
+    def get_dataset_sync(self, id: str) -> Optional[Dataset]:
+        result = self.make_rest_api_call_sync(
+            subpath="/export/dataset", body={"id": id}
+        )
+
+        dataset_dict = result.get("data")
+
+        if dataset_dict is None:
+            return None
+
+        return Dataset.from_dict(self, dataset_dict)
+
+    async def update_dataset(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ) -> Dataset:
+        query = """
+            mutation UpdateDataset(
+                $id: String!
+                $name: String
+                $description: String
+                $metadata: Json
+            ) {
+                updateDataset(
+                    id: $id
+                    name: $name
+                    description: $description
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    name
+                    description
+                    metadata
+                }
+            }
+        """
+        variables: Dict = {
+            "id": id,
+        }
+        if name is not None:
+            variables["name"] = name
+        if description is not None:
+            variables["description"] = description
+        if metadata is not None:
+            variables["metadata"] = metadata
+
+        result = await self.make_api_call("update dataset", query, variables)
+
+        return Dataset.from_dict(self, result["data"]["updateDataset"])
+
+    def update_dataset_sync(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+    ) -> Dataset:
+        query = """
+            mutation UpdateDataset(
+                $id: String!
+                $name: String
+                $description: String
+                $metadata: Json
+            ) {
+                updateDataset(
+                    id: $id
+                    name: $name
+                    description: $description
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    name
+                    description
+                    metadata
+                }
+            }
+        """
+        variables: Dict = {
+            "id": id,
+        }
+        if name is not None:
+            variables["name"] = name
+        if description is not None:
+            variables["description"] = description
+        if metadata is not None:
+            variables["metadata"] = metadata
+
+        result = self.make_api_call_sync("update dataset", query, variables)
+
+        return Dataset.from_dict(self, result["data"]["updateDataset"])
+
+    async def delete_dataset(self, id: str):
+        query = """
+            mutation DeleteDataset(
+                $id: String!
+            ) {
+                deleteDataset(
+                    id: $id
+                ) {
+                    id
+                    createdAt
+                    name
+                    description
+                    metadata
+                }
+            }
+        """
+        variables = {"id": id}
+        result = await self.make_api_call("delete dataset", query, variables)
+
+        return Dataset.from_dict(self, result["data"]["deleteDataset"])
+
+    def delete_dataset_sync(self, id: str):
+        query = """
+            mutation DeleteDataset(
+                $id: String!
+            ) {
+                deleteDataset(
+                    id: $id
+                ) {
+                    id
+                    createdAt
+                    name
+                    description
+                    metadata
+                }
+            }
+        """
+        variables = {"id": id}
+        result = self.make_api_call_sync("delete dataset", query, variables)
+
+        return Dataset.from_dict(self, result["data"]["deleteDataset"])
+
+    # DatasetItem API
+    async def create_dataset_item(
+        self,
+        dataset_id: str,
+        input: Dict,
+        expected_output: Optional[Dict] = None,
+        metadata: Optional[Dict] = None,
+    ) -> DatasetItem:
+        query = """
+            mutation CreateDatasetItem(
+                $datasetId: String!
+                $input: Json!
+                $expectedOutput: Json
+                $metadata: Json
+            ) {
+                createDatasetItem(
+                    datasetId: $datasetId
+                    input: $input
+                    expectedOutput: $expectedOutput
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "input": input,
+            "expectedOutput": expected_output,
+            "metadata": metadata,
+        }
+        result = await self.make_api_call("create dataset item", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["createDatasetItem"])
+
+    def create_dataset_item_sync(
+        self,
+        dataset_id: str,
+        input: Dict,
+        expected_output: Optional[Dict] = None,
+        metadata: Optional[Dict] = None,
+    ) -> DatasetItem:
+        query = """
+            mutation CreateDatasetItem(
+                $datasetId: String!
+                $input: Json!
+                $expectedOutput: Json
+                $metadata: Json
+            ) {
+                createDatasetItem(
+                    datasetId: $datasetId
+                    input: $input
+                    expectedOutput: $expectedOutput
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "input": input,
+            "expectedOutput": expected_output,
+            "metadata": metadata,
+        }
+        result = self.make_api_call_sync("create dataset item", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["createDatasetItem"])
+
+    async def get_dataset_item(self, id: str) -> DatasetItem:
+        query = """
+            query GetDataItem($id: String!) {
+                datasetItem(id: $id) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {"id": id}
+        result = await self.make_api_call("get dataset item", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["datasetItem"])
+
+    def get_dataset_item_sync(self, id: str) -> DatasetItem:
+        query = """
+            query GetDataItem($id: String!) {
+                datasetItem(id: $id) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {"id": id}
+        result = self.make_api_call_sync("get dataset item", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["datasetItem"])
+
+    async def delete_dataset_item(self, id: str) -> DatasetItem:
+        query = """
+            mutation DeleteDatasetItem($id: String!) {
+                deleteDatasetItem(id: $id) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {"id": id}
+        result = await self.make_api_call("delete dataset item", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["deleteDatasetItem"])
+
+    def delete_dataset_item_sync(self, id: str) -> DatasetItem:
+        query = """
+            mutation DeleteDatasetItem($id: String!) {
+                deleteDatasetItem(id: $id) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {"id": id}
+        result = self.make_api_call_sync("delete dataset item", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["deleteDatasetItem"])
+
+    async def add_step_to_dataset(
+        self, dataset_id: str, step_id: str, metadata: Optional[Dict] = None
+    ) -> DatasetItem:
+        query = """
+            mutation AddStepToDataset(
+                $datasetId: String!
+                $stepId: String!
+                $metadata: Json
+            ) {
+                addStepToDataset(
+                    datasetId: $datasetId
+                    stepId: $stepId
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "stepId": step_id,
+            "metadata": metadata,
+        }
+        result = await self.make_api_call("add step to dataset", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["addStepToDataset"])
+
+    def add_step_to_dataset_sync(
+        self,
+        dataset_id: str,
+        step_id: str,
+        metadata: Optional[Dict] = None,
+    ) -> DatasetItem:
+        query = """
+            mutation AddStepToDataset(
+                $datasetId: String!
+                $stepId: String!
+                $metadata: Json
+            ) {
+                addStepToDataset(
+                    datasetId: $datasetId
+                    stepId: $stepId
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "stepId": step_id,
+            "metadata": metadata,
+        }
+        result = self.make_api_call_sync("add step to dataset", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["addStepToDataset"])
