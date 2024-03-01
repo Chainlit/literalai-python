@@ -180,8 +180,8 @@ class LiteralClient:
     def flush_and_stop(self):
         self.event_processor.flush_and_stop()
 
-    def flush(self):
+    def flush_sync(self):
         self.event_processor.flush()
 
-    async def aflush(self):
+    async def flush(self):
         await self.event_processor.aflush()

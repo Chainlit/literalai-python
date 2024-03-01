@@ -82,11 +82,11 @@ class EventProcessor:
     def wait_until_queue_empty(self):
         self.flush_and_stop()
 
-    async def aflush(self):
+    async def flush(self):
         while not self.event_queue.empty():
             await asyncio.sleep(0.2)
 
-    def flush(self):
+    def flus_sync(self):
         while not self.event_queue.empty():
             time.sleep(0.2)
 

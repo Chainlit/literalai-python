@@ -109,6 +109,10 @@ def get_langchain_callback():
                 content="",
             )
 
+            if literal_uuid := message.additional_kwargs.get("uuid"):
+                msg["uuid"] = literal_uuid
+                msg["templated"] = True
+
             if function_call:
                 msg["function_call"] = function_call
             else:
@@ -405,6 +409,21 @@ def get_langchain_callback():
                         ],
                         message_completion=message_completion,
                     )
+                    # find first message with prompt_id
+                    prompt_id = None
+                    variables_with_defaults: Optional[Dict] = None
+                    for m in chat_start["input_messages"]:
+                        if m.additional_kwargs.get("prompt_id"):
+                            prompt_id = m.additional_kwargs["prompt_id"]
+                            variables_with_defaults = m.additional_kwargs.get(
+                                "variables"
+                            )
+                            break
+                    if prompt_id:
+                        current_step.generation.prompt_id = prompt_id
+                    if variables_with_defaults:
+                        current_step.generation.variables = variables_with_defaults
+
                     current_step.output = message_completion
                 else:
                     completion_start = self.completion_generations[str(run.id)]

@@ -1,5 +1,6 @@
 import sys
 from dataclasses import dataclass
+from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
 if sys.version_info < (3, 12):
@@ -144,3 +145,80 @@ class Prompt:
             formatted_messages.append(formatted_message)
 
         return formatted_messages
+
+    def to_langchain(self):
+        try:
+            version("langchain")
+        except Exception:
+            raise Exception(
+                "Please install langchain to use the langchain callback. "
+                "You can install it with `pip install langchain`"
+            )
+
+        from langchain_core.messages import (
+            AIMessage,
+            BaseMessage,
+            HumanMessage,
+            SystemMessage,
+        )
+        from langchain_core.prompts import (
+            AIMessagePromptTemplate,
+            ChatPromptTemplate,
+            HumanMessagePromptTemplate,
+            SystemMessagePromptTemplate,
+        )
+
+        class CustomChatPromptTemplate(ChatPromptTemplate):
+            orig_messages: Optional[List[GenerationMessage]]
+            default_vars: Optional[Dict] = None
+            prompt_id: Optional[str]
+
+            def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
+                variables_with_defaults = {
+                    **(self.default_vars or {}),
+                    **(kwargs or {}),
+                }
+
+                rendered_messages = []
+
+                for index, message in enumerate(self.messages):
+                    additonal_kwargs = {
+                        "uuid": self.orig_messages[index].get("uuid")
+                        if self.orig_messages
+                        else None,
+                        "prompt_id": self.prompt_id,
+                        "variables": variables_with_defaults,
+                    }
+                    content = chevron.render(
+                        message.prompt.template, variables_with_defaults
+                    )
+
+                    if isinstance(message, HumanMessagePromptTemplate):
+                        rendered_messages.append(
+                            HumanMessage(
+                                content=content, additional_kwargs=additonal_kwargs
+                            )
+                        )
+                    if isinstance(message, AIMessagePromptTemplate):
+                        rendered_messages.append(
+                            AIMessage(
+                                content=content, additional_kwargs=additonal_kwargs
+                            )
+                        )
+                    if isinstance(message, SystemMessagePromptTemplate):
+                        rendered_messages.append(
+                            SystemMessage(
+                                content=content, additional_kwargs=additonal_kwargs
+                            )
+                        )
+
+                return rendered_messages
+
+        lc_messages = [(m["role"], m["content"]) for m in self.template_messages]
+
+        chat_template = CustomChatPromptTemplate.from_messages(lc_messages)
+        chat_template.default_vars = self.variables_default_values
+        chat_template.orig_messages = self.template_messages
+        chat_template.prompt_id = self.id
+
+        return chat_template
