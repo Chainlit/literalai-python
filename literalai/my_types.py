@@ -94,6 +94,8 @@ class ImageUrlContent(TypedDict, total=False):
 
 
 class GenerationMessage(TypedDict, total=False):
+    uuid: Optional[str]
+    templated: Optional[bool]
     name: Optional[str]
     role: Optional[GenerationMessageRole]
     content: Optional[Union[str, List[Union[TextContent, ImageUrlContent]]]]
@@ -104,6 +106,7 @@ class GenerationMessage(TypedDict, total=False):
 
 @dataclass
 class BaseGeneration:
+    prompt_id: Optional[str] = None
     provider: Optional[str] = None
     model: Optional[str] = None
     error: Optional[str] = None
@@ -132,6 +135,7 @@ class BaseGeneration:
 
     def to_dict(self):
         return {
+            "promptId": self.prompt_id,
             "provider": self.provider,
             "model": self.model,
             "error": self.error,
@@ -168,6 +172,7 @@ class CompletionGeneration(BaseGeneration):
     @classmethod
     def from_dict(self, generation_dict: Dict) -> "CompletionGeneration":
         return CompletionGeneration(
+            prompt_id=generation_dict.get("promptId"),
             error=generation_dict.get("error"),
             tags=generation_dict.get("tags"),
             provider=generation_dict.get("provider"),
@@ -206,6 +211,7 @@ class ChatGeneration(BaseGeneration):
     @classmethod
     def from_dict(self, generation_dict: Dict) -> "ChatGeneration":
         return ChatGeneration(
+            prompt_id=generation_dict.get("promptId"),
             error=generation_dict.get("error"),
             tags=generation_dict.get("tags"),
             provider=generation_dict.get("provider"),

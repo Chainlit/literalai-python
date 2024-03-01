@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, TypedDict,
 
 from literalai.dataset import Dataset
 from literalai.dataset_item import DatasetItem
+from literalai.prompt import Prompt
 
 if TYPE_CHECKING:
     from typing import Tuple  # noqa: F401
@@ -1697,3 +1698,62 @@ class API:
         result = self.make_api_call_sync("add step to dataset", query, variables)
 
         return DatasetItem.from_dict(result["data"]["addStepToDataset"])
+
+    # Prompt API
+    async def get_prompt(
+        self, name: str, version: Optional[int] = None
+    ) -> Optional[Prompt]:
+        query = """
+            query GetPrompt($name: String!, $version: Int) {
+                promptVersion(name: $name, version: $version) {
+                    id
+                    createdAt
+                    updatedAt
+                    type
+                    templateMessages
+                    tools
+                    settings
+                    variables
+                    variablesDefaultValues
+                    version
+                    lineage {
+                        name
+                    }
+                }
+            }
+        """
+        variables = {"name": name, "version": version}
+        result = await self.make_api_call("get prompt", query, variables)
+
+        prompt = result["data"]["promptVersion"]
+
+        return Prompt.from_dict(self, prompt) if prompt else None
+
+    def get_prompt_sync(
+        self, name: str, version: Optional[int] = None
+    ) -> Optional[Prompt]:
+        query = """
+            query GetPrompt($name: String!, $version: Int) {
+                promptVersion(name: $name, version: $version) {
+                    id
+                    createdAt
+                    updatedAt
+                    type
+                    templateMessages
+                    tools
+                    settings
+                    variables
+                    variablesDefaultValues
+                    version
+                    lineage {
+                        name
+                    }
+                }
+            }
+        """
+        variables = {"name": name, "version": version}
+        result = self.make_api_call_sync("get prompt", query, variables)
+
+        prompt = result["data"]["promptVersion"]
+
+        return Prompt.from_dict(self, prompt) if prompt else None

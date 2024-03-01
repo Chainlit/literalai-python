@@ -418,3 +418,35 @@ class Teste2e:
         fetched_dataset.delete_sync()
 
         assert client.api.get_dataset_sync(id=fetched_dataset.id) is None
+
+    @pytest.mark.timeout(5)
+    async def test_prompt(self, client: LiteralClient):
+        prompt = await client.api.get_prompt(name="Default")
+        assert prompt is not None
+        assert prompt.name == "Default"
+        assert prompt.version == 0
+        assert prompt.provider == "openai"
+
+        messages = prompt.format()
+
+        expected = """Hello, this is a test value and this
+
+* item 0
+* item 1
+* item 2
+
+is a templated list."""
+
+        assert messages[0]["content"] == expected
+
+        messages = prompt.format({"test_var": "Edited value"})
+
+        expected = """Hello, this is a Edited value and this
+
+* item 0
+* item 1
+* item 2
+
+is a templated list."""
+
+        assert messages[0]["content"] == expected
