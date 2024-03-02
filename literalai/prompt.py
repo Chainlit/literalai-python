@@ -146,7 +146,7 @@ class Prompt:
 
         return formatted_messages
 
-    def to_langchain(self):
+    def to_langchain_chat_prompt_template(self):
         try:
             version("langchain")
         except Exception:
