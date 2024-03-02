@@ -182,7 +182,9 @@ class Prompt:
                 rendered_messages = []
 
                 for index, message in enumerate(self.messages):
-                    content = message.prompt.template
+                    content = chevron.render(
+                        message.prompt.template, variables_with_defaults
+                    )
                     additonal_kwargs = {}
                     if self.orig_messages and index < len(self.orig_messages):
                         additonal_kwargs = {
@@ -192,9 +194,6 @@ class Prompt:
                             "prompt_id": self.prompt_id,
                             "variables": variables_with_defaults,
                         }
-                        content = chevron.render(
-                            message.prompt.template, variables_with_defaults
-                        )
 
                     if isinstance(message, HumanMessagePromptTemplate):
                         rendered_messages.append(
