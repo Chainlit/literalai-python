@@ -72,10 +72,11 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
         raise Exception(f"Instrumentation requirements not satisfied: {REQUIREMENTS}")
 
     import inspect
+
     if callable(on_new_generation):
         sig = inspect.signature(on_new_generation)
         parameters = list(sig.parameters.values())
-        
+
         if len(parameters) != 2:
             raise ValueError(
                 "on_new_generation should take 2 parameters: generation and timing"
@@ -89,7 +90,20 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
         tools = kwargs.get("tools")
 
         if generation_type == GenerationType.CHAT:
-            messages = ensure_values_serializable(kwargs.get("messages"))
+            orig_messages = kwargs.get("messages")
+
+            messages = ensure_values_serializable(orig_messages)
+            prompt_id = None
+            variables = None
+
+            for index, message in enumerate(messages):
+                orig_message = orig_messages[index]
+                if literal_prompt := getattr(orig_message, "__literal_prompt__", None):
+                    prompt_id = literal_prompt.get("prompt_id")
+                    variables = literal_prompt.get("variables")
+                    message["uuid"] = literal_prompt.get("uuid")
+                    message["templated"] = True
+
             settings = {
                 "model": model,
                 "frequency_penalty": kwargs.get("frequency_penalty"),
@@ -109,6 +123,8 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
             }
             settings = {k: v for k, v in settings.items() if v is not None}
             return ChatGeneration(
+                prompt_id=prompt_id,
+                variables=variables,
                 provider="openai",
                 model=model,
                 tools=tools,
@@ -283,7 +299,15 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                         ) * 1000
                     token_count += 1
                     completion += chunk.choices[0].text
-                yield chunk
+
+            if (
+                generation
+                and getattr(chunk, "model", None)
+                and generation.model != chunk.model
+            ):
+                generation.model = chunk.model
+
+            yield chunk
 
         if generation:
             generation.duration = time.time() - context["start"]
@@ -296,10 +320,13 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
 
         step = context.get("step")
         if callable(on_new_generation):
-            on_new_generation(generation, {
-                "start": context["start"],
-                "end": time.time(),
-            })
+            on_new_generation(
+                generation,
+                {
+                    "start": context["start"],
+                    "end": time.time(),
+                },
+            )
         elif step:
             if isinstance(generation, ChatGeneration):
                 step.output = generation.message_completion  # type: ignore
@@ -319,6 +346,11 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
             if not generation:
                 return
 
+            if model := getattr(result, "model", None):
+                generation.model = model
+                if generation.settings:
+                    generation.settings["model"] = model
+
             if isinstance(result, Stream):
                 return streaming_response(generation, result, context)
             else:
@@ -326,10 +358,13 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 update_step_after(generation, result)
 
             if callable(on_new_generation):
-                on_new_generation(generation, {
-                    "start": context["start"],
-                    "end": time.time(),
-                })
+                on_new_generation(
+                    generation,
+                    {
+                        "start": context["start"],
+                        "end": time.time(),
+                    },
+                )
             elif step:
                 if isinstance(generation, ChatGeneration):
                     step.output = generation.message_completion  # type: ignore
@@ -359,13 +394,13 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 if len(chunk.choices) > 0:
                     ok = process_delta(chunk.choices[0].delta, message_completion)
                     if not ok:
+                        yield chunk
                         continue
                     if generation.tt_first_token is None:
                         generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                yield chunk
             elif generation and isinstance(generation, CompletionGeneration):
                 if len(chunk.choices) > 0 and chunk.choices[0].text is not None:
                     if generation.tt_first_token is None:
@@ -374,7 +409,15 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                         ) * 1000
                     token_count += 1
                     completion += chunk.choices[0].text
-                yield chunk
+
+            if (
+                generation
+                and getattr(chunk, "model", None)
+                and generation.model != chunk.model
+            ):
+                generation.model = chunk.model
+
+            yield chunk
 
         if generation:
             generation.duration = time.time() - context["start"]
@@ -387,10 +430,13 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
 
         step = context.get("step")
         if callable(on_new_generation):
-            on_new_generation(generation, {
-                "start": context["start"],
-                "end": time.time(),
-            })
+            on_new_generation(
+                generation,
+                {
+                    "start": context["start"],
+                    "end": time.time(),
+                },
+            )
         elif step:
             if isinstance(generation, ChatGeneration):
                 step.output = generation.message_completion  # type: ignore
@@ -409,6 +455,11 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
             if not generation:
                 return result
 
+            if model := getattr(result, "model", None):
+                generation.model = model
+                if generation.settings:
+                    generation.settings["model"] = model
+
             if isinstance(result, AsyncStream):
                 return async_streaming_response(generation, result, context)
             else:
@@ -416,10 +467,13 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 update_step_after(generation, result)
 
             if callable(on_new_generation):
-                on_new_generation(generation, {
-                    "start": context["start"],
-                    "end": time.time(),
-                })
+                on_new_generation(
+                    generation,
+                    {
+                        "start": context["start"],
+                        "end": time.time(),
+                    },
+                )
             elif step:
                 if isinstance(generation, ChatGeneration):
                     step.output = generation.message_completion  # type: ignore

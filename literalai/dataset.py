@@ -1,5 +1,11 @@
+import sys
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict
+from typing import TYPE_CHECKING, Dict, List, Optional
+
+if sys.version_info < (3, 12):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 if TYPE_CHECKING:
     from literalai.api import API
@@ -37,7 +43,7 @@ class Dataset:
         }
 
     @classmethod
-    def from_dict(cls, api: Any, dataset: DatasetDict) -> "Dataset":
+    def from_dict(cls, api: "API", dataset: DatasetDict) -> "Dataset":
         return cls(
             api=api,
             id=dataset.get("id", ""),
