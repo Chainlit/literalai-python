@@ -179,12 +179,11 @@ class Prompt:
                     **(kwargs or {}),
                 }
 
-                rendered_messages = []
+                rendered_messages: List[BaseMessage] = []
 
                 for index, message in enumerate(self.messages):
-                    content = chevron.render(
-                        message.prompt.template, variables_with_defaults
-                    )
+                    template = message.prompt.template  # type: ignore
+                    content = chevron.render(template, variables_with_defaults)
                     additonal_kwargs = {}
                     if self.orig_messages and index < len(self.orig_messages):
                         additonal_kwargs = {

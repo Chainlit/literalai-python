@@ -4,7 +4,7 @@ setup(
     name="literalai",
     version="0.0.300",  # update version in literalai/version.py
     description="An SDK for observability in Python applications",
-    author="",
+    author="Literal AI",
     package_data={"literalai": ["py.typed"]},
     packages=find_packages(),
     install_requires=[
