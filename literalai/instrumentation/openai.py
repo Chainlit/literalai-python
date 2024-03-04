@@ -299,7 +299,15 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                         ) * 1000
                     token_count += 1
                     completion += chunk.choices[0].text
-                yield chunk
+
+            if (
+                generation
+                and getattr(chunk, "model", None)
+                and generation.model != chunk.model
+            ):
+                generation.model = chunk.model
+
+            yield chunk
 
         if generation:
             generation.duration = time.time() - context["start"]
@@ -386,13 +394,13 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 if len(chunk.choices) > 0:
                     ok = process_delta(chunk.choices[0].delta, message_completion)
                     if not ok:
+                        yield chunk
                         continue
                     if generation.tt_first_token is None:
                         generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                yield chunk
             elif generation and isinstance(generation, CompletionGeneration):
                 if len(chunk.choices) > 0 and chunk.choices[0].text is not None:
                     if generation.tt_first_token is None:
@@ -401,7 +409,15 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                         ) * 1000
                     token_count += 1
                     completion += chunk.choices[0].text
-                yield chunk
+
+            if (
+                generation
+                and getattr(chunk, "model", None)
+                and generation.model != chunk.model
+            ):
+                generation.model = chunk.model
+
+            yield chunk
 
         if generation:
             generation.duration = time.time() - context["start"]
