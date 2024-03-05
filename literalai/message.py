@@ -1,4 +1,3 @@
-import datetime
 import uuid
 from typing import TYPE_CHECKING, Dict, List, Optional
 
@@ -6,6 +5,7 @@ if TYPE_CHECKING:
     from literalai.event_processor import EventProcessor
 
 from literalai.context import active_steps_var, active_thread_var
+from literalai.helper import utc_now
 from literalai.my_types import Attachment, Feedback
 from literalai.step import MessageStepType, StepDict
 
@@ -46,7 +46,7 @@ class Message:
 
         self.id = id or str(uuid.uuid4())
         if not timestamp:
-            self.timestamp = datetime.datetime.utcnow().isoformat()
+            self.timestamp = utc_now()
         else:
             self.timestamp = timestamp
         self.name = name

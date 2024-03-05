@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 import os
 import secrets
 
@@ -7,6 +6,7 @@ import pytest
 
 import literalai
 from literalai import LiteralClient
+from literalai.helper import utc_now
 from literalai.thread import DateTimeFilter, ThreadFilter
 
 """
@@ -109,11 +109,7 @@ class Teste2e:
 
         await asyncio.sleep(1)
 
-        filters = ThreadFilter(
-            createdAt=DateTimeFilter(
-                operator="gt", value=datetime.datetime.utcnow().isoformat()
-            )
-        )
+        filters = ThreadFilter(createdAt=DateTimeFilter(operator="gt", value=utc_now()))
 
         threads = await client.api.export_threads(filters=filters)
         assert len(threads.data) == 0

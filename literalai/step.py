@@ -1,4 +1,3 @@
-import datetime
 import inspect
 import uuid
 from copy import deepcopy
@@ -20,6 +19,7 @@ if TYPE_CHECKING:
     from literalai.event_processor import EventProcessor
 
 from literalai.context import active_steps_var, active_thread_var
+from literalai.helper import utc_now
 from literalai.my_types import (
     Attachment,
     AttachmentDict,
@@ -90,7 +90,7 @@ class Step:
 
         sleep(0.001)
         self.id = id or str(uuid.uuid4())
-        self.start_time = datetime.datetime.utcnow().isoformat()
+        self.start_time = utc_now()
         self.name = name
         self.type = type
 
@@ -119,7 +119,7 @@ class Step:
         active_steps_var.set(active_steps)
 
     def end(self):
-        self.end_time = datetime.datetime.utcnow().isoformat()
+        self.end_time = utc_now()
 
         # Update active steps
         active_steps = active_steps_var.get()

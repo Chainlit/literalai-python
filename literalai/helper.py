@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 def filter_none_values(data):
     return {key: value for key, value in data.items() if value is not None}
 
@@ -26,3 +29,14 @@ def ensure_values_serializable(data):
         )  # Convert tuples and sets to lists
     else:
         return str(data)  # Fallback: convert other types to string
+
+
+def utc_now():
+    dt = datetime.utcnow()
+    print(dt, dt.isoformat() + "Z")
+    return dt.isoformat() + "Z"
+
+
+def timestamp_utc(timestamp: float):
+    dt = datetime.utcfromtimestamp(timestamp)
+    return dt.isoformat() + "Z"
