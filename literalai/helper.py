@@ -33,7 +33,6 @@ def ensure_values_serializable(data):
 
 def utc_now():
     dt = datetime.utcnow()
-    print(dt, dt.isoformat() + "Z")
     return dt.isoformat() + "Z"
 
 
