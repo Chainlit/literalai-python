@@ -218,6 +218,7 @@ class Prompt:
         lc_messages = [(m["role"], m["content"]) for m in self.template_messages]
 
         chat_template = CustomChatPromptTemplate.from_messages(lc_messages)
+        chat_template.input_variables = []
         chat_template.default_vars = self.variables_default_values
         chat_template.orig_messages = self.template_messages
         chat_template.prompt_id = self.id
