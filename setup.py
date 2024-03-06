@@ -7,6 +7,7 @@ setup(
     author="Literal AI",
     package_data={"literalai": ["py.typed"]},
     packages=find_packages(),
+    license="Apache License 2.0",
     install_requires=[
         "packaging>=23.0",
         "httpx>=0.23.0",
