@@ -86,7 +86,7 @@ class EventProcessor:
         while not self.event_queue.empty():
             await asyncio.sleep(0.2)
 
-    def flus_sync(self):
+    def flush_sync(self):
         while not self.event_queue.empty():
             time.sleep(0.2)
 

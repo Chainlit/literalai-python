@@ -469,6 +469,7 @@ def get_langchain_callback():
                     current_step.metadata = {}
                 current_step.error = str(error)
                 current_step.end()
+                self.client.flush_sync()
 
         on_llm_error = _on_error
         on_chain_error = _on_error

@@ -234,6 +234,7 @@ class StepContextManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             self.step.error = str(exc_val)
+            await self.client.event_processor.flush()
         self.step.end()
 
     def __enter__(self) -> Step:
@@ -249,6 +250,7 @@ class StepContextManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             self.step.error = str(exc_val)
+            self.client.event_processor.flush_sync()
         self.step.end()
 
 
