@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, TypedDict,
 
 from literalai.dataset import Dataset
 from literalai.dataset_item import DatasetItem
+from literalai.filter import Filter
 from literalai.prompt import Prompt
 
 if TYPE_CHECKING:
@@ -17,14 +18,13 @@ from literalai.my_types import (
     Attachment,
     ChatGeneration,
     CompletionGeneration,
-    Feedback,
-    FeedbackStrategy,
     PaginatedResponse,
-    PaginatedRestResponse,
+    Score,
+    ScoreType,
     User,
 )
 from literalai.step import Step, StepDict, StepType
-from literalai.thread import Thread, ThreadDict, ThreadFilter
+from literalai.thread import Thread
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,10 @@ step_fields = """
         input
         output
         metadata
-        feedback {
+        scores {
             id
+            type
+            name
             value
             comment
         }
@@ -158,7 +160,7 @@ def query_variables_builder(steps):
         $parentId_{id}: String
         $name_{id}: String
         $generation_{id}: GenerationPayloadInput
-        $feedback_{id}: FeedbackPayloadInput
+        $scores_{id}: [ScorePayloadInput!]
         $attachments_{id}: [AttachmentPayloadInput!]
         """
     return generated
@@ -181,7 +183,7 @@ def ingest_steps_builder(steps):
         parentId: $parentId_{id}
         name: $name_{id}
         generation: $generation_{id}
-        feedback: $feedback_{id}
+        scores: $scores_{id}
         attachments: $attachments_{id}
       ) {{
         ok
@@ -407,11 +409,26 @@ class API:
 
     # Thread API
 
-    async def list_threads(
+    threads_filterable_fields = Literal[
+        "id",
+        "createdAt",
+        "participantId",
+        "environment",
+        "name",
+        "metadata",
+        "tokenCount",
+        "tags",
+        "participantIdentifiers",
+        "scoreValue",
+        "duration",
+    ]
+
+    async def get_threads(
         self,
         first: Optional[int] = None,
         after: Optional[str] = None,
-        filters: Optional[ThreadFilter] = None,
+        before: Optional[str] = None,
+        filters: Optional[List[Filter[threads_filterable_fields]]] = None,
     ) -> PaginatedResponse:
         query = (
             """
@@ -419,11 +436,10 @@ class API:
             $after: ID,
             $before: ID,
             $cursorAnchor: DateTime,
-            $filters: ThreadFiltersInput,
+            $filters: [ThreadsInputType!],
             $first: Int,
             $last: Int,
             $projectId: String,
-            $skip: Int
             ) {
             threads(
                 after: $after,
@@ -433,7 +449,6 @@ class API:
                 first: $first,
                 last: $last,
                 projectId: $projectId,
-                skip: $skip
                 ) {
                 pageInfo {
                     startCursor
@@ -446,7 +461,7 @@ class API:
                     cursor
                     node {
 """
-            + shallow_thread_fields
+            + thread_fields
             + """
                     }
                 }
@@ -460,8 +475,10 @@ class API:
             variables["first"] = first
         if after:
             variables["after"] = after
+        if before:
+            variables["before"] = before
         if filters:
-            variables["filters"] = filters.to_dict()
+            variables["filters"] = filters
 
         result = await self.make_api_call("list threads", query, variables)
 
@@ -471,27 +488,6 @@ class API:
         del response["edges"]
 
         return PaginatedResponse[Thread].from_dict(response, Thread)
-
-    async def export_threads(
-        self,
-        page: Optional[int] = None,
-        filters: Optional[ThreadFilter] = None,
-        cursor_anchor: Optional[str] = None,
-    ) -> PaginatedRestResponse[ThreadDict]:
-        body: Dict[str, Any] = {}
-
-        if cursor_anchor:
-            body["cursorAnchor"] = cursor_anchor
-
-        if page:
-            body["page"] = page
-
-        if filters:
-            body["filters"] = filters.to_dict()
-
-        result = await self.make_rest_api_call(subpath="/export/threads", body=body)
-
-        return PaginatedRestResponse(**result)
 
     async def create_thread(
         self,
@@ -718,85 +714,121 @@ class API:
         deleted = bool(result["data"]["deleteThread"])
         return deleted
 
-    # Feedback API
+    # Score API
 
-    async def create_feedback(
+    async def create_score(
         self,
-        step_id: str,
+        name: str,
         value: int,
+        type: ScoreType,
+        step_id: Optional[str] = None,
+        generation_id: Optional[str] = None,
+        dataset_experiment_item_id: Optional[str] = None,
         comment: Optional[str] = None,
-        strategy: Optional[FeedbackStrategy] = None,
-    ) -> "Feedback":
+        tags: Optional[List[str]] = None,
+    ) -> "Score":
         query = """
-        mutation CreateFeedback(
+        mutation CreateScore(
+            $name: String!,
+            $type: ScoreType!,
+            $value: Float!,
+            $stepId: String,
+            $generationId: String,
+            $datasetExperimentItemId: String,
             $comment: String,
-            $stepId: String!,
-            $strategy: FeedbackStrategy,
-            $value: Int!,
+            $tags: [String!],
+
         ) {
-            createFeedback(
-                comment: $comment,
-                stepId: $stepId,
-                strategy: $strategy,
+            createScore(
+                name: $name,
+                type: $type,
                 value: $value,
+                stepId: $stepId,
+                generationId: $generationId,
+                datasetExperimentItemId: $datasetExperimentItemId,
+                comment: $comment,
+                tags: $tags,
             ) {
                 id
-                threadId
-                stepId
-                value
-                comment
-                strategy
+                name,
+                type,
+                value,
+                stepId,
+                generationId,
+                datasetExperimentItemId,
+                comment,
+                tags,
             }
         }
         """
 
         variables = {
-            "comment": comment,
-            "stepId": step_id,
-            "strategy": strategy,
+            "name": name,
+            "type": type,
             "value": value,
+            "stepId": step_id,
+            "generationId": generation_id,
+            "datasetExperimentItemId": dataset_experiment_item_id,
+            "comment": comment,
+            "tags": tags,
         }
 
-        result = await self.make_api_call("create feedback", query, variables)
+        result = await self.make_api_call("create score", query, variables)
 
-        return Feedback.from_dict(result["data"]["createFeedback"])
+        return Score.from_dict(result["data"]["createScore"])
 
-    class FeedbackUpdate(TypedDict, total=False):
+    class ScoreUpdate(TypedDict, total=False):
         comment: Optional[str]
-        value: Optional[int]
-        strategy: Optional[FeedbackStrategy]
+        value: Optional[float]
+        type: Optional[ScoreType]
 
-    async def update_feedback(
+    async def update_score(
         self,
         id: str,
-        update_params: FeedbackUpdate,
-    ) -> "Feedback":
+        update_params: ScoreUpdate,
+    ) -> "Score":
         query = """
-            mutation UpdateFeedback(
+            mutation UpdateScore(
                 $id: String!,
                 $comment: String,
-                $value: Int,
-                $strategy: FeedbackStrategy,
+                $value: Float!,
             ) {
-                updateFeedback(
+                updateScore(
                     id: $id,
                     comment: $comment,
                     value: $value,
-                    strategy: $strategy,
                 ) {
                     id
-                    threadId
-                    stepId
-                    value
-                    comment
-                    strategy
+                    name,
+                    type,
+                    value,
+                    stepId,
+                    generationId,
+                    datasetExperimentItemId,
+                    comment,
+                    tags,
                 }
             }
         """
         variables = {"id": id, **update_params}
-        result = await self.make_api_call("update feedback", query, variables)
+        result = await self.make_api_call("update score", query, variables)
 
-        return Feedback.from_dict(result["data"]["updateFeedback"])
+        return Score.from_dict(result["data"]["updateScore"])
+
+    async def delete_score(self, id: str):
+        query = """
+        mutation DeleteScore($id: String!) {
+            deleteScore(id: $id) {
+                id
+            }
+        }
+        """
+
+        variables = {"id": id}
+
+        result = await self.make_api_call("delete score", query, variables)
+
+        return result["data"]["deleteScore"]
 
     # Attachment API
 
@@ -1255,6 +1287,7 @@ class API:
                 return {"object_key": None, "url": None}
 
     # Dataset API
+
     async def create_dataset(
         self,
         name: Optional[str] = None,
@@ -1474,6 +1507,7 @@ class API:
         return Dataset.from_dict(self, result["data"]["deleteDataset"])
 
     # DatasetItem API
+
     async def create_dataset_item(
         self,
         dataset_id: str,
@@ -1700,6 +1734,7 @@ class API:
         return DatasetItem.from_dict(result["data"]["addStepToDataset"])
 
     # Prompt API
+
     async def get_prompt(
         self, name: str, version: Optional[int] = None
     ) -> Optional[Prompt]:

@@ -6,8 +6,6 @@ import pytest
 
 import literalai
 from literalai import LiteralClient
-from literalai.helper import utc_now
-from literalai.thread import DateTimeFilter, ThreadFilter
 
 """
 End to end tests for the SDK
@@ -73,7 +71,7 @@ class Teste2e:
         )
         assert updated_thread.tags == ["hello:world"]
 
-        threads = await client.api.list_threads(first=1)
+        threads = await client.api.get_threads(first=1)
         assert len(threads.data) == 1
 
         await client.api.delete_thread(id=thread.id)
@@ -103,22 +101,7 @@ class Teste2e:
 
         assert deleted_step is None
 
-    async def test_thread_export(self, client: LiteralClient):
-        thread = await client.api.create_thread(metadata={"foo": "bar"}, tags=["hello"])
-        assert thread.id is not None
-
-        await asyncio.sleep(1)
-
-        filters = ThreadFilter(createdAt=DateTimeFilter(operator="gt", value=utc_now()))
-
-        threads = await client.api.export_threads(filters=filters)
-        assert len(threads.data) == 0
-
-        threads = await client.api.export_threads()
-
-        assert len(threads.data) > 0
-
-    async def test_feedback(self, client: LiteralClient):
+    async def test_score(self, client: LiteralClient):
         thread = await client.api.create_thread()
         step = await client.api.create_step(
             thread_id=thread.id, metadata={"foo": "bar"}
@@ -126,17 +109,21 @@ class Teste2e:
 
         assert step.id is not None
 
-        feedback = await client.api.create_feedback(
-            step_id=step.id, comment="hello", value=1
+        score = await client.api.create_score(
+            step_id=step.id,
+            name="user-feedback",
+            type="HUMAN",
+            comment="hello",
+            value=1,
         )
-        assert feedback.id is not None
-        assert feedback.comment == "hello"
+        assert score.id is not None
+        assert score.comment == "hello"
 
-        updated_feedback = await client.api.update_feedback(
-            id=feedback.id, update_params={"value": 2}
+        updated_score = await client.api.update_score(
+            id=score.id, update_params={"value": 0}
         )
-        assert updated_feedback.value == 2
-        assert updated_feedback.comment == "hello"
+        assert updated_score.value == 0
+        assert updated_score.comment == "hello"
 
     async def test_attachment(self, client: LiteralClient):
         attachment_url = (
