@@ -182,8 +182,8 @@ class CompletionGeneration(BaseGeneration):
 
 @dataclass
 class ChatGeneration(BaseGeneration):
-    messages: List[GenerationMessage] = Field(default_factory=list)
     type = GenerationType.CHAT
+    messages: Optional[List[GenerationMessage]] = Field(default_factory=list)
     message_completion: Optional[GenerationMessage] = None
 
     def to_dict(self):

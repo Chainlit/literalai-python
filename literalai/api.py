@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, TypedDict,
 
 from literalai.dataset import Dataset
 from literalai.dataset_item import DatasetItem
-from literalai.filter import Filter
+from literalai.filter import Filter, OrderBy
 from literalai.prompt import Prompt
 
 if TYPE_CHECKING:
@@ -423,12 +423,15 @@ class API:
         "duration",
     ]
 
+    threads_orderable_fields = Literal["createdAt", "tokenCount", "participant"]
+
     async def get_threads(
         self,
         first: Optional[int] = None,
         after: Optional[str] = None,
         before: Optional[str] = None,
         filters: Optional[List[Filter[threads_filterable_fields]]] = None,
+        order_by: Optional[OrderBy[threads_orderable_fields]] = None,
     ) -> PaginatedResponse:
         query = (
             """
@@ -437,6 +440,7 @@ class API:
             $before: ID,
             $cursorAnchor: DateTime,
             $filters: [ThreadsInputType!],
+            $orderBy: ThreadsOrderByInput,
             $first: Int,
             $last: Int,
             $projectId: String,
@@ -446,6 +450,7 @@ class API:
                 before: $before,
                 cursorAnchor: $cursorAnchor,
                 filters: $filters,
+                orderBy: $orderBy,
                 first: $first,
                 last: $last,
                 projectId: $projectId,
@@ -479,6 +484,8 @@ class API:
             variables["before"] = before
         if filters:
             variables["filters"] = filters
+        if order_by:
+            variables["orderBy"] = order_by
 
         result = await self.make_api_call("list threads", query, variables)
 

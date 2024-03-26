@@ -53,7 +53,8 @@ async def main():
                 "operator": "gt",
                 "value": "2023-12-05",
             },
-        ]
+        ],
+        order_by={"column": "participant", "direction": "ASC"},
     )
     print(threads.to_dict())
 

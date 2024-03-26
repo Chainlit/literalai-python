@@ -31,3 +31,8 @@ class Filter(Generic[Field], TypedDict):
     operator: OPERATORS
     value: Any
     path: Optional[str]
+
+
+class OrderBy(Generic[Field], TypedDict):
+    column: Field
+    direction: Literal["ASC", "DESC"]
