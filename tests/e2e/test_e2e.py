@@ -6,6 +6,7 @@ import pytest
 
 import literalai
 from literalai import LiteralClient
+from literalai.my_types import ChatGeneration
 
 """
 End to end tests for the SDK
@@ -48,17 +49,34 @@ class Teste2e:
         fetched_user = await client.api.get_user(id=user.id)
         assert fetched_user and fetched_user.id == user.id
 
+        users = await client.api.get_users(first=1)
+        assert len(users.data) == 1
+
         await client.api.delete_user(id=user.id)
 
         deleted_user = await client.api.get_user(id=user.id)
         assert deleted_user is None
 
-    async def test_thread(self, client: LiteralClient):
-        """
-        Warning: it does not test the list thread pagination
-        FIXME update method is broken
-        """
+    async def test_generation(self, client: LiteralClient):
+        chat_generation = ChatGeneration(
+            provider="test",
+            model="test",
+            messages=[
+                {"content": "Hello", "role": "user"},
+                {"content": "Hi", "role": "assistant"},
+            ],
+            tags=["test"],
+        )
+        generation = await client.api.create_generation(chat_generation)
+        assert generation.id is not None
 
+        generations = await client.api.get_generations(
+            first=1, order_by={"column": "createdAt", "direction": "DESC"}
+        )
+        assert len(generations.data) == 1
+        assert generations.data[0].id == generation.id
+
+    async def test_thread(self, client: LiteralClient):
         thread = await client.api.create_thread(metadata={"foo": "bar"}, tags=["hello"])
         assert thread.id is not None
         assert thread.metadata == {"foo": "bar"}
@@ -73,6 +91,7 @@ class Teste2e:
 
         threads = await client.api.get_threads(first=1)
         assert len(threads.data) == 1
+        assert threads.data[0].id == thread.id
 
         await client.api.delete_thread(id=thread.id)
 
@@ -124,6 +143,12 @@ class Teste2e:
         )
         assert updated_score.value == 0
         assert updated_score.comment == "hello"
+
+        scores = await client.api.get_scores(
+            first=1, order_by={"column": "createdAt", "direction": "DESC"}
+        )
+        assert len(scores.data) == 1
+        assert scores.data[0].id == score.id
 
     async def test_attachment(self, client: LiteralClient):
         attachment_url = (

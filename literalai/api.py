@@ -16,6 +16,7 @@ import httpx
 from literalai.helper import ensure_values_serializable
 from literalai.my_types import (
     Attachment,
+    BaseGeneration,
     ChatGeneration,
     CompletionGeneration,
     PaginatedResponse,
@@ -49,7 +50,6 @@ step_fields = """
         }
         tags
         generation {
-          tags
           prompt
           completion
           createdAt
@@ -317,6 +317,84 @@ class API:
 
     # User API
 
+    users_filterable_fields = Literal[
+        "id",
+        "createdAt",
+        "identifier",
+        "lastEngaged",
+        "threadCount",
+        "tokenCount",
+        "metadata",
+    ]
+
+    async def get_users(
+        self,
+        first: Optional[int] = None,
+        after: Optional[str] = None,
+        before: Optional[str] = None,
+        filters: Optional[List[Filter[users_filterable_fields]]] = None,
+    ) -> PaginatedResponse:
+        query = """
+        query GetParticipants(
+            $after: ID,
+            $before: ID,
+            $cursorAnchor: DateTime,
+            $filters: [participantsInputType!],
+            $first: Int,
+            $last: Int,
+            $projectId: String,
+            ) {
+            participants(
+                after: $after,
+                before: $before,
+                cursorAnchor: $cursorAnchor,
+                filters: $filters,
+                first: $first,
+                last: $last,
+                projectId: $projectId,
+                ) {
+                pageInfo {
+                    startCursor
+                    endCursor
+                    hasNextPage
+                    hasPreviousPage
+                }
+                totalCount
+                edges {
+                    cursor
+                    node {
+                        id
+                        createdAt
+                        lastEngaged
+                        threadCount
+                        tokenCount
+                        identifier
+                        metadata
+                    }
+                }
+            }
+        }
+    """
+        variables: Dict[str, Any] = {}
+
+        if first:
+            variables["first"] = first
+        if after:
+            variables["after"] = after
+        if before:
+            variables["before"] = before
+        if filters:
+            variables["filters"] = filters
+
+        result = await self.make_api_call("get users", query, variables)
+
+        response = result["data"]["participants"]
+
+        response["data"] = list(map(lambda x: x["node"], response["edges"]))
+        del response["edges"]
+
+        return PaginatedResponse[User].from_dict(response, User)
+
     async def create_user(
         self, identifier: str, metadata: Optional[Dict] = None
     ) -> User:
@@ -412,8 +490,9 @@ class API:
     threads_filterable_fields = Literal[
         "id",
         "createdAt",
-        "participantId",
         "name",
+        "stepType",
+        "stepName",
         "metadata",
         "tokenCount",
         "tags",
@@ -486,7 +565,7 @@ class API:
         if order_by:
             variables["orderBy"] = order_by
 
-        result = await self.make_api_call("list threads", query, variables)
+        result = await self.make_api_call("get threads", query, variables)
 
         response = result["data"]["threads"]
 
@@ -722,6 +801,105 @@ class API:
 
     # Score API
 
+    scores_filterable_fields = Literal[
+        "id",
+        "createdAt",
+        "participant",
+        "name",
+        "tags",
+        "value",
+        "type",
+        "comment",
+    ]
+
+    scores_orderable_fields = Literal["createdAt"]
+
+    async def get_scores(
+        self,
+        first: Optional[int] = None,
+        after: Optional[str] = None,
+        before: Optional[str] = None,
+        filters: Optional[List[Filter[scores_filterable_fields]]] = None,
+        order_by: Optional[OrderBy[scores_orderable_fields]] = None,
+    ) -> PaginatedResponse:
+        query = """
+        query GetScores(
+            $after: ID,
+            $before: ID,
+            $cursorAnchor: DateTime,
+            $filters: [scoresInputType!],
+            $orderBy: ScoresOrderByInput,
+            $first: Int,
+            $last: Int,
+            $projectId: String,
+            ) {
+            scores(
+                after: $after,
+                before: $before,
+                cursorAnchor: $cursorAnchor,
+                filters: $filters,
+                orderBy: $orderBy,
+                first: $first,
+                last: $last,
+                projectId: $projectId,
+                ) {
+                pageInfo {
+                    startCursor
+                    endCursor
+                    hasNextPage
+                    hasPreviousPage
+                }
+                totalCount
+                edges {
+                    cursor
+                    node {
+                        comment
+                        createdAt
+                        id
+                        projectId
+                        stepId
+                        generationId
+                        datasetExperimentItemId
+                        type
+                        updatedAt
+                        name
+                        value
+                        tags
+                        step {
+                            thread {
+                            id
+                            participant {
+                                identifier
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    """
+        variables: Dict[str, Any] = {}
+
+        if first:
+            variables["first"] = first
+        if after:
+            variables["after"] = after
+        if before:
+            variables["before"] = before
+        if filters:
+            variables["filters"] = filters
+        if order_by:
+            variables["orderBy"] = order_by
+
+        result = await self.make_api_call("get scores", query, variables)
+
+        response = result["data"]["scores"]
+
+        response["data"] = list(map(lambda x: x["node"], response["edges"]))
+        del response["edges"]
+
+        return PaginatedResponse[Score].from_dict(response, Score)  # type: ignore
+
     async def create_score(
         self,
         name: str,
@@ -810,8 +988,7 @@ class API:
                     stepId,
                     generationId,
                     datasetExperimentItemId,
-                    comment,
-                    tags,
+                    comment
                 }
             }
         """
@@ -1185,13 +1362,134 @@ class API:
 
     # Generation API
 
+    generation_filterable_fields = Literal[
+        "id",
+        "createdAt",
+        "model",
+        "duration",
+        "promptLineage",
+        "promptVersion",
+        "tags",
+        "score",
+        "participant",
+        "tokenCount",
+        "error",
+    ]
+
+    generation_orderable_fields = Literal[
+        "createdAt",
+        "tokenCount",
+        "model",
+        "provider",
+        "participant",
+        "duration",
+    ]
+
+    async def get_generations(
+        self,
+        first: Optional[int] = None,
+        after: Optional[str] = None,
+        before: Optional[str] = None,
+        filters: Optional[List[Filter[generation_filterable_fields]]] = None,
+        order_by: Optional[OrderBy[generation_orderable_fields]] = None,
+    ) -> PaginatedResponse:
+        query = """
+        query GetGenerations(
+            $after: ID,
+            $before: ID,
+            $cursorAnchor: DateTime,
+            $filters: [generationsInputType!],
+            $orderBy: GenerationsOrderByInput,
+            $first: Int,
+            $last: Int,
+            $projectId: String,
+            ) {
+            generations(
+                after: $after,
+                before: $before,
+                cursorAnchor: $cursorAnchor,
+                filters: $filters,
+                orderBy: $orderBy,
+                first: $first,
+                last: $last,
+                projectId: $projectId,
+                ) {
+                pageInfo {
+                    startCursor
+                    endCursor
+                    hasNextPage
+                    hasPreviousPage
+                }
+                totalCount
+                edges {
+                    cursor
+                    node {
+                        id
+                        projectId
+                        prompt
+                        completion
+                        createdAt
+                        provider
+                        model
+                        variables
+                        messages
+                        messageCompletion
+                        tools
+                        settings
+                        stepId
+                        tokenCount
+                        duration
+                        inputTokenCount
+                        outputTokenCount
+                        ttFirstToken
+                        duration
+                        tokenThroughputInSeconds
+                        error
+                        type
+                        tags
+                        step {
+                            threadId
+                            thread {
+                            participant {
+                                identifier
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    """
+        variables: Dict[str, Any] = {}
+
+        if first:
+            variables["first"] = first
+        if after:
+            variables["after"] = after
+        if before:
+            variables["before"] = before
+        if filters:
+            variables["filters"] = filters
+        if order_by:
+            variables["orderBy"] = order_by
+
+        result = await self.make_api_call("get generations", query, variables)
+
+        response = result["data"]["generations"]
+
+        response["data"] = list(map(lambda x: x["node"], response["edges"]))
+        del response["edges"]
+
+        return PaginatedResponse[ChatGeneration].from_dict(response, ChatGeneration)
+
     async def create_generation(
         self, generation: Union[ChatGeneration, CompletionGeneration]
     ):
         mutation = """
         mutation CreateGeneration($generation: GenerationPayloadInput!) {
             createGeneration(generation: $generation) {
-                id
+                id,
+                type
             }
         }
         """
@@ -1202,7 +1500,7 @@ class API:
 
         result = await self.make_api_call("create generation", mutation, variables)
 
-        return result["data"]["createGeneration"]
+        return BaseGeneration.from_dict(result["data"]["createGeneration"])
 
     def create_generation_sync(
         self, generation: Union[ChatGeneration, CompletionGeneration]
@@ -1210,7 +1508,8 @@ class API:
         mutation = """
         mutation CreateGeneration($generation: GenerationPayloadInput!) {
             createGeneration(generation: $generation) {
-                id
+                id,
+                type
             }
         }
         """
@@ -1221,7 +1520,7 @@ class API:
 
         result = self.make_api_call_sync("create generation", mutation, variables)
 
-        return result["data"]["createGeneration"]
+        return BaseGeneration.from_dict(result["data"]["createGeneration"])
 
     # Upload API
 

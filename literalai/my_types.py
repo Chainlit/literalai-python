@@ -100,6 +100,7 @@ class GenerationMessage(TypedDict, total=False):
 
 @dataclass
 class BaseGeneration:
+    id: Optional[str] = None
     prompt_id: Optional[str] = None
     provider: Optional[str] = None
     model: Optional[str] = None
@@ -166,6 +167,7 @@ class CompletionGeneration(BaseGeneration):
     @classmethod
     def from_dict(self, generation_dict: Dict) -> "CompletionGeneration":
         return CompletionGeneration(
+            id=generation_dict.get("id"),
             prompt_id=generation_dict.get("promptId"),
             error=generation_dict.get("error"),
             tags=generation_dict.get("tags"),
@@ -205,6 +207,7 @@ class ChatGeneration(BaseGeneration):
     @classmethod
     def from_dict(self, generation_dict: Dict) -> "ChatGeneration":
         return ChatGeneration(
+            id=generation_dict.get("id"),
             prompt_id=generation_dict.get("promptId"),
             error=generation_dict.get("error"),
             tags=generation_dict.get("tags"),
