@@ -413,7 +413,6 @@ class API:
         "id",
         "createdAt",
         "participantId",
-        "environment",
         "name",
         "metadata",
         "tokenCount",
@@ -786,8 +785,7 @@ class API:
 
     class ScoreUpdate(TypedDict, total=False):
         comment: Optional[str]
-        value: Optional[float]
-        type: Optional[ScoreType]
+        value: float
 
     async def update_score(
         self,

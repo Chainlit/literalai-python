@@ -17,19 +17,24 @@ ScoreType = Literal["HUMAN", "AI"]
 @dataclass
 class PageInfo:
     hasNextPage: bool
+    startCursor: Optional[str]
     endCursor: Optional[str]
 
     def to_dict(self):
         return {
             "hasNextPage": self.hasNextPage,
+            "startCursor": self.startCursor,
             "endCursor": self.endCursor,
         }
 
     @classmethod
     def from_dict(cls, page_info_dict: Dict) -> "PageInfo":
         hasNextPage = page_info_dict.get("hasNextPage", False)
+        startCursor = page_info_dict.get("startCursor", None)
         endCursor = page_info_dict.get("endCursor", None)
-        return cls(hasNextPage=hasNextPage, endCursor=endCursor)
+        return cls(
+            hasNextPage=hasNextPage, startCursor=startCursor, endCursor=endCursor
+        )
 
 
 T = TypeVar("T", covariant=True)
