@@ -5,7 +5,7 @@ if sys.version_info < (3, 11):
 else:
     from typing import TypedDict
 
-from typing import Any, Generic, Literal, Optional, TypeVar, Union
+from typing import Any, Generic, List, Literal, Optional, TypeVar, Union
 
 Field = TypeVar("Field")
 Operators = TypeVar("Operators")
@@ -36,3 +36,70 @@ class Filter(Generic[Field], TypedDict):
 class OrderBy(Generic[Field], TypedDict):
     column: Field
     direction: Literal["ASC", "DESC"]
+
+
+threads_filterable_fields = Literal[
+    "id",
+    "createdAt",
+    "name",
+    "stepType",
+    "stepName",
+    "metadata",
+    "tokenCount",
+    "tags",
+    "participantIdentifiers",
+    "scoreValue",
+    "duration",
+]
+threads_orderable_fields = Literal["createdAt", "tokenCount", "participant"]
+threads_filters = List[Filter[threads_filterable_fields]]
+threads_order_by = OrderBy[threads_orderable_fields]
+
+users_filterable_fields = Literal[
+    "id",
+    "createdAt",
+    "identifier",
+    "lastEngaged",
+    "threadCount",
+    "tokenCount",
+    "metadata",
+]
+users_filters = List[Filter[users_filterable_fields]]
+
+scores_filterable_fields = Literal[
+    "id",
+    "createdAt",
+    "participant",
+    "name",
+    "tags",
+    "value",
+    "type",
+    "comment",
+]
+scores_orderable_fields = Literal["createdAt"]
+scores_filters = List[Filter[scores_filterable_fields]]
+scores_order_by = OrderBy[scores_orderable_fields]
+
+generation_filterable_fields = Literal[
+    "id",
+    "createdAt",
+    "model",
+    "duration",
+    "promptLineage",
+    "promptVersion",
+    "tags",
+    "score",
+    "participant",
+    "tokenCount",
+    "error",
+]
+generation_orderable_fields = Literal[
+    "createdAt",
+    "tokenCount",
+    "model",
+    "provider",
+    "participant",
+    "duration",
+]
+generations_filters = List[Filter[generation_filterable_fields]]
+generations_order_by = OrderBy[generation_orderable_fields]

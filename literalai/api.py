@@ -5,7 +5,15 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, TypedDict,
 
 from literalai.dataset import Dataset
 from literalai.dataset_item import DatasetItem
-from literalai.filter import Filter, OrderBy
+from literalai.filter import (
+    generations_filters,
+    generations_order_by,
+    scores_filters,
+    scores_order_by,
+    threads_filters,
+    threads_order_by,
+    users_filters,
+)
 from literalai.prompt import Prompt
 
 if TYPE_CHECKING:
@@ -317,22 +325,12 @@ class API:
 
     # User API
 
-    users_filterable_fields = Literal[
-        "id",
-        "createdAt",
-        "identifier",
-        "lastEngaged",
-        "threadCount",
-        "tokenCount",
-        "metadata",
-    ]
-
     async def get_users(
         self,
         first: Optional[int] = None,
         after: Optional[str] = None,
         before: Optional[str] = None,
-        filters: Optional[List[Filter[users_filterable_fields]]] = None,
+        filters: Optional[users_filters] = None,
     ) -> PaginatedResponse:
         query = """
         query GetParticipants(
@@ -487,29 +485,13 @@ class API:
 
     # Thread API
 
-    threads_filterable_fields = Literal[
-        "id",
-        "createdAt",
-        "name",
-        "stepType",
-        "stepName",
-        "metadata",
-        "tokenCount",
-        "tags",
-        "participantIdentifiers",
-        "scoreValue",
-        "duration",
-    ]
-
-    threads_orderable_fields = Literal["createdAt", "tokenCount", "participant"]
-
     async def get_threads(
         self,
         first: Optional[int] = None,
         after: Optional[str] = None,
         before: Optional[str] = None,
-        filters: Optional[List[Filter[threads_filterable_fields]]] = None,
-        order_by: Optional[OrderBy[threads_orderable_fields]] = None,
+        filters: Optional[threads_filters] = None,
+        order_by: Optional[threads_order_by] = None,
     ) -> PaginatedResponse:
         query = (
             """
@@ -801,26 +783,13 @@ class API:
 
     # Score API
 
-    scores_filterable_fields = Literal[
-        "id",
-        "createdAt",
-        "participant",
-        "name",
-        "tags",
-        "value",
-        "type",
-        "comment",
-    ]
-
-    scores_orderable_fields = Literal["createdAt"]
-
     async def get_scores(
         self,
         first: Optional[int] = None,
         after: Optional[str] = None,
         before: Optional[str] = None,
-        filters: Optional[List[Filter[scores_filterable_fields]]] = None,
-        order_by: Optional[OrderBy[scores_orderable_fields]] = None,
+        filters: Optional[scores_filters] = None,
+        order_by: Optional[scores_order_by] = None,
     ) -> PaginatedResponse:
         query = """
         query GetScores(
@@ -1362,36 +1331,13 @@ class API:
 
     # Generation API
 
-    generation_filterable_fields = Literal[
-        "id",
-        "createdAt",
-        "model",
-        "duration",
-        "promptLineage",
-        "promptVersion",
-        "tags",
-        "score",
-        "participant",
-        "tokenCount",
-        "error",
-    ]
-
-    generation_orderable_fields = Literal[
-        "createdAt",
-        "tokenCount",
-        "model",
-        "provider",
-        "participant",
-        "duration",
-    ]
-
     async def get_generations(
         self,
         first: Optional[int] = None,
         after: Optional[str] = None,
         before: Optional[str] = None,
-        filters: Optional[List[Filter[generation_filterable_fields]]] = None,
-        order_by: Optional[OrderBy[generation_orderable_fields]] = None,
+        filters: Optional[generations_filters] = None,
+        order_by: Optional[generations_order_by] = None,
     ) -> PaginatedResponse:
         query = """
         query GetGenerations(
