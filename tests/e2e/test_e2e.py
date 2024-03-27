@@ -89,7 +89,15 @@ class Teste2e:
         )
         assert updated_thread.tags == ["hello:world"]
 
-        threads = await client.api.get_threads(first=1)
+        threads = await client.api.get_threads(
+            first=1, order_by={"column": "createdAt", "direction": "DESC"}
+        )
+        assert len(threads.data) == 1
+        assert threads.data[0].id == thread.id
+
+        threads = await client.api.list_threads(
+            first=1, order_by={"column": "createdAt", "direction": "DESC"}
+        )
         assert len(threads.data) == 1
         assert threads.data[0].id == thread.id
 

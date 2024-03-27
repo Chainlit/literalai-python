@@ -26,7 +26,7 @@ OPERATORS = Union[
 ]
 
 
-class Filter(Generic[Field], TypedDict):
+class Filter(Generic[Field], TypedDict, total=False):
     field: Field
     operator: OPERATORS
     value: Any
@@ -51,7 +51,7 @@ threads_filterable_fields = Literal[
     "scoreValue",
     "duration",
 ]
-threads_orderable_fields = Literal["createdAt", "tokenCount", "participant"]
+threads_orderable_fields = Literal["createdAt", "tokenCount"]
 threads_filters = List[Filter[threads_filterable_fields]]
 threads_order_by = OrderBy[threads_orderable_fields]
 

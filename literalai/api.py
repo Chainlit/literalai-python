@@ -556,6 +556,82 @@ class API:
 
         return PaginatedResponse[Thread].from_dict(response, Thread)
 
+    async def list_threads(
+        self,
+        first: Optional[int] = None,
+        after: Optional[str] = None,
+        before: Optional[str] = None,
+        filters: Optional[threads_filters] = None,
+        order_by: Optional[threads_order_by] = None,
+    ) -> PaginatedResponse:
+        query = """query getThreads(
+    $first: Int
+    $after: ID
+    $last: Int
+    $before: ID
+    $skip: Int
+    $projectId: String
+    $filters: [ThreadsInputType!]
+    $orderBy: ThreadsOrderByInput
+    $cursorAnchor: DateTime
+  ) {
+    threads(
+      first: $first
+      after: $after
+      last: $last
+      before: $before
+      skip: $skip
+      projectId: $projectId
+      filters: $filters
+      orderBy: $orderBy
+      cursorAnchor: $cursorAnchor
+    ) {
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      totalCount
+      edges {
+        node {
+          id
+          createdAt
+          tokenCount
+          name
+          metadata
+          duration
+          tags
+          participant {
+            identifier
+            id
+          }
+        }
+      }
+    }
+  }"""
+        variables: Dict[str, Any] = {}
+
+        if first:
+            variables["first"] = first
+        if after:
+            variables["after"] = after
+        if before:
+            variables["before"] = before
+        if filters:
+            variables["filters"] = filters
+        if order_by:
+            variables["orderBy"] = order_by
+
+        result = await self.make_api_call("get threads", query, variables)
+
+        response = result["data"]["threads"]
+
+        response["data"] = list(map(lambda x: x["node"], response["edges"]))
+        del response["edges"]
+
+        return PaginatedResponse[Thread].from_dict(response, Thread)
+
     async def create_thread(
         self,
         name: Optional[str] = None,
