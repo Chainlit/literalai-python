@@ -26,8 +26,8 @@ from literalai.my_types import (
     BaseGeneration,
     ChatGeneration,
     CompletionGeneration,
-    Feedback,
-    FeedbackDict,
+    Score,
+    ScoreDict,
 )
 
 TrueStepType = Literal[
@@ -54,7 +54,7 @@ class StepDict(TypedDict, total=False):
     startTime: Optional[str]
     endTime: Optional[str]
     generation: Optional[Dict]
-    feedback: Optional[FeedbackDict]
+    scores: Optional[List[ScoreDict]]
     attachments: Optional[List[AttachmentDict]]
 
 
@@ -74,7 +74,7 @@ class Step:
     thread_id: Optional[str] = None
 
     generation: Optional[Union[ChatGeneration, CompletionGeneration]] = None
-    feedback: Optional[Feedback] = None
+    scores: Optional[List[Score]] = []
     attachments: List[Attachment] = []
 
     def __init__(
@@ -153,7 +153,7 @@ class Step:
             "generation": self.generation.to_dict() if self.generation else None,
             "name": self.name,
             "tags": self.tags,
-            "feedback": self.feedback.to_dict() if self.feedback else None,
+            "scores": [score.to_dict() for score in self.scores],
             "attachments": [attachment.to_dict() for attachment in self.attachments],
         }
 
@@ -181,10 +181,10 @@ class Step:
             if generation_dict:
                 step.generation = BaseGeneration.from_dict(generation_dict)
 
-        if "feedback" in step_dict:
-            feedback_dict = step_dict["feedback"]
-            if feedback_dict:
-                step.feedback = Feedback.from_dict(feedback_dict)
+        if "scores" in step_dict:
+            scores = step_dict["scores"]
+            if scores:
+                step.scores = [Score.from_dict(score) for score in scores]
 
         if "attachments" in step_dict:
             attachments = step_dict["attachments"]

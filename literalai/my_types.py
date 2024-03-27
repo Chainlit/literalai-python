@@ -11,27 +11,30 @@ else:
 from pydantic.dataclasses import Field, dataclass
 
 GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system"]
-FeedbackStrategy = Literal[
-    "BINARY", "STARS", "BIG_STARS", "LIKERT", "CONTINUOUS", "LETTERS", "PERCENTAGE"
-]
+ScoreType = Literal["HUMAN", "AI"]
 
 
 @dataclass
 class PageInfo:
     hasNextPage: bool
+    startCursor: Optional[str]
     endCursor: Optional[str]
 
     def to_dict(self):
         return {
             "hasNextPage": self.hasNextPage,
+            "startCursor": self.startCursor,
             "endCursor": self.endCursor,
         }
 
     @classmethod
     def from_dict(cls, page_info_dict: Dict) -> "PageInfo":
         hasNextPage = page_info_dict.get("hasNextPage", False)
+        startCursor = page_info_dict.get("startCursor", None)
         endCursor = page_info_dict.get("endCursor", None)
-        return cls(hasNextPage=hasNextPage, endCursor=endCursor)
+        return cls(
+            hasNextPage=hasNextPage, startCursor=startCursor, endCursor=endCursor
+        )
 
 
 T = TypeVar("T", covariant=True)
@@ -68,15 +71,6 @@ class PaginatedResponse(Generic[T]):
         return cls(pageInfo=pageInfo, data=data)
 
 
-@dataclass
-class PaginatedRestResponse(Generic[T]):
-    totalCount: int
-    totalPage: int
-    hasNextPage: bool
-    hasPreviousPage: bool
-    data: List[T]
-
-
 @unique
 class GenerationType(Enum):
     CHAT = "CHAT"
@@ -106,6 +100,7 @@ class GenerationMessage(TypedDict, total=False):
 
 @dataclass
 class BaseGeneration:
+    id: Optional[str] = None
     prompt_id: Optional[str] = None
     provider: Optional[str] = None
     model: Optional[str] = None
@@ -172,6 +167,7 @@ class CompletionGeneration(BaseGeneration):
     @classmethod
     def from_dict(self, generation_dict: Dict) -> "CompletionGeneration":
         return CompletionGeneration(
+            id=generation_dict.get("id"),
             prompt_id=generation_dict.get("promptId"),
             error=generation_dict.get("error"),
             tags=generation_dict.get("tags"),
@@ -193,8 +189,8 @@ class CompletionGeneration(BaseGeneration):
 
 @dataclass
 class ChatGeneration(BaseGeneration):
-    messages: List[GenerationMessage] = Field(default_factory=list)
     type = GenerationType.CHAT
+    messages: Optional[List[GenerationMessage]] = Field(default_factory=list)
     message_completion: Optional[GenerationMessage] = None
 
     def to_dict(self):
@@ -211,6 +207,7 @@ class ChatGeneration(BaseGeneration):
     @classmethod
     def from_dict(self, generation_dict: Dict) -> "ChatGeneration":
         return ChatGeneration(
+            id=generation_dict.get("id"),
             prompt_id=generation_dict.get("promptId"),
             error=generation_dict.get("error"),
             tags=generation_dict.get("tags"),
@@ -230,13 +227,16 @@ class ChatGeneration(BaseGeneration):
         )
 
 
-class FeedbackDict(TypedDict, total=False):
+class ScoreDict(TypedDict, total=False):
     id: Optional[str]
-    threadId: Optional[str]
+    name: str
+    type: ScoreType
+    value: float
     stepId: Optional[str]
-    value: Optional[float]
-    strategy: FeedbackStrategy
+    generationId: Optional[str]
+    datasetExperimentItemId: Optional[str]
     comment: Optional[str]
+    tags: Optional[List[str]]
 
 
 class AttachmentDict(TypedDict, total=False):
@@ -251,43 +251,55 @@ class AttachmentDict(TypedDict, total=False):
 
 
 @dataclass
-class Feedback:
+class Score:
+    name: str
+    type: ScoreType
+    value: float
+    step_id: Optional[str]
+    generation_id: Optional[str]
+    dataset_experiment_item_id: Optional[str]
+    comment: Optional[str]
+    tags: Optional[List[str]]
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
-    thread_id: Optional[str] = None
-    step_id: Optional[str] = None
-    value: Optional[float] = None
-    strategy: FeedbackStrategy = "BINARY"
-    comment: Optional[str] = None
 
     def to_dict(self):
         return {
             "id": self.id,
-            "threadId": self.thread_id,
-            "stepId": self.step_id,
+            "name": self.name,
+            "type": self.type,
             "value": self.value,
-            "strategy": self.strategy,
+            "stepId": self.step_id,
+            "generationId": self.generation_id,
+            "datasetExperimentItemId": self.dataset_experiment_item_id,
             "comment": self.comment,
+            "tags": self.tags,
         }
 
     @classmethod
-    def from_dict(cls, feedback_dict: FeedbackDict) -> "Feedback":
-        id = feedback_dict.get("id", "")
-        thread_id = feedback_dict.get("threadId", "")
-        step_id = feedback_dict.get("stepId", "")
-        value = feedback_dict.get("value", None)
-        strategy = feedback_dict.get("strategy", "BINARY")
-        comment = feedback_dict.get("comment", None)
+    def from_dict(cls, score_dict: ScoreDict) -> "Score":
+        id = score_dict.get("id", "")
+        name = score_dict.get("name", "")
+        type = score_dict.get("type", "HUMAN")
+        value = score_dict.get("value", 0.0)
+        step_id = score_dict.get("stepId", "")
+        generation_id = score_dict.get("generationId", "")
+        dataset_experiment_item_id = score_dict.get("datasetExperimentItemId", "")
+        comment = score_dict.get("comment", "")
+        tags = score_dict.get("tags", [])
 
-        feedback = cls(
+        score = cls(
             id=id,
-            thread_id=thread_id,
-            step_id=step_id,
+            name=name,
+            type=type,
             value=value,
-            strategy=strategy,
+            step_id=step_id,
+            generation_id=generation_id,
+            dataset_experiment_item_id=dataset_experiment_item_id,
             comment=comment,
+            tags=tags,
         )
 
-        return feedback
+        return score
 
 
 @dataclass

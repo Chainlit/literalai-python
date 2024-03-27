@@ -73,9 +73,13 @@ async def main():
         print("Error: No LLM step found")
         return
 
-    # attach a feedback
-    await sdk.api.create_feedback(
-        step_id=llm_step.id, value=1, comment="this is a comment"
+    # attach a score
+    await sdk.api.create_score(
+        step_id=llm_step.id,
+        name="user-feedback",
+        type="HUMAN",
+        value=1,
+        comment="this is a comment",
     )
 
     # get the updated steps

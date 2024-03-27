@@ -1,9 +1,7 @@
 import inspect
 import uuid
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, Dict, List, Literal, Optional, TypedDict
-
-from pydantic.dataclasses import dataclass
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypedDict
 
 from literalai.context import active_thread_var
 from literalai.my_types import User, UserDict
@@ -166,108 +164,3 @@ def thread_decorator(
                 return func(*args, **kwargs)
 
         return sync_wrapper
-
-
-StringOperators = Literal["eq", "ilike", "like", "neq", "nilike", "nlike"]
-StringListOperators = Literal["in", "nin"]
-NumberListOperators = Literal["in", "nin"]
-NumberOperators = Literal["eq", "gt", "gte", "lt", "lte", "neq"]
-DateTimeOperators = Literal["gt", "gte", "lt", "lte"]
-
-
-@dataclass
-class StringFilter:
-    operator: StringOperators
-    value: str
-
-    def to_dict(self):
-        return {
-            "operator": self.operator,
-            "value": self.value,
-        }
-
-
-@dataclass
-class StringListFilter:
-    operator: StringListOperators
-    value: List[str]
-
-    def to_dict(self):
-        return {
-            "operator": self.operator,
-            "value": self.value,
-        }
-
-
-@dataclass
-class NumberListFilter:
-    operator: NumberListOperators
-    value: List[float]
-
-    def to_dict(self):
-        return {
-            "operator": self.operator,
-            "value": self.value,
-        }
-
-
-@dataclass
-class NumberFilter:
-    operator: NumberOperators
-    value: float
-
-    def to_dict(self):
-        return {
-            "operator": self.operator,
-            "value": self.value,
-        }
-
-
-@dataclass
-class DateTimeFilter:
-    operator: DateTimeOperators
-    value: str
-
-    def to_dict(self):
-        return {
-            "operator": self.operator,
-            "value": self.value,
-        }
-
-
-@dataclass
-class ThreadFilter:
-    # attachmentsName: Optional[StringListFilter] = None
-    createdAt: Optional[DateTimeFilter] = None
-    afterCreatedAt: Optional[DateTimeFilter] = None
-    beforeCreatedAt: Optional[DateTimeFilter] = None
-    # duration: Optional[NumberFilter] = None
-    environment: Optional[StringFilter] = None
-    feedbacksValue: Optional[NumberListFilter] = None
-    participantsIdentifier: Optional[StringListFilter] = None
-    search: Optional[StringFilter] = None
-    # tokenCount: Optional[NumberFilter] = None
-
-    def to_dict(self):
-        return {
-            # "attachmentsName": self.attachmentsName.to_dict()
-            # if self.attachmentsName
-            # else None,
-            "createdAt": self.createdAt.to_dict() if self.createdAt else None,
-            "afterCreatedAt": self.afterCreatedAt.to_dict()
-            if self.afterCreatedAt
-            else None,
-            "beforeCreatedAt": self.beforeCreatedAt.to_dict()
-            if self.beforeCreatedAt
-            else None,
-            # "duration": self.duration.to_dict() if self.duration else None,
-            "environment": self.environment.to_dict() if self.environment else None,
-            "feedbacksValue": self.feedbacksValue.to_dict()
-            if self.feedbacksValue
-            else None,
-            "participantsIdentifier": self.participantsIdentifier.to_dict()
-            if self.participantsIdentifier
-            else None,
-            "search": self.search.to_dict() if self.search else None,
-            # "tokenCount": self.tokenCount.to_dict() if self.tokenCount else None,
-        }

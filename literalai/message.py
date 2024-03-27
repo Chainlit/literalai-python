@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import utc_now
-from literalai.my_types import Attachment, Feedback
+from literalai.my_types import Attachment, Score
 from literalai.step import MessageStepType, StepDict
 
 
@@ -22,7 +22,7 @@ class Message:
     tags: Optional[List[str]] = None
     created_at: Optional[str] = None
 
-    feedback: Optional[Feedback] = None
+    scores: List[Score] = []
     attachments: List[Attachment] = []
 
     def __init__(
@@ -33,7 +33,7 @@ class Message:
         name: Optional[str] = None,
         thread_id: Optional[str] = None,
         parent_id: Optional[str] = None,
-        feedback: Optional[Feedback] = None,
+        scores: List[Score] = [],
         attachments: List[Attachment] = [],
         metadata: Optional[Dict] = {},
         timestamp: Optional[str] = None,
@@ -52,7 +52,7 @@ class Message:
         self.name = name
         self.type = type
         self.content = content
-        self.feedback = feedback
+        self.scores = scores
         self.attachments = attachments
         self.metadata = metadata
         self.tags = tags
@@ -102,7 +102,7 @@ class Message:
             },  # no input, output = content in Message
             "name": self.name,
             "tags": self.tags,
-            "feedback": self.feedback.to_dict() if self.feedback else None,
+            "scores": [score.to_dict() for score in self.scores],
             "attachments": [attachment.to_dict() for attachment in self.attachments],
         }
 
@@ -117,7 +117,7 @@ class Message:
         timestamp = message_dict.get("startTime", None)
         content = message_dict.get("output", None)
         name = message_dict.get("name", None)
-        feedback = message_dict.get("feedback", None)
+        scores = message_dict.get("scores", None)
         attachments = message_dict.get("attachments", [])
 
         message = cls(
@@ -129,7 +129,7 @@ class Message:
             thread_id=thread_id,
             content=content,
             name=name,
-            feedback=feedback,
+            scores=scores,
             attachments=attachments,
         )
 

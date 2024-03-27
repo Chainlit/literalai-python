@@ -3,7 +3,6 @@ import asyncio
 from dotenv import load_dotenv
 
 from literalai import LiteralClient
-from literalai.thread import DateTimeFilter, ThreadFilter
 
 load_dotenv()
 
@@ -38,7 +37,7 @@ async def main():
 
     after = None
     max_calls = 5
-    while len((result := await sdk.api.list_threads(first=2, after=after)).data) > 0:
+    while len((result := await sdk.api.get_threads(first=2, after=after)).data) > 0:
         print(result.to_dict())
         after = result.pageInfo.endCursor
         max_calls -= 1
@@ -47,9 +46,16 @@ async def main():
 
     print("filtered")
 
-    filters = ThreadFilter(createdAt=DateTimeFilter(operator="gt", value="2023-12-05"))
-
-    threads = await sdk.api.list_threads(filters=filters)
+    threads = await sdk.api.get_threads(
+        filters=[
+            {
+                "field": "createdAt",
+                "operator": "gt",
+                "value": "2023-12-05",
+            },
+        ],
+        order_by={"column": "participant", "direction": "ASC"},
+    )
     print(threads.to_dict())
 
 
