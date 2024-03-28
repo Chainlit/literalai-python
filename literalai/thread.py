@@ -105,8 +105,8 @@ class ThreadContextManager:
             thread_data_to_upsert["metadata"] = metadata
         if tags := thread_data.get("tags"):
             thread_data_to_upsert["tags"] = tags
-        if user := thread_data.get("user"):
-            thread_data_to_upsert["participant_id"] = user
+        if participant_id := thread_data.get("participant").get("id"):
+            thread_data_to_upsert["participant_id"] = participant_id
         self.client.api.upsert_thread_sync(**thread_data_to_upsert)
 
     def __call__(self, func):
