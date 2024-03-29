@@ -381,6 +381,36 @@ class Teste2e:
         assert deleted_dataset is None
 
     @pytest.mark.timeout(5)
+    async def test_generation_dataset(self, client: LiteralClient):
+        chat_generation = ChatGeneration(
+            provider="test",
+            model="test",
+            messages=[
+                {"content": "Hello", "role": "user"},
+                {"content": "Hi", "role": "assistant"},
+            ],
+            tags=["test"],
+        )
+        generation = await client.api.create_generation(chat_generation)
+        assert generation.id is not None
+        dataset = await client.api.create_dataset(name="foo", type="generation")
+        assert dataset.name == "foo"
+
+        # Add generation to dataset
+        generation_item = await dataset.add_generation(generation.id)
+
+        assert generation_item["input"] == {
+            "messages": [
+                {"content": "Hello", "role": "user"},
+                {"content": "Hi", "role": "assistant"},
+            ]
+        }
+        assert generation_item["expectedOutput"] == {"messageCompletion": None}
+
+        # Delete a dataset
+        await dataset.delete()
+
+    @pytest.mark.timeout(5)
     async def test_dataset_sync(self, client: LiteralClient):
         step = await self.create_test_step(client)
         dataset = client.api.create_dataset_sync(

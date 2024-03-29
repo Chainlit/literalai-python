@@ -196,9 +196,9 @@ class Dataset:
         :return: The created DatasetItem instance.
         """
         if self.type == "key_value":
-            raise ValueError("Cannot add a step to a kv dataset")
+            raise ValueError("Cannot add a generation to a kv dataset")
 
-        dataset_item = await self.api.add_step_to_dataset(
+        dataset_item = await self.api.add_generation_to_dataset(
             self.id, generation_id, metadata
         )
         if self.items is None:
@@ -214,9 +214,9 @@ class Dataset:
         Synchronous version of the add_generation method.
         """
         if self.type == "key_value":
-            raise ValueError("Cannot add a step to a kv dataset")
+            raise ValueError("Cannot add a generation to a kv dataset")
 
-        dataset_item = self.api.add_step_to_dataset_sync(
+        dataset_item = self.api.add_generation_to_dataset_sync(
             self.id, generation_id, metadata
         )
         if self.items is None:
