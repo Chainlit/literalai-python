@@ -195,9 +195,6 @@ class Dataset:
         :param metadata: Metadata for the dataset item (optional).
         :return: The created DatasetItem instance.
         """
-        if self.type == "key_value":
-            raise ValueError("Cannot add a generation to a kv dataset")
-
         dataset_item = await self.api.add_generation_to_dataset(
             self.id, generation_id, metadata
         )
