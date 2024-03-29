@@ -3,7 +3,7 @@ import mimetypes
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, TypedDict, Union
 
-from literalai.dataset import Dataset
+from literalai.dataset import Dataset, DatasetType
 from literalai.dataset_item import DatasetItem
 from literalai.filter import (
     generations_filters,
@@ -1619,23 +1619,27 @@ class API:
         name: Optional[str] = None,
         description: Optional[str] = None,
         metadata: Optional[Dict] = None,
+        type: DatasetType = "key_value",
     ) -> Dataset:
         query = """
             mutation createDataset(
                 $name: String
                 $description: String
                 $metadata: Json
+                $type: DatasetType
             ) {
                 createDataset(
                     name: $name
                     description: $description
                     metadata: $metadata
+                    type: $type
                 ) {
                     id
                     createdAt
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1643,6 +1647,7 @@ class API:
             "name": name,
             "description": description,
             "metadata": metadata,
+            "type": type,
         }
         result = await self.make_api_call("create dataset", query, variables)
 
@@ -1653,23 +1658,27 @@ class API:
         name: Optional[str] = None,
         description: Optional[str] = None,
         metadata: Optional[Dict] = None,
+        type: DatasetType = "key_value",
     ) -> Dataset:
         query = """
             mutation createDataset(
                 $name: String
                 $description: String
                 $metadata: Json
+                $type: DatasetType
             ) {
                 createDataset(
                     name: $name
                     description: $description
                     metadata: $metadata
+                    type: $type
                 ) {
                     id
                     createdAt
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1677,6 +1686,7 @@ class API:
             "name": name,
             "description": description,
             "metadata": metadata,
+            "type": type,
         }
         result = self.make_api_call_sync("create dataset", query, variables)
 
@@ -1731,6 +1741,7 @@ class API:
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1773,6 +1784,7 @@ class API:
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1803,6 +1815,7 @@ class API:
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1824,6 +1837,7 @@ class API:
                     name
                     description
                     metadata
+                    type
                 }
             }
         """

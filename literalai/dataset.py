@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Literal
 
 if sys.version_info < (3, 12):
     from typing_extensions import TypedDict
@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 from literalai.dataset_item import DatasetItemDict
 
+DatasetType = Literal["key_value", "generation"]
+
 
 class DatasetDict(TypedDict, total=False):
     id: str
@@ -20,6 +22,7 @@ class DatasetDict(TypedDict, total=False):
     name: Optional[str]
     description: Optional[str]
     items: Optional[List[DatasetItemDict]]
+    type: DatasetType
 
 
 @dataclass
@@ -31,6 +34,7 @@ class Dataset:
     name: Optional[str] = None
     description: Optional[str] = None
     items: List[DatasetItemDict] = field(default_factory=lambda: [])
+    type: DatasetType = "key_value"
 
     def to_dict(self):
         return {
@@ -40,6 +44,7 @@ class Dataset:
             "name": self.name,
             "description": self.description,
             "items": self.items,
+            "type": self.type,
         }
 
     @classmethod
@@ -52,6 +57,7 @@ class Dataset:
             name=dataset.get("name"),
             description=dataset.get("description"),
             items=dataset.get("items") or [],
+            type=dataset.get("type", "key_value"),
         )
 
     async def update(
@@ -154,6 +160,9 @@ class Dataset:
         :param metadata: Metadata for the dataset item (optional).
         :return: The created DatasetItem instance.
         """
+        if self.type == "generation":
+            raise ValueError("Cannot add a step to a generation dataset")
+
         dataset_item = await self.api.add_step_to_dataset(self.id, step_id, metadata)
         if self.items is None:
             self.items = []
@@ -167,7 +176,49 @@ class Dataset:
         """
         Synchronous version of the add_step method.
         """
+        if self.type == "generation":
+            raise ValueError("Cannot add a step to a generation dataset")
+
         dataset_item = self.api.add_step_to_dataset_sync(self.id, step_id, metadata)
+        if self.items is None:
+            self.items = []
+        dataset_item_dict = dataset_item.to_dict()
+        self.items.append(dataset_item_dict)
+        return dataset_item_dict
+
+    async def add_generation(
+        self, generation_id: str, metadata: Optional[Dict] = None
+    ) -> DatasetItemDict:
+        """
+        Create a new dataset item based on a generation and add it to this dataset.
+        :param generation_id: The id of the generation to add to the dataset.
+        :param metadata: Metadata for the dataset item (optional).
+        :return: The created DatasetItem instance.
+        """
+        if self.type == "key_value":
+            raise ValueError("Cannot add a step to a kv dataset")
+
+        dataset_item = await self.api.add_step_to_dataset(
+            self.id, generation_id, metadata
+        )
+        if self.items is None:
+            self.items = []
+        dataset_item_dict = dataset_item.to_dict()
+        self.items.append(dataset_item_dict)
+        return dataset_item_dict
+
+    def add_generation_sync(
+        self, generation_id: str, metadata: Optional[Dict] = None
+    ) -> DatasetItemDict:
+        """
+        Synchronous version of the add_generation method.
+        """
+        if self.type == "key_value":
+            raise ValueError("Cannot add a step to a kv dataset")
+
+        dataset_item = self.api.add_step_to_dataset_sync(
+            self.id, generation_id, metadata
+        )
         if self.items is None:
             self.items = []
         dataset_item_dict = dataset_item.to_dict()
