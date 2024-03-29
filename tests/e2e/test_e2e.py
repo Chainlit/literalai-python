@@ -1,6 +1,7 @@
 import asyncio
 import os
 import secrets
+import uuid
 
 import pytest
 
@@ -323,17 +324,19 @@ class Teste2e:
 
     @pytest.mark.timeout(5)
     async def test_dataset(self, client: LiteralClient):
+        dataset_name = str(uuid.uuid4())
         step = await self.create_test_step(client)
         dataset = await client.api.create_dataset(
-            name="foo", description="bar", metadata={"demo": True}
+            name=dataset_name, description="bar", metadata={"demo": True}
         )
-        assert dataset.name == "foo"
+        assert dataset.name == dataset_name
         assert dataset.description == "bar"
         assert dataset.metadata == {"demo": True}
 
         # Update a dataset
-        await dataset.update(name="baz")
-        assert dataset.name == "baz"
+        next_name = str(uuid.uuid4())
+        await dataset.update(name=next_name)
+        assert dataset.name == next_name
         assert dataset.description == "bar"
 
         # Create dataset items
@@ -393,8 +396,9 @@ class Teste2e:
         )
         generation = await client.api.create_generation(chat_generation)
         assert generation.id is not None
-        dataset = await client.api.create_dataset(name="foo", type="generation")
-        assert dataset.name == "foo"
+        dataset_name = str(uuid.uuid4())
+        dataset = await client.api.create_dataset(name=dataset_name, type="generation")
+        assert dataset.name == dataset_name
 
         # Add generation to dataset
         generation_item = await dataset.add_generation(generation.id)
@@ -413,16 +417,18 @@ class Teste2e:
     @pytest.mark.timeout(5)
     async def test_dataset_sync(self, client: LiteralClient):
         step = await self.create_test_step(client)
+        dataset_name = str(uuid.uuid4())
         dataset = client.api.create_dataset_sync(
-            name="foo", description="bar", metadata={"demo": True}
+            name=dataset_name, description="bar", metadata={"demo": True}
         )
-        assert dataset.name == "foo"
+        assert dataset.name == dataset_name
         assert dataset.description == "bar"
         assert dataset.metadata == {"demo": True}
 
         # Update a dataset
-        dataset.update_sync(name="baz")
-        assert dataset.name == "baz"
+        next_name = str(uuid.uuid4())
+        dataset.update_sync(name=next_name)
+        assert dataset.name == next_name
         assert dataset.description == "bar"
 
         # Create dataset items

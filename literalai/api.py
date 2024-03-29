@@ -1616,14 +1616,14 @@ class API:
 
     async def create_dataset(
         self,
-        name: Optional[str] = None,
+        name: str,
         description: Optional[str] = None,
         metadata: Optional[Dict] = None,
         type: DatasetType = "key_value",
     ) -> Dataset:
         query = """
             mutation createDataset(
-                $name: String
+                $name: String!
                 $description: String
                 $metadata: Json
                 $type: DatasetType
@@ -1655,14 +1655,14 @@ class API:
 
     def create_dataset_sync(
         self,
-        name: Optional[str] = None,
+        name: str,
         description: Optional[str] = None,
         metadata: Optional[Dict] = None,
         type: DatasetType = "key_value",
     ) -> Dataset:
         query = """
             mutation createDataset(
-                $name: String
+                $name: String!
                 $description: String
                 $metadata: Json
                 $type: DatasetType
