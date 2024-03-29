@@ -4,7 +4,6 @@ from functools import wraps
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypedDict
 
 from literalai.context import active_thread_var
-from literalai.my_types import User, UserDict
 from literalai.step import Step, StepDict
 
 if TYPE_CHECKING:
@@ -18,7 +17,7 @@ class ThreadDict(TypedDict, total=False):
     tags: Optional[List[str]]
     createdAt: Optional[str]
     steps: Optional[List[StepDict]]
-    participant: Optional[UserDict]
+    participant_id: Optional[str]
 
 
 class Thread:
@@ -27,7 +26,7 @@ class Thread:
     metadata: Optional[Dict]
     tags: Optional[List[str]]
     steps: Optional[List[Step]]
-    user: Optional["User"]
+    participant_id: Optional[str]
     created_at: Optional[str]  # read-only, set by server
     needs_upsert: Optional[bool]
 
@@ -38,15 +37,15 @@ class Thread:
         name: Optional[str] = None,
         metadata: Optional[Dict] = {},
         tags: Optional[List[str]] = [],
-        user: Optional["User"] = None,
+        participant_id: Optional[str] = None,
     ):
         self.id = id
         self.steps = steps
         self.name = name
         self.metadata = metadata
         self.tags = tags
-        self.user = user
-        self.needs_upsert = bool(metadata or tags or user or name)
+        self.participant_id = participant_id
+        self.needs_upsert = bool(metadata or tags or participant_id or name)
 
     def to_dict(self) -> ThreadDict:
         return {
@@ -55,25 +54,28 @@ class Thread:
             "tags": self.tags,
             "name": self.name,
             "steps": [step.to_dict() for step in self.steps] if self.steps else [],
-            "participant": self.user.to_dict() if self.user else None,
+            "participant_id": self.participant_id,
             "createdAt": getattr(self, "created_at", None),
         }
 
     @classmethod
-    def from_dict(cls, thread_dict: Dict) -> "Thread":
-        id = thread_dict.get("id", "")
+    def from_dict(cls, thread_dict: ThreadDict) -> "Thread":
+        step_dict_list = thread_dict.get("steps", None) or []
+        id = thread_dict.get("id", None) or ""
         name = thread_dict.get("name", None)
         metadata = thread_dict.get("metadata", {})
         tags = thread_dict.get("tags", [])
-        steps = [Step.from_dict(step) for step in thread_dict.get("steps", [])]
-        user = thread_dict.get("participant", None)
+        steps = [Step.from_dict(step_dict) for step_dict in step_dict_list]
+        participant_id = thread_dict.get("participant_id", None)
         created_at = thread_dict.get("createdAt", None)
 
-        if user:
-            user = User.from_dict(user)
-
         thread = cls(
-            id=id, steps=steps, name=name, metadata=metadata, tags=tags, user=user
+            id=id,
+            steps=steps,
+            name=name,
+            metadata=metadata,
+            tags=tags,
+            participant_id=participant_id,
         )
 
         thread.created_at = created_at
@@ -105,7 +107,7 @@ class ThreadContextManager:
             thread_data_to_upsert["metadata"] = metadata
         if tags := thread_data.get("tags"):
             thread_data_to_upsert["tags"] = tags
-        if participant_id := thread_data.get("participant").get("id"):
+        if participant_id := thread_data.get("participant_id"):
             thread_data_to_upsert["participant_id"] = participant_id
         self.client.api.upsert_thread_sync(**thread_data_to_upsert)
 

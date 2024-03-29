@@ -1,7 +1,7 @@
 import sys
 import uuid
 from enum import Enum, unique
-from typing import Dict, Generic, List, Literal, Optional, Protocol, TypeVar, Union
+from typing import Any, Dict, Generic, List, Literal, Optional, Protocol, TypeVar, Union
 
 if sys.version_info < (3, 12):
     from typing_extensions import TypedDict
@@ -42,7 +42,7 @@ T = TypeVar("T", covariant=True)
 
 class HasFromDict(Protocol[T]):
     @classmethod
-    def from_dict(cls, obj_dict: Dict) -> T:
+    def from_dict(cls, obj_dict: Any) -> T:
         raise NotImplementedError()
 
 
