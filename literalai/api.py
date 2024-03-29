@@ -2059,6 +2059,75 @@ class API:
 
         return DatasetItem.from_dict(result["data"]["addStepToDataset"])
 
+    async def add_generation_to_dataset(
+        self, dataset_id: str, generation_id: str, metadata: Optional[Dict] = None
+    ) -> DatasetItem:
+        query = """
+            mutation AddGenerationToDataset(
+                $datasetId: String!
+                $generationId: String!
+                $metadata: Json
+            ) {
+                addGenerationToDataset(
+                    datasetId: $datasetId
+                    generationId: $generationId
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "generationId": generation_id,
+            "metadata": metadata,
+        }
+        result = await self.make_api_call("add generation to dataset", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["addGenerationToDataset"])
+
+    def add_generation_to_dataset_sync(
+        self,
+        dataset_id: str,
+        generation_id: str,
+        metadata: Optional[Dict] = None,
+    ) -> DatasetItem:
+        query = """
+            mutation AddGenerationToDataset(
+                $datasetId: String!
+                $generationId: String!
+                $metadata: Json
+            ) {
+                addGenerationToDataset(
+                    datasetId: $datasetId
+                    generationId: $generationId
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "generationId": generation_id,
+            "metadata": metadata,
+        }
+        result = self.make_api_call_sync("add generation to dataset", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["addGenerationToDataset"])
+
     # Prompt API
 
     async def get_prompt(
