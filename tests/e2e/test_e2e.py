@@ -87,8 +87,7 @@ class Teste2e:
         assert thread.id is not None
         assert thread.metadata == {"foo": "bar"}
         assert user.id
-        assert thread.user
-        assert thread.user.id == user.id
+        assert thread.participant_id == user.id
 
         fetched_thread = await client.api.get_thread(id=thread.id)
         assert fetched_thread and fetched_thread.id == thread.id

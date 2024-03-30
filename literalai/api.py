@@ -483,6 +483,15 @@ class API:
 
         return result["data"]["deleteParticipant"]["id"]
 
+    async def get_or_create_user(
+        self, identifier: str, metadata: Optional[Dict] = None
+    ):
+        user = await self.get_user(identifier=identifier)
+        if user:
+            return user
+
+        return await self.create_user(identifier, metadata)
+
     # Thread API
 
     async def get_threads(
