@@ -101,11 +101,13 @@ class ThreadContextManager:
             "thread_id": thread_data["id"],
             "name": thread_data["name"],
         }
+        participant = thread_data.get("participant")
+        participant_id = participant.get("id") if participant else None
         if metadata := thread_data.get("metadata"):
             thread_data_to_upsert["metadata"] = metadata
         if tags := thread_data.get("tags"):
             thread_data_to_upsert["tags"] = tags
-        if participant_id := thread_data.get("participant").get("id"):
+        if participant_id:
             thread_data_to_upsert["participant_id"] = participant_id
         self.client.api.upsert_thread_sync(**thread_data_to_upsert)
 

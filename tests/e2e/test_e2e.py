@@ -78,9 +78,17 @@ class Teste2e:
         assert generations.data[0].id == generation.id
 
     async def test_thread(self, client: LiteralClient):
-        thread = await client.api.create_thread(metadata={"foo": "bar"}, tags=["hello"])
+        user = await client.api.create_user(
+            identifier=f"test_user_{secrets.token_hex()}"
+        )
+        thread = await client.api.create_thread(
+            metadata={"foo": "bar"}, participant_id=user.id, tags=["hello"]
+        )
         assert thread.id is not None
         assert thread.metadata == {"foo": "bar"}
+        assert user.id
+        assert thread.user
+        assert thread.user.id == user.id
 
         fetched_thread = await client.api.get_thread(id=thread.id)
         assert fetched_thread and fetched_thread.id == thread.id
@@ -103,6 +111,7 @@ class Teste2e:
         assert threads.data[0].id == thread.id
 
         await client.api.delete_thread(id=thread.id)
+        await client.api.delete_user(id=user.id)
 
         deleted_thread = await client.api.get_thread(id=thread.id)
         assert deleted_thread is None
@@ -392,6 +401,7 @@ class Teste2e:
                 {"content": "Hello", "role": "user"},
                 {"content": "Hi", "role": "assistant"},
             ],
+            message_completion={"content": "Hello back!", "role": "assistant"},
             tags=["test"],
         )
         generation = await client.api.create_generation(chat_generation)
@@ -409,7 +419,10 @@ class Teste2e:
                 {"content": "Hi", "role": "assistant"},
             ]
         }
-        assert generation_item["expectedOutput"] == {"messageCompletion": None}
+        assert generation_item["expectedOutput"] == {
+            "content": "Hello back!",
+            "role": "assistant",
+        }
 
         # Delete a dataset
         await dataset.delete()
