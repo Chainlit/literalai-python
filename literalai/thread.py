@@ -4,6 +4,7 @@ from functools import wraps
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypedDict
 
 from literalai.context import active_thread_var
+from literalai.my_types import UserDict
 from literalai.step import Step, StepDict
 
 if TYPE_CHECKING:
@@ -17,7 +18,7 @@ class ThreadDict(TypedDict, total=False):
     tags: Optional[List[str]]
     createdAt: Optional[str]
     steps: Optional[List[StepDict]]
-    participant_id: Optional[str]
+    participant: Optional[UserDict]
 
 
 class Thread:
@@ -54,7 +55,9 @@ class Thread:
             "tags": self.tags,
             "name": self.name,
             "steps": [step.to_dict() for step in self.steps] if self.steps else [],
-            "participant_id": self.participant_id,
+            "participant": UserDict(id=self.participant_id)
+            if self.participant_id
+            else None,
             "createdAt": getattr(self, "created_at", None),
         }
 
@@ -66,7 +69,8 @@ class Thread:
         metadata = thread_dict.get("metadata", {})
         tags = thread_dict.get("tags", [])
         steps = [Step.from_dict(step_dict) for step_dict in step_dict_list]
-        participant_id = thread_dict.get("participant_id", None)
+        participant = thread_dict.get("participant", None)
+        participant_id = participant.get("id", None) if participant else None
         created_at = thread_dict.get("createdAt", None)
 
         thread = cls(

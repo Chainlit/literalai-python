@@ -3,7 +3,7 @@ import mimetypes
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, TypedDict, Union
 
-from literalai.dataset import Dataset
+from literalai.dataset import Dataset, DatasetType
 from literalai.dataset_item import DatasetItem
 from literalai.filter import (
     generations_filters,
@@ -1625,26 +1625,30 @@ class API:
 
     async def create_dataset(
         self,
-        name: Optional[str] = None,
+        name: str,
         description: Optional[str] = None,
         metadata: Optional[Dict] = None,
+        type: DatasetType = "key_value",
     ) -> Dataset:
         query = """
             mutation createDataset(
-                $name: String
+                $name: String!
                 $description: String
                 $metadata: Json
+                $type: DatasetType
             ) {
                 createDataset(
                     name: $name
                     description: $description
                     metadata: $metadata
+                    type: $type
                 ) {
                     id
                     createdAt
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1652,6 +1656,7 @@ class API:
             "name": name,
             "description": description,
             "metadata": metadata,
+            "type": type,
         }
         result = await self.make_api_call("create dataset", query, variables)
 
@@ -1659,26 +1664,30 @@ class API:
 
     def create_dataset_sync(
         self,
-        name: Optional[str] = None,
+        name: str,
         description: Optional[str] = None,
         metadata: Optional[Dict] = None,
+        type: DatasetType = "key_value",
     ) -> Dataset:
         query = """
             mutation createDataset(
-                $name: String
+                $name: String!
                 $description: String
                 $metadata: Json
+                $type: DatasetType
             ) {
                 createDataset(
                     name: $name
                     description: $description
                     metadata: $metadata
+                    type: $type
                 ) {
                     id
                     createdAt
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1686,6 +1695,7 @@ class API:
             "name": name,
             "description": description,
             "metadata": metadata,
+            "type": type,
         }
         result = self.make_api_call_sync("create dataset", query, variables)
 
@@ -1740,6 +1750,7 @@ class API:
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1782,6 +1793,7 @@ class API:
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1812,6 +1824,7 @@ class API:
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -1833,6 +1846,7 @@ class API:
                     name
                     description
                     metadata
+                    type
                 }
             }
         """
@@ -2067,6 +2081,75 @@ class API:
         result = self.make_api_call_sync("add step to dataset", query, variables)
 
         return DatasetItem.from_dict(result["data"]["addStepToDataset"])
+
+    async def add_generation_to_dataset(
+        self, dataset_id: str, generation_id: str, metadata: Optional[Dict] = None
+    ) -> DatasetItem:
+        query = """
+            mutation AddGenerationToDataset(
+                $datasetId: String!
+                $generationId: String!
+                $metadata: Json
+            ) {
+                addGenerationToDataset(
+                    datasetId: $datasetId
+                    generationId: $generationId
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "generationId": generation_id,
+            "metadata": metadata,
+        }
+        result = await self.make_api_call("add generation to dataset", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["addGenerationToDataset"])
+
+    def add_generation_to_dataset_sync(
+        self,
+        dataset_id: str,
+        generation_id: str,
+        metadata: Optional[Dict] = None,
+    ) -> DatasetItem:
+        query = """
+            mutation AddGenerationToDataset(
+                $datasetId: String!
+                $generationId: String!
+                $metadata: Json
+            ) {
+                addGenerationToDataset(
+                    datasetId: $datasetId
+                    generationId: $generationId
+                    metadata: $metadata
+                ) {
+                    id
+                    createdAt
+                    datasetId
+                    metadata
+                    input
+                    expectedOutput
+                    intermediarySteps
+                }
+            }
+        """
+        variables = {
+            "datasetId": dataset_id,
+            "generationId": generation_id,
+            "metadata": metadata,
+        }
+        result = self.make_api_call_sync("add generation to dataset", query, variables)
+
+        return DatasetItem.from_dict(result["data"]["addGenerationToDataset"])
 
     # Prompt API
 
