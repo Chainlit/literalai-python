@@ -28,6 +28,7 @@ class Thread:
     tags: Optional[List[str]]
     steps: Optional[List[Step]]
     participant_id: Optional[str]
+    participant_identifier: Optional[str]
     created_at: Optional[str]  # read-only, set by server
     needs_upsert: Optional[bool]
 
@@ -55,7 +56,9 @@ class Thread:
             "tags": self.tags,
             "name": self.name,
             "steps": [step.to_dict() for step in self.steps] if self.steps else [],
-            "participant": UserDict(id=self.participant_id)
+            "participant": UserDict(
+                id=self.participant_id, identifier=self.participant_identifier
+            )
             if self.participant_id
             else None,
             "createdAt": getattr(self, "created_at", None),
@@ -71,6 +74,9 @@ class Thread:
         steps = [Step.from_dict(step_dict) for step_dict in step_dict_list]
         participant = thread_dict.get("participant", None)
         participant_id = participant.get("id", None) if participant else None
+        participant_identifier = (
+            participant.get("identifier", None) if participant else None
+        )
         created_at = thread_dict.get("createdAt", None)
 
         thread = cls(
@@ -83,6 +89,7 @@ class Thread:
         )
 
         thread.created_at = created_at
+        thread.participant_identifier = participant_identifier
 
         return thread
 
