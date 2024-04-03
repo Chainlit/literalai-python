@@ -223,7 +223,7 @@ class ChatGeneration(BaseGeneration):
             token_throughput_in_s=generation_dict.get("tokenThroughputInSeconds"),
             duration=generation_dict.get("duration"),
             messages=generation_dict.get("messages", []),
-            message_completion=generation_dict.get("message_completion"),
+            message_completion=generation_dict.get("messageCompletion"),
         )
 
 
