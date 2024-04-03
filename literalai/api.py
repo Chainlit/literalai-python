@@ -167,6 +167,7 @@ def query_variables_builder(steps):
         $metadata_{id}: Json
         $parentId_{id}: String
         $name_{id}: String
+        $tags_{id}: [String!]
         $generation_{id}: GenerationPayloadInput
         $scores_{id}: [ScorePayloadInput!]
         $attachments_{id}: [AttachmentPayloadInput!]
@@ -190,6 +191,7 @@ def ingest_steps_builder(steps):
         metadata: $metadata_{id}
         parentId: $parentId_{id}
         name: $name_{id}
+        tags: $tags_{id}
         generation: $generation_{id}
         scores: $scores_{id}
         attachments: $attachments_{id}
@@ -1275,6 +1277,8 @@ class API:
             $metadata: Json,
             $parentId: String,
             $name: String,
+            $tags: [String!],
+
         ) {
             createStep(
                 threadId: $threadId,
@@ -1286,6 +1290,7 @@ class API:
                 metadata: $metadata,
                 parentId: $parentId,
                 name: $name,
+                tags: $tags,
             ) {
 """
             + step_fields
