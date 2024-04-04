@@ -262,6 +262,14 @@ class API:
             if json.get("errors"):
                 raise_error(json["errors"])
 
+            if json.get("data"):
+                if isinstance(json["data"], dict):
+                    for key, value in json["data"].items():
+                        if value and value.get("ok") is False:
+                            raise_error(
+                                f"Failed to {description}: {value.get('message')}"
+                            )
+
             return json
 
         # This should not be reached, exceptions should be thrown beforehands
