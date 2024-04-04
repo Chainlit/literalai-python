@@ -444,7 +444,7 @@ def get_langchain_callback():
                         prompt=completion_start["prompt"],
                         completion=completion,
                     )
-                    current_step.output = completion
+                    current_step.output = {"content": completion}
 
                 if current_step:
                     if current_step.metadata is None:
