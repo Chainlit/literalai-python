@@ -18,7 +18,7 @@ from literalai.step import (
 from literalai.thread import ThreadContextManager, thread_decorator
 
 
-class LiteralClient:
+class BaseLiteralClient:
     def __init__(
         self,
         batch_size: int = 1,
@@ -184,8 +184,15 @@ class LiteralClient:
     def flush_and_stop(self):
         self.event_processor.flush_and_stop()
 
-    def flush_sync(self):
+
+class LiteralClient(BaseLiteralClient):
+
+    def flush(self):
         self.event_processor.flush_sync()
+
+
+class AsyncLiteralClient(BaseLiteralClient):
+
 
     async def flush(self):
         await self.event_processor.flush()
