@@ -1,9 +1,10 @@
 from typing import Any, Dict, Optional
-from literalai.filter import (
-    users_filters,
-)
-from literalai.my_types import User, PaginatedResponse
+
+from literalai.filter import users_filters
+from literalai.my_types import PaginatedResponse, User
+
 from . import gql
+
 
 def get_users_helper(
     first: Optional[int] = None,
@@ -21,20 +22,18 @@ def get_users_helper(
         variables["before"] = before
     if filters:
         variables["filters"] = filters
-        
+
     def process_response(response):
         paginated_response = response["data"]["participants"]
         response["data"] = list(map(lambda x: x["node"], paginated_response["edges"]))
         return PaginatedResponse[User].from_dict(response, User)
 
     description = "get users"
-    
+
     return gql.GET_PARTICIPANTS, description, variables, process_response
 
 
-def create_user_helper(
-    identifier: str, metadata: Optional[Dict] = None
-):
+def create_user_helper(identifier: str, metadata: Optional[Dict] = None):
     variables = {"identifier": identifier, "metadata": metadata}
 
     def process_response(response):
@@ -60,9 +59,8 @@ def update_user_helper(
 
     return gql.UPDATE_PARTICIPANT, description, variables, process_response
 
-def get_user_helper(
-    id: Optional[str] = None, identifier: Optional[str] = None
-):
+
+def get_user_helper(id: Optional[str] = None, identifier: Optional[str] = None):
     if id is None and identifier is None:
         raise Exception("Either id or identifier must be provided")
 
@@ -78,6 +76,7 @@ def get_user_helper(
     description = "get user"
 
     return gql.GET_PARTICIPANT, description, variables, process_response
+
 
 def delete_user_helper(id: str):
     variables = {"id": id}

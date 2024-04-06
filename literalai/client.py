@@ -1,7 +1,7 @@
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from literalai.api import API
+from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
 from literalai.context import active_steps_var, active_thread_var
 from literalai.event_processor import EventProcessor
@@ -18,10 +18,13 @@ from literalai.step import (
 from literalai.thread import ThreadContextManager, thread_decorator
 
 
-class LiteralClient:
+class BaseLiteralClient:
+    api: Union[LiteralAPI, AsyncLiteralAPI]
+
     def __init__(
         self,
         batch_size: int = 1,
+        is_async: bool = False,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ):
@@ -31,14 +34,28 @@ class LiteralClient:
                 raise Exception("LITERAL_API_KEY not provided")
         if not url:
             url = os.getenv("LITERAL_API_URL", "https://cloud.getliteral.ai")
-        self.api = API(api_key=api_key, url=url)
+        if is_async:
+            self.api = AsyncLiteralAPI(api_key=api_key, url=url)
+        else:
+            self.api = LiteralAPI(api_key=api_key, url=url)
+
         self.event_processor = EventProcessor(
-            api=self.api,
+            api=LiteralAPI(api_key=api_key, url=url),
             batch_size=batch_size,
         )
 
+    def to_sync(self) -> "LiteralClient":
+        if isinstance(self.api, AsyncLiteralAPI):
+            return LiteralClient(
+                batch_size=self.event_processor.batch_size,
+                api_key=self.api.api_key,
+                url=self.api.url,
+            )
+        else:
+            return self  # type: ignore
+
     def instrument_openai(self):
-        instrument_openai(self)
+        instrument_openai(self.to_sync())
 
     def langchain_callback(
         self,
@@ -48,7 +65,7 @@ class LiteralClient:
     ):
         LangchainTracer = get_langchain_callback()
         return LangchainTracer(
-            self,
+            self.to_sync(),
             to_ignore=to_ignore,
             to_keep=to_keep,
             **kwargs,
@@ -184,8 +201,34 @@ class LiteralClient:
     def flush_and_stop(self):
         self.event_processor.flush_and_stop()
 
-    def flush_sync(self):
+
+class LiteralClient(BaseLiteralClient):
+    api: LiteralAPI
+
+    def __init__(
+        self,
+        batch_size: int = 1,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
+        super().__init__(
+            batch_size=batch_size, is_async=False, api_key=api_key, url=url
+        )
+
+    def flush(self):
         self.event_processor.flush_sync()
+
+
+class AsyncLiteralClient(BaseLiteralClient):
+    api: AsyncLiteralAPI
+
+    def __init__(
+        self,
+        batch_size: int = 1,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
+        super().__init__(batch_size=batch_size, is_async=True, api_key=api_key, url=url)
 
     async def flush(self):
         await self.event_processor.flush()

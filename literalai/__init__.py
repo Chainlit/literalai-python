@@ -1,4 +1,4 @@
-from .client import LiteralClient
+from .client import AsyncLiteralClient, LiteralClient
 from .dataset import Dataset
 from .dataset_item import DatasetItem
 from .message import Message
@@ -9,6 +9,7 @@ from .version import __version__
 
 __all__ = [
     "LiteralClient",
+    "AsyncLiteralClient",
     "Message",
     "Step",
     "Thread",

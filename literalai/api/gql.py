@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, List, Union
+
 from literalai.helper import ensure_values_serializable
 
 if TYPE_CHECKING:
@@ -212,7 +213,8 @@ query GetThreads(
         }
     }
 }
-""")
+"""
+)
 
 LIST_THREADS = """query listThreads(
 $first: Int
@@ -338,7 +340,7 @@ mutation UpdateThread(
 )
 
 GET_THREAD = (
-"""
+    """
 query GetThread($id: String!) {
     threadDetail(id: $id) {
 """
@@ -905,6 +907,7 @@ query GetPrompt($name: String!, $version: Int) {
 }
 """
 
+
 def serialize_step(event, id):
     result = {}
 
@@ -914,6 +917,7 @@ def serialize_step(event, id):
             result[f"{key}_{id}"] = value
 
     return result
+
 
 def steps_variables_builder(steps: List[Union["StepDict", "Step"]]):
     variables = {}

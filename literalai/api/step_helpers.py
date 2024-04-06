@@ -1,6 +1,9 @@
-from typing import Dict, Optional, List, Union
-from literalai.step import Step, StepType, StepDict
+from typing import Dict, List, Optional, Union
+
+from literalai.step import Step, StepDict, StepType
+
 from . import gql
+
 
 def create_step_helper(
     thread_id: Optional[str] = None,
@@ -34,6 +37,7 @@ def create_step_helper(
 
     return gql.CREATE_STEP, description, variables, process_response
 
+
 def update_step_helper(
     id: str,
     type: Optional[StepType] = None,
@@ -66,6 +70,7 @@ def update_step_helper(
 
     return gql.UPDATE_STEP, description, variables, process_response
 
+
 def get_step_helper(id: str):
     variables = {"id": id}
 
@@ -75,8 +80,8 @@ def get_step_helper(id: str):
 
     description = "get step"
 
-
     return gql.GET_STEP, description, variables, process_response
+
 
 def delete_step_helper(id: str):
     variables = {"id": id}
@@ -88,14 +93,14 @@ def delete_step_helper(id: str):
 
     return gql.DELETE_STEP, description, variables, process_response
 
-async def send_steps_helper(steps: List[Union[StepDict, "Step"]]) -> "Dict":
+
+def send_steps_helper(steps: List[Union[StepDict, "Step"]]):
     query = gql.steps_query_builder(steps)
     variables = gql.steps_variables_builder(steps)
-    
+
     description = "send steps"
-    
+
     def process_response(response: Dict):
         return response
-    
+
     return query, description, variables, process_response
-    

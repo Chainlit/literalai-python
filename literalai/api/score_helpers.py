@@ -1,11 +1,10 @@
-from typing import Any, Dict, Optional, List, TypedDict
-from literalai.filter import (
-    scores_filters,
-    scores_order_by,
-)
+from typing import Any, Dict, List, Optional, TypedDict
+
+from literalai.filter import scores_filters, scores_order_by
 from literalai.my_types import PaginatedResponse, Score, ScoreType
 
 from . import gql
+
 
 def get_scores_helper(
     first: Optional[int] = None,
@@ -37,6 +36,7 @@ def get_scores_helper(
 
     return gql.GET_SCORES, description, variables, process_response
 
+
 def create_score_helper(
     name: str,
     value: int,
@@ -65,9 +65,11 @@ def create_score_helper(
 
     return gql.CREATE_SCORE, description, variables, process_response
 
+
 class ScoreUpdate(TypedDict, total=False):
     comment: Optional[str]
     value: float
+
 
 def update_score_helper(
     id: str,
@@ -81,6 +83,7 @@ def update_score_helper(
     description = "update score"
 
     return gql.UPDATE_SCORE, description, variables, process_response
+
 
 def delete_score_helper(id: str):
     variables = {"id": id}

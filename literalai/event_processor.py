@@ -5,7 +5,7 @@ import time
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from literalai.api import API
+    from literalai.api import LiteralAPI
     from literalai.step import StepDict
 
 
@@ -23,7 +23,7 @@ async def to_thread(func, /, *args, **kwargs):
 class EventProcessor:
     event_queue: queue.Queue
 
-    def __init__(self, api: "API", batch_size: int = 1):
+    def __init__(self, api: "LiteralAPI", batch_size: int = 1):
         self.batch_size = batch_size
         self.api = api
         self.event_queue = queue.Queue()
@@ -40,8 +40,6 @@ class EventProcessor:
         await to_thread(self.event_queue.put, event)
 
     def _process_events(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         while True:
             batch: List["StepDict"] = []
             try:
@@ -56,20 +54,20 @@ class EventProcessor:
 
             # Process the batch if any events are present
             if batch:
-                loop.run_until_complete(self._process_batch(batch))
+                self._process_batch(batch)
 
             # Stop if the stop_event is set and the queue is empty
             if self.stop_event.is_set() and self.event_queue.empty():
                 break
 
-    async def _process_batch(self, batch):
-        res = await self.api.send_steps(
+    def _process_batch(self, batch):
+        res = self.api.send_steps(
             steps=batch,
         )
         # simple one-try retry in case of network failure (no retry on graphql errors)
         if not res:
-            await asyncio.sleep(0.5)
-            await self.api.send_steps(
+            time.sleep(0.5)
+            self.api.send_steps(
                 steps=batch,
             )
             return

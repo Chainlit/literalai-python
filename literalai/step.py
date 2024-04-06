@@ -15,7 +15,7 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from literalai.client import LiteralClient
+    from literalai.client import BaseLiteralClient
     from literalai.event_processor import EventProcessor
 
 from literalai.context import active_steps_var, active_thread_var
@@ -199,7 +199,7 @@ class Step:
 class StepContextManager:
     def __init__(
         self,
-        client: "LiteralClient",
+        client: "BaseLiteralClient",
         name: str = "",
         type: TrueStepType = "undefined",
         id: Optional[str] = None,
@@ -255,7 +255,7 @@ class StepContextManager:
 
 
 def step_decorator(
-    client: "LiteralClient",
+    client: "BaseLiteralClient",
     func: Callable,
     type: TrueStepType = "undefined",
     name: str = "",

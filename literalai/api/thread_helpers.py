@@ -1,11 +1,11 @@
-from typing import Any, Dict, Optional, List
-from literalai.filter import (
-    threads_filters,
-    threads_order_by,
-)
-from literalai.thread import Thread
+from typing import Any, Dict, List, Optional
+
+from literalai.filter import threads_filters, threads_order_by
 from literalai.my_types import PaginatedResponse
+from literalai.thread import Thread
+
 from . import gql
+
 
 def get_threads_helper(
     first: Optional[int] = None,
@@ -29,12 +29,14 @@ def get_threads_helper(
 
     def process_response(response):
         processed_response = response["data"]["threads"]
-        processed_response["data"] = [edge["node"] for edge in processed_response["edges"]]
+        processed_response["data"] = [
+            edge["node"] for edge in processed_response["edges"]
+        ]
         del processed_response["edges"]
         return PaginatedResponse[Thread].from_dict(processed_response, Thread)
 
     description = "get threads"
-    
+
     return gql.GET_THREADS, description, variables, process_response
 
 
@@ -68,6 +70,7 @@ def list_threads_helper(
 
     return gql.LIST_THREADS, description, variables, process_response
 
+
 def get_thread_helper(id: str):
     variables = {"id": id}
 
@@ -78,6 +81,7 @@ def get_thread_helper(id: str):
     description = "get thread"
 
     return gql.GET_THREAD, description, variables, process_response
+
 
 def create_thread_helper(
     name: Optional[str] = None,
@@ -129,6 +133,7 @@ def upsert_thread_helper(
 
     return gql.UPSERT_THREAD, description, variables, process_response
 
+
 def update_thread_helper(
     id: str,
     name: Optional[str] = None,
@@ -155,6 +160,7 @@ def update_thread_helper(
     description = "update thread"
 
     return gql.UPDATE_THREAD, description, variables, process_response
+
 
 def delete_thread_helper(id: str):
     variables = {"thread_id": id}

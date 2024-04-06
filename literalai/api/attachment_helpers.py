@@ -1,7 +1,10 @@
-from typing import Dict, Optional, TypedDict, Union
 import mimetypes
+from typing import Dict, Optional, TypedDict, Union
+
 from literalai.my_types import Attachment
+
 from . import gql
+
 
 def create_attachment_helper(
     thread_id: str,
@@ -22,9 +25,7 @@ def create_attachment_helper(
         raise Exception("Only one of content and path must be provided")
 
     if (content and url) or (path and url):
-        raise Exception(
-            "Only one of content, path and attachment url must be provided"
-        )
+        raise Exception("Only one of content, path and attachment url must be provided")
 
     if path:
         # TODO: if attachment.mime is text, we could read as text?
@@ -57,16 +58,16 @@ def create_attachment_helper(
 
     return gql.CREATE_ATTACHMENT, description, variables, content, process_response
 
-class AttachmentUpload(TypedDict, total=False):
-        metadata: Optional[Dict]
-        name: Optional[str]
-        mime: Optional[str]
-        objectKey: Optional[str]
-        url: Optional[str]
 
-def update_attachment_helper(
-    id: str, update_params: AttachmentUpload
-):
+class AttachmentUpload(TypedDict, total=False):
+    metadata: Optional[Dict]
+    name: Optional[str]
+    mime: Optional[str]
+    objectKey: Optional[str]
+    url: Optional[str]
+
+
+def update_attachment_helper(id: str, update_params: AttachmentUpload):
     variables = {"id": id, **update_params}
 
     def process_response(response):
@@ -87,6 +88,7 @@ def get_attachment_helper(id: str):
     description = "get attachment"
 
     return gql.GET_ATTACHMENT, description, variables, process_response
+
 
 def delete_attachment_helper(id: str):
     variables = {"id": id}
