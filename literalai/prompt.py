@@ -11,7 +11,7 @@ else:
 import chevron
 
 if TYPE_CHECKING:
-    from literalai.api import API
+    from literalai.api import LiteralAPI
 
 from literalai.my_types import GenerationMessage, GenerationType
 
@@ -63,7 +63,7 @@ class PromptDict(TypedDict, total=False):
 
 @dataclass
 class Prompt:
-    api: "API"
+    api: "LiteralAPI"
     id: str
     created_at: str
     updated_at: str
@@ -97,7 +97,7 @@ class Prompt:
         }
 
     @classmethod
-    def from_dict(cls, api: "API", prompt_dict: PromptDict) -> "Prompt":
+    def from_dict(cls, api: "LiteralAPI", prompt_dict: PromptDict) -> "Prompt":
         # Create a Prompt instance from a dictionary (PromptDict)
         provider = prompt_dict.get("settings", {}).pop("provider", "")
 

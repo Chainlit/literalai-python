@@ -335,7 +335,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
             step.generation = generation
             step.end()
         else:
-            client.api.create_generation_sync(generation)
+            client.api.create_generation(generation)
 
     def after_wrapper(metadata: Dict):
         # Needs to be done in a separate function to avoid transforming all returned data into generators
@@ -373,7 +373,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 step.generation = generation
                 step.end()
             else:
-                client.api.create_generation_sync(generation)
+                client.api.create_generation(generation)
             return result
 
         return after

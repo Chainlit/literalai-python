@@ -56,7 +56,7 @@ def run():
 
 
 run()
-sdk.wait_until_queue_empty()
+sdk.flush_and_stop()
 
 
 # Get the steps from the API for the demo

@@ -19,18 +19,18 @@ async def main():
 
     cb = client.langchain_callback()
     with client.step(name="chat_model.invoke"):
-        print(chat_model.invoke(messages, config={"callbacks": [cb]}).content)
+        print(chat_model.invoke(messages, config={"callbacks": [cb]}))
 
     print(
         (
             await chat_model.ainvoke(
                 messages, config={"callbacks": [client.langchain_callback()]}
             )
-        ).content
+        )
     )
 
 
 asyncio.run(main())
-client.wait_until_queue_empty()
+client.flush_and_stop()
 
 print("Done")

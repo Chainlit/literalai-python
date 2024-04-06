@@ -8,7 +8,7 @@ from literalai.my_types import UserDict
 from literalai.step import Step, StepDict
 
 if TYPE_CHECKING:
-    from literalai.client import LiteralClient
+    from literalai.client import BaseLiteralClient
 
 
 class ThreadDict(TypedDict, total=False):
@@ -97,7 +97,7 @@ class Thread:
 class ThreadContextManager:
     def __init__(
         self,
-        client: "LiteralClient",
+        client: "BaseLiteralClient",
         thread_id: "Optional[str]" = None,
         name: "Optional[str]" = None,
         **kwargs,
@@ -111,7 +111,7 @@ class ThreadContextManager:
         thread = active_thread_var.get()
         thread_data = thread.to_dict()
         thread_data_to_upsert = {
-            "thread_id": thread_data["id"],
+            "id": thread_data["id"],
             "name": thread_data["name"],
         }
         if metadata := thread_data.get("metadata"):
@@ -120,7 +120,8 @@ class ThreadContextManager:
             thread_data_to_upsert["tags"] = tags
         if participant_id := thread_data.get("participant_id"):
             thread_data_to_upsert["participant_id"] = participant_id
-        self.client.api.upsert_thread_sync(**thread_data_to_upsert)
+
+        self.client.to_sync().api.upsert_thread(**thread_data_to_upsert)
 
     def __call__(self, func):
         return thread_decorator(
@@ -149,7 +150,7 @@ class ThreadContextManager:
 
 
 def thread_decorator(
-    client: "LiteralClient",
+    client: "BaseLiteralClient",
     func: Callable,
     thread_id: Optional[str] = None,
     name: Optional[str] = None,
