@@ -95,4 +95,4 @@ def run():
 
 
 run()
-sdk.wait_until_queue_empty()
+sdk.flush_and_stop()

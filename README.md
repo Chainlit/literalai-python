@@ -31,7 +31,7 @@ def main():
 
 
 main()
-client.wait_until_queue_empty()
+client.flush_and_stop()
 print("Done")
 ```
 

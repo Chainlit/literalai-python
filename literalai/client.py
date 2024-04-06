@@ -195,9 +195,6 @@ class BaseLiteralClient:
         active_steps_var.set([])
         active_thread_var.set(None)
 
-    def wait_until_queue_empty(self):
-        self.event_processor.flush_and_stop()
-
     def flush_and_stop(self):
         self.event_processor.flush_and_stop()
 
@@ -216,7 +213,7 @@ class LiteralClient(BaseLiteralClient):
         )
 
     def flush(self):
-        self.event_processor.flush_sync()
+        self.event_processor.flush()
 
 
 class AsyncLiteralClient(BaseLiteralClient):
@@ -231,4 +228,4 @@ class AsyncLiteralClient(BaseLiteralClient):
         super().__init__(batch_size=batch_size, is_async=True, api_key=api_key, url=url)
 
     async def flush(self):
-        await self.event_processor.flush()
+        await self.event_processor.aflush()

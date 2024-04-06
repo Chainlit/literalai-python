@@ -1,5 +1,7 @@
 import asyncio
+
 from dotenv import load_dotenv
+
 from literalai import LiteralClient
 
 load_dotenv()
@@ -35,4 +37,4 @@ async def main():
 
 
 asyncio.run(main())
-client.wait_until_queue_empty()
+client.flush_and_stop()

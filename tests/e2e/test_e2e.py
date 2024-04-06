@@ -33,7 +33,7 @@ class Teste2e:
 
         client = LiteralClient(batch_size=1, url=url, api_key=api_key)
         yield client
-        client.event_processor.wait_until_queue_empty()
+        client.event_processor.flush_and_stop()
 
     @pytest.fixture(scope="session")
     def async_client(self):
@@ -43,7 +43,7 @@ class Teste2e:
 
         async_client = AsyncLiteralClient(batch_size=1, url=url, api_key=api_key)
         yield async_client
-        async_client.event_processor.wait_until_queue_empty()
+        async_client.event_processor.flush_and_stop()
 
     async def test_user(self, client: LiteralClient, async_client: AsyncLiteralClient):
         user = await async_client.api.create_user(
