@@ -25,20 +25,27 @@ class Teste2e:
     Those tests are not meant to be parallelized
     """
 
-    @pytest.fixture(
-        scope="session"
-    )  # Feel free to move this fixture up for further testing
+    @pytest.fixture(scope="session")
     def client(self):
         url = os.getenv("LITERAL_API_URL", None)
         api_key = os.getenv("LITERAL_API_KEY", None)
         assert url is not None and api_key is not None, "Missing environment variables"
 
         client = LiteralClient(batch_size=1, url=url, api_key=api_key)
-        async_client = AsyncLiteralClient(batch_size=1, url=url, api_key=api_key)
-        yield client, async_client
+        yield client
         client.event_processor.wait_until_queue_empty()
 
-    async def test_user(self, _: LiteralClient, async_client: AsyncLiteralClient):
+    @pytest.fixture(scope="session")
+    def async_client(self):
+        url = os.getenv("LITERAL_API_URL", None)
+        api_key = os.getenv("LITERAL_API_KEY", None)
+        assert url is not None and api_key is not None, "Missing environment variables"
+
+        async_client = AsyncLiteralClient(batch_size=1, url=url, api_key=api_key)
+        yield async_client
+        async_client.event_processor.wait_until_queue_empty()
+
+    async def test_user(self, client: LiteralClient, async_client: AsyncLiteralClient):
         user = await async_client.api.create_user(
             identifier=f"test_user_{secrets.token_hex()}", metadata={"foo": "bar"}
         )
@@ -61,7 +68,9 @@ class Teste2e:
         deleted_user = await async_client.api.get_user(id=user.id)
         assert deleted_user is None
 
-    async def test_generation(self, _: LiteralClient, async_client: AsyncLiteralClient):
+    async def test_generation(
+        self, client: LiteralClient, async_client: AsyncLiteralClient
+    ):
         chat_generation = ChatGeneration(
             provider="test",
             model="test",
@@ -80,7 +89,9 @@ class Teste2e:
         assert len(generations.data) == 1
         assert generations.data[0].id == generation.id
 
-    async def test_thread(self, _: LiteralClient, async_client: AsyncLiteralClient):
+    async def test_thread(
+        self, client: LiteralClient, async_client: AsyncLiteralClient
+    ):
         user = await async_client.api.create_user(
             identifier=f"test_user_{secrets.token_hex()}"
         )
@@ -118,7 +129,7 @@ class Teste2e:
         deleted_thread = await async_client.api.get_thread(id=thread.id)
         assert deleted_thread is None
 
-    async def test_step(self, _: LiteralClient, async_client: AsyncLiteralClient):
+    async def test_step(self, client: LiteralClient, async_client: AsyncLiteralClient):
         thread = await async_client.api.create_thread()
         step = await async_client.api.create_step(
             thread_id=thread.id, metadata={"foo": "bar"}
@@ -142,7 +153,7 @@ class Teste2e:
 
         assert deleted_step is None
 
-    async def test_score(self, _: LiteralClient, async_client: AsyncLiteralClient):
+    async def test_score(self, client: LiteralClient, async_client: AsyncLiteralClient):
         thread = await async_client.api.create_thread()
         step = await async_client.api.create_step(
             thread_id=thread.id, metadata={"foo": "bar"}
@@ -172,7 +183,9 @@ class Teste2e:
         assert len(scores.data) == 1
         assert scores.data[0].id == score.id
 
-    async def test_attachment(self, _: LiteralClient, async_client: AsyncLiteralClient):
+    async def test_attachment(
+        self, client: LiteralClient, async_client: AsyncLiteralClient
+    ):
         attachment_url = (
             "https://upload.wikimedia.org/wikipedia/commons/8/8f/Example_image.svg"
         )
@@ -208,7 +221,9 @@ class Teste2e:
         deleted_attachment = await async_client.api.get_attachment(id=attachment.id)
         assert deleted_attachment is None
 
-    async def test_ingestion(self, _: LiteralClient, async_client: AsyncLiteralClient):
+    async def test_ingestion(
+        self, client: LiteralClient, async_client: AsyncLiteralClient
+    ):
         with async_client.thread():
             with async_client.step(name="test_ingestion") as step:
                 step.metadata = {"foo": "bar"}
@@ -222,7 +237,7 @@ class Teste2e:
 
     @pytest.mark.timeout(5)
     async def test_thread_decorator(
-        self, _: LiteralClient, async_client: AsyncLiteralClient
+        self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
         async def assert_delete(thread_id: str):
             await asyncio.sleep(1)
@@ -253,7 +268,7 @@ class Teste2e:
 
     @pytest.mark.timeout(5)
     async def test_step_decorator(
-        self, _: LiteralClient, async_client: AsyncLiteralClient
+        self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
         async def assert_delete(thread_id: str, step_id: str):
             await asyncio.sleep(1)
@@ -294,7 +309,7 @@ class Teste2e:
 
     @pytest.mark.timeout(5)
     async def test_run_decorator(
-        self, _: LiteralClient, async_client: AsyncLiteralClient
+        self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
         async def assert_delete(step_id: str):
             await asyncio.sleep(1)
@@ -314,7 +329,7 @@ class Teste2e:
         await assert_delete(step_id)
 
     async def test_parallel_requests(
-        self, _: LiteralClient, async_client: AsyncLiteralClient
+        self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
         ids = []
 
@@ -344,7 +359,9 @@ class Teste2e:
         )
 
     @pytest.mark.timeout(5)
-    async def test_dataset(self, _: LiteralClient, async_client: AsyncLiteralClient):
+    async def test_dataset(
+        self, client: LiteralClient, async_client: AsyncLiteralClient
+    ):
         dataset_name = str(uuid.uuid4())
         step = await self.create_test_step(async_client)
         dataset = await async_client.api.create_dataset(
@@ -356,7 +373,7 @@ class Teste2e:
 
         # Update a dataset
         next_name = str(uuid.uuid4())
-        await dataset.update(name=next_name)
+        dataset.update(name=next_name)
         assert dataset.name == next_name
         assert dataset.description == "bar"
 
@@ -372,7 +389,7 @@ class Teste2e:
             },
         ]
 
-        [await dataset.create_item(**input) for input in inputs]
+        [dataset.create_item(**input) for input in inputs]
 
         for item in dataset.items:
             assert item["datasetId"] == dataset.id
@@ -388,17 +405,17 @@ class Teste2e:
 
         # Add step to dataset
         assert step.id is not None
-        step_item = await fetched_dataset.add_step(step.id)
+        step_item = fetched_dataset.add_step(step.id)
 
         assert step_item["input"] == {"content": "hello world!"}
         assert step_item["expectedOutput"] == {"content": "hello back!"}
 
         # Delete a dataset item
         item_id = fetched_dataset.items[0]["id"]
-        await fetched_dataset.delete_item(item_id=item_id)
+        fetched_dataset.delete_item(item_id=item_id)
 
         # Delete a dataset
-        await fetched_dataset.delete()
+        fetched_dataset.delete()
 
         deleted_dataset = await async_client.api.get_dataset(id=dataset.id)
 
@@ -406,7 +423,7 @@ class Teste2e:
 
     @pytest.mark.timeout(5)
     async def test_generation_dataset(
-        self, _: LiteralClient, async_client: AsyncLiteralClient
+        self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
         chat_generation = ChatGeneration(
             provider="test",
@@ -427,7 +444,7 @@ class Teste2e:
         assert dataset.name == dataset_name
 
         # Add generation to dataset
-        generation_item = await dataset.add_generation(generation.id)
+        generation_item = dataset.add_generation(generation.id)
 
         assert generation_item["input"] == {
             "messages": [
@@ -441,7 +458,7 @@ class Teste2e:
         }
 
         # Delete a dataset
-        await dataset.delete()
+        dataset.delete()
 
     @pytest.mark.timeout(5)
     async def test_dataset_sync(
@@ -503,7 +520,9 @@ class Teste2e:
         assert client.api.get_dataset(id=fetched_dataset.id) is None
 
     @pytest.mark.timeout(5)
-    async def test_prompt(self, _: LiteralClient, async_client: AsyncLiteralClient):
+    async def test_prompt(
+        self, client: LiteralClient, async_client: AsyncLiteralClient
+    ):
         prompt = await async_client.api.get_prompt(name="Default")
         assert prompt is not None
         assert prompt.name == "Default"

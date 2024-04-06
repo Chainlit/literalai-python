@@ -1,9 +1,7 @@
-from typing import TYPE_CHECKING, List, Union
+from typing import List, Union
 
 from literalai.helper import ensure_values_serializable
-
-if TYPE_CHECKING:
-    from literalai.step import Step, StepDict
+from literalai.step import Step, StepDict
 
 STEP_FIELDS = """
         id
