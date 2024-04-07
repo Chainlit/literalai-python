@@ -885,7 +885,47 @@ mutation AddGenerationToDataset(
 }
 """
 
-GET_PROMPT = """
+CREATE_PROMPT_LINEAGE = """mutation createPromptLineage(
+    $name: String!
+    $description: String
+  ) {
+    createPromptLineage(
+      name: $name
+      description: $description
+    ) {
+      id
+      name
+    }
+  }"""
+
+CREATE_PROMPT_VERSION = """mutation createPromptVersion(
+    $lineageId: String!
+    $versionDesc: String
+    $templateMessages: Json
+    $tools: Json
+    $settings: Json
+    $variables: Json
+    $variablesDefaultValues: Json
+  ) {
+    createPromptVersion(
+      lineageId: $lineageId
+      versionDesc: $versionDesc
+      templateMessages: $templateMessages
+      tools: $tools
+      settings: $settings
+      variables: $variables
+      variablesDefaultValues: $variablesDefaultValues
+    ) {
+      id
+      version
+      createdAt
+      tools
+      settings
+      templateMessages
+    }
+  }"""
+
+GET_PROMPT_VERSION = """
 query GetPrompt($name: String!, $version: Int) {
     promptVersion(name: $name, version: $version) {
         id

@@ -99,7 +99,8 @@ class Prompt:
     @classmethod
     def from_dict(cls, api: "LiteralAPI", prompt_dict: PromptDict) -> "Prompt":
         # Create a Prompt instance from a dictionary (PromptDict)
-        provider = prompt_dict.get("settings", {}).pop("provider", "")
+        settings = prompt_dict.get("settings") or {}
+        provider = settings.pop("provider", "")
 
         return cls(
             api=api,
@@ -113,7 +114,7 @@ class Prompt:
             template_messages=prompt_dict.get("templateMessages", []),
             tools=prompt_dict.get("tools", None) or None,
             provider=provider,
-            settings=prompt_dict.get("settings", {}),
+            settings=settings,
             variables=prompt_dict.get("variables", []),
             variables_default_values=prompt_dict.get("variablesDefaultValues"),
         )

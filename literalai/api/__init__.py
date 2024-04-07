@@ -42,7 +42,11 @@ from .dataset_helpers import (
     update_dataset_helper,
 )
 from .generation_helpers import create_generation_helper, get_generations_helper
-from .prompt_helpers import get_prompt_helper
+from .prompt_helpers import (
+    create_prompt_helper,
+    create_prompt_lineage_helper,
+    get_prompt_helper,
+)
 from .score_helpers import (
     ScoreUpdate,
     create_score_helper,
@@ -83,6 +87,7 @@ from literalai.my_types import (
     Attachment,
     ChatGeneration,
     CompletionGeneration,
+    GenerationMessage,
     ScoreType,
 )
 from literalai.step import Step, StepDict, StepType
@@ -615,6 +620,16 @@ class LiteralAPI(BaseLiteralAPI):
 
     # Prompt API
 
+    def create_prompt_lineage(self, name: str, description: Optional[str] = None):
+        return self.gql_helper(*create_prompt_lineage_helper(name, description))
+
+    def create_prompt(self, name: str, template_messages: List[GenerationMessage]):
+        lineage = self.create_prompt_lineage(name)
+        lineage_id = lineage["id"]
+        return self.gql_helper(
+            *create_prompt_helper(self, lineage_id, template_messages)
+        )
+
     def get_prompt(self, name: str, version: Optional[int] = None):
         return self.gql_helper(*get_prompt_helper(self, name, version))
 
@@ -1125,6 +1140,19 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         )
 
     # Prompt API
+
+    async def create_prompt_lineage(self, name: str, description: Optional[str] = None):
+        return await self.gql_helper(*create_prompt_lineage_helper(name, description))
+
+    async def create_prompt(
+        self, name: str, template_messages: List[GenerationMessage]
+    ):
+        lineage = await self.create_prompt_lineage(name)
+        lineage_id = lineage["id"]
+        sync_api = LiteralAPI(self.api_key, self.url)
+        return await self.gql_helper(
+            *create_prompt_helper(sync_api, lineage_id, template_messages)
+        )
 
     async def get_prompt(self, name: str, version: Optional[int] = None):
         sync_api = LiteralAPI(self.api_key, self.url)
