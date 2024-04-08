@@ -623,11 +623,16 @@ class LiteralAPI(BaseLiteralAPI):
     def create_prompt_lineage(self, name: str, description: Optional[str] = None):
         return self.gql_helper(*create_prompt_lineage_helper(name, description))
 
-    def create_prompt(self, name: str, template_messages: List[GenerationMessage]):
+    def create_prompt(
+        self,
+        name: str,
+        template_messages: List[GenerationMessage],
+        settings: Optional[Dict] = None,
+    ):
         lineage = self.create_prompt_lineage(name)
         lineage_id = lineage["id"]
         return self.gql_helper(
-            *create_prompt_helper(self, lineage_id, template_messages)
+            *create_prompt_helper(self, lineage_id, template_messages, settings)
         )
 
     def get_prompt(self, name: str, version: Optional[int] = None):
@@ -1145,13 +1150,16 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(*create_prompt_lineage_helper(name, description))
 
     async def create_prompt(
-        self, name: str, template_messages: List[GenerationMessage]
+        self,
+        name: str,
+        template_messages: List[GenerationMessage],
+        settings: Optional[Dict] = None,
     ):
         lineage = await self.create_prompt_lineage(name)
         lineage_id = lineage["id"]
         sync_api = LiteralAPI(self.api_key, self.url)
         return await self.gql_helper(
-            *create_prompt_helper(sync_api, lineage_id, template_messages)
+            *create_prompt_helper(sync_api, lineage_id, template_messages, settings)
         )
 
     async def get_prompt(self, name: str, version: Optional[int] = None):

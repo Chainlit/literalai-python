@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from literalai.my_types import GenerationMessage
 from literalai.prompt import Prompt
@@ -22,9 +22,16 @@ def create_prompt_lineage_helper(name: str, description: Optional[str] = None):
 
 
 def create_prompt_helper(
-    api: "LiteralAPI", lineage_id: str, template_messages: List[GenerationMessage]
+    api: "LiteralAPI",
+    lineage_id: str,
+    template_messages: List[GenerationMessage],
+    settings: Optional[Dict] = None,
 ):
-    variables = {"lineageId": lineage_id, "templateMessages": template_messages}
+    variables = {
+        "lineageId": lineage_id,
+        "templateMessages": template_messages,
+        "settings": settings,
+    }
 
     def process_response(response):
         prompt = response["data"]["createPromptVersion"]
