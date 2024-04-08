@@ -27,6 +27,7 @@ class BaseLiteralClient:
         is_async: bool = False,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        disabled: bool = False,
     ):
         if not api_key:
             api_key = os.getenv("LITERAL_API_KEY", None)
@@ -39,9 +40,12 @@ class BaseLiteralClient:
         else:
             self.api = LiteralAPI(api_key=api_key, url=url)
 
+        self.disabled = disabled
+
         self.event_processor = EventProcessor(
             api=LiteralAPI(api_key=api_key, url=url),
             batch_size=batch_size,
+            disabled=disabled,
         )
 
     def to_sync(self) -> "LiteralClient":
@@ -207,9 +211,14 @@ class LiteralClient(BaseLiteralClient):
         batch_size: int = 1,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        disabled: bool = False,
     ):
         super().__init__(
-            batch_size=batch_size, is_async=False, api_key=api_key, url=url
+            batch_size=batch_size,
+            is_async=False,
+            api_key=api_key,
+            url=url,
+            disabled=disabled,
         )
 
     def flush(self):
@@ -224,8 +233,15 @@ class AsyncLiteralClient(BaseLiteralClient):
         batch_size: int = 1,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        disabled: bool = False,
     ):
-        super().__init__(batch_size=batch_size, is_async=True, api_key=api_key, url=url)
+        super().__init__(
+            batch_size=batch_size,
+            is_async=False,
+            api_key=api_key,
+            url=url,
+            disabled=disabled,
+        )
 
     async def flush(self):
         await self.event_processor.aflush()

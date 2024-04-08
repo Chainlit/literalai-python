@@ -23,14 +23,17 @@ async def to_thread(func, /, *args, **kwargs):
 class EventProcessor:
     event_queue: queue.Queue
 
-    def __init__(self, api: "LiteralAPI", batch_size: int = 1):
+    def __init__(self, api: "LiteralAPI", batch_size: int = 1, disabled: bool = False):
         self.batch_size = batch_size
         self.api = api
         self.event_queue = queue.Queue()
         self.processing_thread = threading.Thread(
             target=self._process_events, daemon=True
         )
-        self.processing_thread.start()
+        self.disabled = disabled
+        if not self.disabled:
+            self.processing_thread.start()
+
         self.stop_event = threading.Event()
 
     def add_event(self, event: "StepDict"):
@@ -74,7 +77,8 @@ class EventProcessor:
 
     def flush_and_stop(self):
         self.stop_event.set()
-        self.processing_thread.join()
+        if not self.disabled:
+            self.processing_thread.join()
 
     async def aflush(self):
         while not self.event_queue.empty():

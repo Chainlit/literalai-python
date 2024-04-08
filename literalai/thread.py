@@ -108,6 +108,9 @@ class ThreadContextManager:
         self.kwargs = kwargs
 
     def upsert(self):
+        if self.client.disabled:
+            return
+
         thread = active_thread_var.get()
         thread_data = thread.to_dict()
         thread_data_to_upsert = {
