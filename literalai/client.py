@@ -45,7 +45,7 @@ class BaseLiteralClient:
         self.event_processor = EventProcessor(
             api=LiteralAPI(api_key=api_key, url=url),
             batch_size=batch_size,
-            disabled=disabled,
+            disabled=self.disabled,
         )
 
     def to_sync(self) -> "LiteralClient":
@@ -54,6 +54,7 @@ class BaseLiteralClient:
                 batch_size=self.event_processor.batch_size,
                 api_key=self.api.api_key,
                 url=self.api.url,
+                disabled=self.disabled,
             )
         else:
             return self  # type: ignore
@@ -237,7 +238,7 @@ class AsyncLiteralClient(BaseLiteralClient):
     ):
         super().__init__(
             batch_size=batch_size,
-            is_async=False,
+            is_async=True,
             api_key=api_key,
             url=url,
             disabled=disabled,
