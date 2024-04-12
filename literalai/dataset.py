@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from literalai.api import LiteralAPI
 
 from literalai.dataset_experiment import DatasetExperiment
-from literalai.dataset_item import DatasetItemDict
+from literalai.dataset_item import DatasetItem
 
 DatasetType = Literal["key_value", "generation"]
 
@@ -22,7 +22,7 @@ class DatasetDict(TypedDict, total=False):
     metadata: Dict
     name: Optional[str]
     description: Optional[str]
-    items: Optional[List[DatasetItemDict]]
+    items: Optional[List[DatasetItem]]
     type: DatasetType
 
 
@@ -34,7 +34,7 @@ class Dataset:
     metadata: Dict
     name: Optional[str] = None
     description: Optional[str] = None
-    items: List[DatasetItemDict] = field(default_factory=lambda: [])
+    items: List[DatasetItem] = field(default_factory=lambda: [])
     type: DatasetType = "key_value"
 
     def to_dict(self):
@@ -44,7 +44,7 @@ class Dataset:
             "metadata": self.metadata,
             "name": self.name,
             "description": self.description,
-            "items": self.items,
+            "items": [item.to_dict() for item in self.items],
             "type": self.type,
         }
 
@@ -57,7 +57,7 @@ class Dataset:
             metadata=dataset.get("metadata", {}),
             name=dataset.get("name"),
             description=dataset.get("description"),
-            items=dataset.get("items") or [],
+            items=[DatasetItem.from_dict(item) for item in dataset.get("items", [])],
             type=dataset.get("type", "key_value"),
         )
 
@@ -82,7 +82,7 @@ class Dataset:
         input: Dict,
         expected_output: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
-    ) -> DatasetItemDict:
+    ) -> DatasetItem:
         """
         Create a new dataset item and add it to this dataset.
         :param input: The input data for the dataset item.
@@ -95,9 +95,8 @@ class Dataset:
         )
         if self.items is None:
             self.items = []
-        dataset_item_dict = dataset_item.to_dict()
-        self.items.append(dataset_item_dict)
-        return dataset_item_dict
+        self.items.append(dataset_item)
+        return dataset_item
 
     def create_experiment(
         self, name: str, prompt_id: str, assertions: Optional[Dict] = None
@@ -122,11 +121,11 @@ class Dataset:
         """
         self.api.delete_dataset_item(item_id)
         if self.items is not None:
-            self.items = [item for item in self.items if item["id"] != item_id]
+            self.items = [item for item in self.items if item.id != item_id]
 
     def add_step(
         self, step_id: str, metadata: Optional[Dict] = None
-    ) -> DatasetItemDict:
+    ) -> DatasetItem:
         """
         Create a new dataset item based on a step and add it to this dataset.
         :param step_id: The id of the step to add to the dataset.
@@ -139,13 +138,12 @@ class Dataset:
         dataset_item = self.api.add_step_to_dataset(self.id, step_id, metadata)
         if self.items is None:
             self.items = []
-        dataset_item_dict = dataset_item.to_dict()
-        self.items.append(dataset_item_dict)
-        return dataset_item_dict
+        self.items.append(dataset_item)
+        return dataset_item
 
     def add_generation(
         self, generation_id: str, metadata: Optional[Dict] = None
-    ) -> DatasetItemDict:
+    ) -> DatasetItem:
         """
         Create a new dataset item based on a generation and add it to this dataset.
         :param generation_id: The id of the generation to add to the dataset.
@@ -157,6 +155,5 @@ class Dataset:
         )
         if self.items is None:
             self.items = []
-        dataset_item_dict = dataset_item.to_dict()
-        self.items.append(dataset_item_dict)
-        return dataset_item_dict
+        self.items.append(dataset_item)
+        return dataset_item
