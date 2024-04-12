@@ -10,6 +10,7 @@ else:
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
 
+from literalai.dataset_experiment import DatasetExperiment
 from literalai.dataset_item import DatasetItemDict
 
 DatasetType = Literal["key_value", "generation"]
@@ -97,6 +98,21 @@ class Dataset:
         dataset_item_dict = dataset_item.to_dict()
         self.items.append(dataset_item_dict)
         return dataset_item_dict
+
+    def create_experiment(
+        self, name: str, prompt_id: str, assertions: Optional[Dict] = None
+    ) -> DatasetExperiment:
+        """
+        Creates a new dataset experiment based on this dataset.
+        :param name: The name of the experiment .
+        :param prompt_id: The Prompt ID used on LLM calls (optional).
+        :param assertions: The assertions to be used on the experiment.
+        :return: The created DatasetExperiment instance as a dictionary.
+        """
+        experiment = self.api.create_dataset_experiment(
+            self.id, name, prompt_id, assertions
+        )
+        return experiment
 
     def delete_item(self, item_id: str):
         """

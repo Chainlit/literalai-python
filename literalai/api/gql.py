@@ -789,6 +789,47 @@ DELETE_DATASET = """
     }
 """
 
+CREATE_DATASET_EXPERIMENT = """
+    mutation CreateDatasetExperiment(
+        $name: String! 
+        $datasetId: String!
+        $promptId: String
+        $assertions: Json!
+    ) {
+        createDatasetExperiment(
+            name: $name
+            datasetId: $datasetId
+            promptId: $promptId
+            assertions: $assertions
+        ) {
+          id
+          name
+          datasetId
+          assertions
+        }
+    }
+"""
+
+CREATE_DATASET_EXPERIMENT_ITEM = """
+    mutation CreateDatasetExperimentItem(
+        $datasetExperimentId: String!
+        $datasetItemId: String!
+        $input: Json
+        $output: Json
+    ) {
+        createDatasetExperimentItem(
+            datasetExperimentId: $datasetExperimentId
+            datasetItemId: $datasetItemId
+            input: $input
+            output: $output
+        ) {
+          id
+          input
+          output
+        }
+      }
+"""
+
 CREATE_DATASET_ITEM = """
 mutation CreateDatasetItem(
     $datasetId: String!

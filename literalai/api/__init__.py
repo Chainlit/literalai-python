@@ -13,6 +13,7 @@ from typing import (
 )
 
 from literalai.dataset import DatasetType
+from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
 from literalai.filter import (
     generations_filters,
     generations_order_by,
@@ -33,6 +34,8 @@ from .attachment_helpers import (
 from .dataset_helpers import (
     add_generation_to_dataset_helper,
     add_step_to_dataset_helper,
+    create_dataset_experiment_helper,
+    create_dataset_experiment_item_helper,
     create_dataset_helper,
     create_dataset_item_helper,
     delete_dataset_helper,
@@ -50,6 +53,7 @@ from .prompt_helpers import (
 from .score_helpers import (
     ScoreUpdate,
     create_score_helper,
+    create_scores_query_builder,
     delete_score_helper,
     get_scores_helper,
     update_score_helper,
@@ -88,6 +92,8 @@ from literalai.my_types import (
     ChatGeneration,
     CompletionGeneration,
     GenerationMessage,
+    Score,
+    ScoreDict,
     ScoreType,
 )
 from literalai.step import Step, StepDict, StepType
@@ -303,6 +309,18 @@ class LiteralAPI(BaseLiteralAPI):
             *get_scores_helper(first, after, before, filters, order_by)
         )
 
+    def create_scores(self, scores: List[ScoreDict]):
+        query = create_scores_query_builder(scores)
+        variables = {}
+        for id, score in enumerate(scores):
+            for k, v in score.items():
+                variables[f"{k}_{id}"] = v
+
+        def process_response(response):
+            return [Score.from_dict(x) for x in response["data"].values()]
+
+        return self.gql_helper(query, "create scores", variables, process_response)
+
     def create_score(
         self,
         name: str,
@@ -376,9 +394,7 @@ class LiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = (
-            {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -389,7 +405,10 @@ class LiteralAPI(BaseLiteralAPI):
         with httpx.Client() as client:
             if upload_type == "raw":
                 upload_response = client.request(
-                    url=url, headers=headers, method=method, data=content  # type: ignore
+                    url=url,
+                    headers=headers,
+                    method=method,
+                    data=content,  # type: ignore
                 )
             else:
                 upload_response = client.request(
@@ -584,6 +603,40 @@ class LiteralAPI(BaseLiteralAPI):
 
     def delete_dataset(self, id: str):
         return self.gql_helper(*delete_dataset_helper(self, id))
+
+    # Dataset Experiment APIs
+
+    def create_dataset_experiment(
+        self,
+        dataset_id: str,
+        name: str,
+        prompt_id: str,
+        assertions: Optional[Dict] = None,
+    ) -> "DatasetExperiment":
+        return self.gql_helper(
+            *create_dataset_experiment_helper(
+                self, dataset_id, name, prompt_id, assertions
+            )
+        )
+
+    def create_dataset_experiment_item(self, experiment_item: DatasetExperimentItem):
+        # Create the dataset experiment item
+        result = self.gql_helper(
+            *create_dataset_experiment_item_helper(
+                dataset_experiment_id=experiment_item.dataset_experiment_id,
+                dataset_item_id=experiment_item.dataset_item_id,
+                input=experiment_item.input,
+                output=experiment_item.output,
+            )
+        )
+
+        for score in experiment_item.scores:
+            score["datasetExperimentItemId"] = result.id
+
+        # Create the scores and add to experiment item.
+        result.scores = self.create_scores(experiment_item.scores)
+
+        return result
 
     # Dataset Item API
 
@@ -896,9 +949,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = (
-            {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -909,7 +960,10 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         async with httpx.AsyncClient() as client:
             if upload_type == "raw":
                 upload_response = await client.request(
-                    url=url, headers=headers, method=method, data=content  # type: ignore
+                    url=url,
+                    headers=headers,
+                    method=method,
+                    data=content,  # type: ignore
                 )
             else:
                 upload_response = await client.request(
