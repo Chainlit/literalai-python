@@ -32,8 +32,18 @@ def create_dataset_helper(
     return gql.CREATE_DATASET, description, variables, process_response
 
 
-def get_dataset_helper(api: "LiteralAPI", id: str):
-    body = {"id": id}
+def get_dataset_helper(
+    api: "LiteralAPI", id: Optional[str] = None, name: Optional[str] = None
+):
+    if not id and not name:
+        raise ValueError("id or name must be provided")
+
+    body = {}
+
+    if id:
+        body["id"] = id
+    if name:
+        body["name"] = name
 
     def process_response(response):
         dataset_dict = response.get("data")
@@ -98,7 +108,9 @@ def create_dataset_experiment_helper(
     }
 
     def process_response(response):
-        return DatasetExperiment.from_dict(api, response["data"]["createDatasetExperiment"])
+        return DatasetExperiment.from_dict(
+            api, response["data"]["createDatasetExperiment"]
+        )
 
     description = "create dataset experiment"
 

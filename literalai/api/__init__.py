@@ -394,7 +394,9 @@ class LiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = (
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -585,8 +587,10 @@ class LiteralAPI(BaseLiteralAPI):
             *create_dataset_helper(self, name, description, metadata, type)
         )
 
-    def get_dataset(self, id: str):
-        subpath, _, variables, process_response = get_dataset_helper(self, id)
+    def get_dataset(self, id: Optional[str] = None, name: Optional[str] = None):
+        subpath, _, variables, process_response = get_dataset_helper(
+            self, id=id, name=name
+        )
         response = self.make_rest_call(subpath, variables)
         return process_response(response)
 
@@ -949,7 +953,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = (
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -1143,9 +1149,11 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *create_dataset_helper(sync_api, name, description, metadata, type)
         )
 
-    async def get_dataset(self, id: str):
+    async def get_dataset(self, id: Optional[str] = None, name: Optional[str] = None):
         sync_api = LiteralAPI(self.api_key, self.url)
-        subpath, _, variables, process_response = get_dataset_helper(sync_api, id)
+        subpath, _, variables, process_response = get_dataset_helper(
+            sync_api, id=id, name=name
+        )
         response = await self.make_rest_call(subpath, variables)
         return process_response(response)
 
