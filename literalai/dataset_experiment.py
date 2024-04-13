@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 class DatasetExperimentItemDict(TypedDict, total=False):
-    id: Optional[str]
+    id: str
     datasetExperimentId: str
     datasetItemId: str
     scores: List[ScoreDict]
@@ -23,8 +23,8 @@ class DatasetExperimentItem:
     dataset_experiment_id: str
     dataset_item_id: str
     scores: List[ScoreDict]
-    input: Dict
-    output: Dict
+    input: Optional[Dict]
+    output: Optional[Dict]
 
     def to_dict(self):
         return {
@@ -42,7 +42,7 @@ class DatasetExperimentItem:
             id=item.get("id", ""),
             dataset_experiment_id=item.get("datasetExperimentId", ""),
             dataset_item_id=item.get("datasetItemId", ""),
-            scores=item.get("scores"),
+            scores=item.get("scores", []),
             input=item.get("input"),
             output=item.get("output"),
         )
@@ -53,7 +53,7 @@ class DatasetExperimentDict(TypedDict, total=False):
     createdAt: str
     name: str
     datasetId: str
-    assertions: Dict
+    params: Dict
     promptId: Optional[str]
     items: Optional[List[DatasetExperimentItemDict]]
 
@@ -65,11 +65,11 @@ class DatasetExperiment:
     created_at: str
     name: str
     dataset_id: str
-    assertions: Dict
+    params: Optional[Dict]
     prompt_id: Optional[str] = None
     items: List[DatasetExperimentItem] = field(default_factory=lambda: [])
 
-    def log(self, item_dict: DatasetExperimentItemDict):
+    def log(self, item_dict: DatasetExperimentItemDict) -> DatasetExperimentItem:
         dataset_experiment_item = DatasetExperimentItem.from_dict(
             {
                 "datasetExperimentId": self.id,
@@ -80,9 +80,9 @@ class DatasetExperiment:
             }
         )
 
-        item_dict = self.api.create_dataset_experiment_item(dataset_experiment_item)
-        self.items.append(item_dict)
-        return item_dict
+        item = self.api.create_dataset_experiment_item(dataset_experiment_item)
+        self.items.append(item)
+        return item
 
     def to_dict(self):
         return {
@@ -91,7 +91,7 @@ class DatasetExperiment:
             "name": self.name,
             "datasetId": self.dataset_id,
             "promptId": self.prompt_id,
-            "assertions": self.assertions,
+            "params": self.params,
             "items": [item.to_dict() for item in self.items],
         }
 
@@ -99,16 +99,19 @@ class DatasetExperiment:
     def from_dict(
         cls, api: "LiteralAPI", dataset_experiment: DatasetExperimentDict
     ) -> "DatasetExperiment":
+        items = dataset_experiment.get("items", [])
+        if not isinstance(items, list):
+            raise Exception("Dataset items should be a list.")
         return cls(
             api=api,
             id=dataset_experiment.get("id", ""),
             created_at=dataset_experiment.get("createdAt", ""),
             name=dataset_experiment.get("name", ""),
             dataset_id=dataset_experiment.get("datasetId", ""),
-            assertions=dataset_experiment.get("assertions"),
+            params=dataset_experiment.get("params"),
             prompt_id=dataset_experiment.get("promptId"),
             items=[
                 DatasetExperimentItem.from_dict(item)
-                for item in dataset_experiment.get("items", [])
+                for item in items
             ],
         )

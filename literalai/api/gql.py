@@ -794,18 +794,18 @@ CREATE_DATASET_EXPERIMENT = """
         $name: String! 
         $datasetId: String!
         $promptId: String
-        $assertions: Json!
+        $params: Json!
     ) {
         createDatasetExperiment(
             name: $name
             datasetId: $datasetId
             promptId: $promptId
-            assertions: $assertions
+            params: $params
         ) {
           id
           name
           datasetId
-          assertions
+          params
         }
     }
 """

@@ -98,13 +98,13 @@ def create_dataset_experiment_helper(
     dataset_id: str,
     name: str,
     prompt_id: Optional[str] = None,
-    assertions: Optional[Dict] = None,
-) -> "DatasetExperiment":
+    params: Optional[Dict] = None,
+):
     variables = {
         "datasetId": dataset_id,
         "name": name,
         "promptId": prompt_id,
-        "assertions": assertions,
+        "params": params,
     }
 
     def process_response(response):

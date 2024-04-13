@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from literalai.api import LiteralAPI
 
 from literalai.dataset_experiment import DatasetExperiment
-from literalai.dataset_item import DatasetItem
+from literalai.dataset_item import DatasetItem, DatasetItemDict
 
 DatasetType = Literal["key_value", "generation"]
 
@@ -22,7 +22,7 @@ class DatasetDict(TypedDict, total=False):
     metadata: Dict
     name: Optional[str]
     description: Optional[str]
-    items: Optional[List[DatasetItem]]
+    items: Optional[List[DatasetItemDict]]
     type: DatasetType
 
 
@@ -50,6 +50,10 @@ class Dataset:
 
     @classmethod
     def from_dict(cls, api: "LiteralAPI", dataset: DatasetDict) -> "Dataset":
+        items = dataset.get("items", [])
+        if not isinstance(items, list):
+            raise Exception("Dataset items should be an array")
+
         return cls(
             api=api,
             id=dataset.get("id", ""),
@@ -57,7 +61,7 @@ class Dataset:
             metadata=dataset.get("metadata", {}),
             name=dataset.get("name"),
             description=dataset.get("description"),
-            items=[DatasetItem.from_dict(item) for item in dataset.get("items", [])],
+            items=[DatasetItem.from_dict(item) for item in items],
             type=dataset.get("type", "key_value"),
         )
 
@@ -99,17 +103,17 @@ class Dataset:
         return dataset_item
 
     def create_experiment(
-        self, name: str, prompt_id: str, assertions: Optional[Dict] = None
+        self, name: str, prompt_id: str, params: Optional[Dict] = None
     ) -> DatasetExperiment:
         """
         Creates a new dataset experiment based on this dataset.
         :param name: The name of the experiment .
         :param prompt_id: The Prompt ID used on LLM calls (optional).
-        :param assertions: The assertions to be used on the experiment.
+        :param params: The params used on the experiment.
         :return: The created DatasetExperiment instance as a dictionary.
         """
         experiment = self.api.create_dataset_experiment(
-            self.id, name, prompt_id, assertions
+            self.id, name, prompt_id, params
         )
         return experiment
 

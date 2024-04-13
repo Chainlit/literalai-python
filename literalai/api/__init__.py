@@ -394,9 +394,7 @@ class LiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = (
-            {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -615,15 +613,15 @@ class LiteralAPI(BaseLiteralAPI):
         dataset_id: str,
         name: str,
         prompt_id: str,
-        assertions: Optional[Dict] = None,
+        params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
         return self.gql_helper(
-            *create_dataset_experiment_helper(
-                self, dataset_id, name, prompt_id, assertions
-            )
+            *create_dataset_experiment_helper(self, dataset_id, name, prompt_id, params)
         )
 
-    def create_dataset_experiment_item(self, experiment_item: DatasetExperimentItem):
+    def create_dataset_experiment_item(
+        self, experiment_item: DatasetExperimentItem
+    ) -> DatasetExperimentItem:
         # Create the dataset experiment item
         result = self.gql_helper(
             *create_dataset_experiment_item_helper(
@@ -953,9 +951,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = (
-            {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
