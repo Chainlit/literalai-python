@@ -392,9 +392,9 @@ class Teste2e:
         [dataset.create_item(**input) for input in inputs]
 
         for item in dataset.items:
-            assert item["datasetId"] == dataset.id
-            assert item["input"] is not None
-            assert item["expectedOutput"] is not None
+            assert item.dataset_id == dataset.id
+            assert item.input is not None
+            assert item.expected_output is not None
 
         # Get a dataset with items
         fetched_dataset = await async_client.api.get_dataset(id=dataset.id)
@@ -446,13 +446,13 @@ class Teste2e:
         # Add generation to dataset
         generation_item = dataset.add_generation(generation.id)
 
-        assert generation_item["input"] == {
+        assert generation_item.input == {
             "messages": [
                 {"content": "Hello", "role": "user"},
                 {"content": "Hi", "role": "assistant"},
             ]
         }
-        assert generation_item["expectedOutput"] == {
+        assert generation_item.expectedOutput == {
             "content": "Hello back!",
             "role": "assistant",
         }
@@ -493,9 +493,9 @@ class Teste2e:
         [dataset.create_item(**input) for input in inputs]
 
         for item in dataset.items:
-            assert item["datasetId"] == dataset.id
-            assert item["input"] is not None
-            assert item["expectedOutput"] is not None
+            assert item.dataset_id == dataset.id
+            assert item.input is not None
+            assert item.expected_output is not None
 
         # Get a dataset with items
         fetched_dataset = client.api.get_dataset(id=dataset.id)
