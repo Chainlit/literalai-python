@@ -12,7 +12,6 @@ from typing import (
     Union,
 )
 
-import numpy as np
 from literalai.dataset import DatasetType
 from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
 from literalai.filter import (
@@ -53,6 +52,7 @@ from .prompt_helpers import (
 )
 from .score_helpers import (
     ScoreUpdate,
+    check_scores_finite,
     create_score_helper,
     create_scores_query_builder,
     delete_score_helper,
@@ -311,6 +311,8 @@ class LiteralAPI(BaseLiteralAPI):
         )
 
     def create_scores(self, scores: List[ScoreDict]):
+        check_scores_finite(scores)
+
         query = create_scores_query_builder(scores)
         variables = {}
         for id, score in enumerate(scores):
@@ -333,6 +335,8 @@ class LiteralAPI(BaseLiteralAPI):
         comment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
+        check_scores_finite([{"name": name, "value": value}])
+
         return self.gql_helper(
             *create_score_helper(
                 name,
@@ -880,11 +884,12 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         )
 
     async def create_scores(self, scores: List[ScoreDict]):
+        check_scores_finite(scores)
+
         query = create_scores_query_builder(scores)
         variables = {}
 
         for id, score in enumerate(scores):
-            score["value"] = np.nan_to_num(score["value"])
             for k, v in score.items():
                 variables[f"{k}_{id}"] = v
 
@@ -906,6 +911,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         comment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
+        check_scores_finite([{"name": name, "value": value}])
+
         return await self.gql_helper(
             *create_score_helper(
                 name,
@@ -1206,6 +1213,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     async def create_experiment_item(
         self, experiment_item: DatasetExperimentItem
     ) -> DatasetExperimentItem:
+        check_scores_finite(experiment_item.scores)
+
         # Create the dataset experiment item
         result = await self.gql_helper(
             *create_experiment_item_helper(

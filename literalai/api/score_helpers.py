@@ -1,3 +1,4 @@
+import math
 from typing import Any, Dict, List, Optional, TypedDict
 
 from literalai.filter import scores_filters, scores_order_by
@@ -81,6 +82,7 @@ def create_scores_fields_builder(scores: List[ScoreDict]):
         """
     return generated
 
+
 def create_scores_args_builder(scores: List[ScoreDict]):
     generated = ""
     for id in range(len(scores)):
@@ -105,6 +107,7 @@ def create_scores_args_builder(scores: List[ScoreDict]):
             }}
         """
     return generated
+
 
 def create_scores_query_builder(scores: List[ScoreDict]):
     return f"""
@@ -142,3 +145,12 @@ def delete_score_helper(id: str):
     description = "delete score"
 
     return gql.DELETE_SCORE, description, variables, process_response
+
+
+def check_scores_finite(scores: List[ScoreDict]):
+    for score in scores:
+        if not math.isfinite(score["value"]):
+            raise ValueError(
+                f"Value {score['value']} for score {score['name']} is not finite"
+            )
+    return True
