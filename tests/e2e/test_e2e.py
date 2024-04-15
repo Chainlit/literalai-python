@@ -411,7 +411,7 @@ class Teste2e:
         assert step_item.expected_output == {"content": "hello back!"}
 
         # Delete a dataset item
-        item_id = fetched_dataset.items[0]["id"]
+        item_id = fetched_dataset.items[0].id
         fetched_dataset.delete_item(item_id=item_id)
 
         # Delete a dataset
@@ -511,7 +511,7 @@ class Teste2e:
         assert step_item.expected_output == {"content": "hello back!"}
 
         # Delete a dataset item
-        item_id = fetched_dataset.items[0]["id"]
+        item_id = fetched_dataset.items[0].id
         fetched_dataset.delete_item(item_id=item_id)
 
         # Delete a dataset
