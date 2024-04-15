@@ -613,7 +613,7 @@ class LiteralAPI(BaseLiteralAPI):
         self,
         dataset_id: str,
         name: str,
-        prompt_id: Optional[str],
+        prompt_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
         return self.gql_helper(
@@ -1192,7 +1192,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         self,
         dataset_id: str,
         name: str,
-        prompt_id: str,
+        prompt_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
         sync_api = LiteralAPI(self.api_key, self.url)

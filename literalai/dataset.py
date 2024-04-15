@@ -103,7 +103,7 @@ class Dataset:
         return dataset_item
 
     def create_experiment(
-        self, name: str, prompt_id: str, params: Optional[Dict] = None
+        self, name: str, prompt_id: Optional[str] = None, params: Optional[Dict] = None
     ) -> DatasetExperiment:
         """
         Creates a new dataset experiment based on this dataset.
