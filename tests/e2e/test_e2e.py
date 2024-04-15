@@ -407,8 +407,8 @@ class Teste2e:
         assert step.id is not None
         step_item = fetched_dataset.add_step(step.id)
 
-        assert step_item["input"] == {"content": "hello world!"}
-        assert step_item["expectedOutput"] == {"content": "hello back!"}
+        assert step_item.input == {"content": "hello world!"}
+        assert step_item.expected_output == {"content": "hello back!"}
 
         # Delete a dataset item
         item_id = fetched_dataset.items[0]["id"]
@@ -452,7 +452,7 @@ class Teste2e:
                 {"content": "Hi", "role": "assistant"},
             ]
         }
-        assert generation_item.expectedOutput == {
+        assert generation_item.expected_output == {
             "content": "Hello back!",
             "role": "assistant",
         }
@@ -507,8 +507,8 @@ class Teste2e:
         assert step.id is not None
         step_item = fetched_dataset.add_step(step.id)
 
-        assert step_item["input"] == {"content": "hello world!"}
-        assert step_item["expectedOutput"] == {"content": "hello back!"}
+        assert step_item.input == {"content": "hello world!"}
+        assert step_item.expected_output == {"content": "hello back!"}
 
         # Delete a dataset item
         item_id = fetched_dataset.items[0]["id"]
