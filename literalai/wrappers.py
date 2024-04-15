@@ -3,6 +3,8 @@ from functools import wraps
 from importlib import import_module
 from typing import TYPE_CHECKING, Callable, Optional, TypedDict, Union
 
+from literalai.context import active_steps_var
+
 if TYPE_CHECKING:
     from literalai.step import ChatGeneration, CompletionGeneration, Step
 
@@ -30,12 +32,15 @@ def sync_wrapper(before_func=None, after_func=None):
             if before_func:
                 before_func(context, *args, **kwargs)
             context["start"] = time.time()
-
             try:
                 result = original_func(*args, **kwargs)
             except Exception as e:
-                if "generation" in context:
-                    context["generation"].error = str(e)
+                active_steps = active_steps_var.get()
+                if active_steps and len(active_steps) > 0:
+                    current_step = active_steps[-1]
+                    current_step.error = str(e)
+                    current_step.end()
+                    current_step.processor.flush()
                 raise e
             # If an after_func is provided, call it with the result and the shared context.
             if after_func:
@@ -61,9 +66,12 @@ def async_wrapper(before_func=None, after_func=None):
             try:
                 result = await original_func(*args, **kwargs)
             except Exception as e:
-                if "generation" in context:
-                    context["generation"].error = str(e)
-
+                active_steps = active_steps_var.get()
+                if active_steps and len(active_steps) > 0:
+                    current_step = active_steps[-1]
+                    current_step.error = str(e)
+                    current_step.end()
+                    current_step.processor.flush()
                 raise e
 
             # If an after_func is provided, call it with the result and the shared context.
