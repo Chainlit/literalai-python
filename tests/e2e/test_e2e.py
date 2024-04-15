@@ -392,9 +392,9 @@ class Teste2e:
         [dataset.create_item(**input) for input in inputs]
 
         for item in dataset.items:
-            assert item["datasetId"] == dataset.id
-            assert item["input"] is not None
-            assert item["expectedOutput"] is not None
+            assert item.dataset_id == dataset.id
+            assert item.input is not None
+            assert item.expected_output is not None
 
         # Get a dataset with items
         fetched_dataset = await async_client.api.get_dataset(id=dataset.id)
@@ -407,11 +407,11 @@ class Teste2e:
         assert step.id is not None
         step_item = fetched_dataset.add_step(step.id)
 
-        assert step_item["input"] == {"content": "hello world!"}
-        assert step_item["expectedOutput"] == {"content": "hello back!"}
+        assert step_item.input == {"content": "hello world!"}
+        assert step_item.expected_output == {"content": "hello back!"}
 
         # Delete a dataset item
-        item_id = fetched_dataset.items[0]["id"]
+        item_id = fetched_dataset.items[0].id
         fetched_dataset.delete_item(item_id=item_id)
 
         # Delete a dataset
@@ -446,13 +446,13 @@ class Teste2e:
         # Add generation to dataset
         generation_item = dataset.add_generation(generation.id)
 
-        assert generation_item["input"] == {
+        assert generation_item.input == {
             "messages": [
                 {"content": "Hello", "role": "user"},
                 {"content": "Hi", "role": "assistant"},
             ]
         }
-        assert generation_item["expectedOutput"] == {
+        assert generation_item.expected_output == {
             "content": "Hello back!",
             "role": "assistant",
         }
@@ -493,9 +493,9 @@ class Teste2e:
         [dataset.create_item(**input) for input in inputs]
 
         for item in dataset.items:
-            assert item["datasetId"] == dataset.id
-            assert item["input"] is not None
-            assert item["expectedOutput"] is not None
+            assert item.dataset_id == dataset.id
+            assert item.input is not None
+            assert item.expected_output is not None
 
         # Get a dataset with items
         fetched_dataset = client.api.get_dataset(id=dataset.id)
@@ -507,11 +507,11 @@ class Teste2e:
         assert step.id is not None
         step_item = fetched_dataset.add_step(step.id)
 
-        assert step_item["input"] == {"content": "hello world!"}
-        assert step_item["expectedOutput"] == {"content": "hello back!"}
+        assert step_item.input == {"content": "hello world!"}
+        assert step_item.expected_output == {"content": "hello back!"}
 
         # Delete a dataset item
-        item_id = fetched_dataset.items[0]["id"]
+        item_id = fetched_dataset.items[0].id
         fetched_dataset.delete_item(item_id=item_id)
 
         # Delete a dataset

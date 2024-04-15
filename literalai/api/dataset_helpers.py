@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Dict, Optional
 
 from literalai.dataset import Dataset, DatasetType
+from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
 from literalai.dataset_item import DatasetItem
 
 if TYPE_CHECKING:
@@ -31,8 +32,18 @@ def create_dataset_helper(
     return gql.CREATE_DATASET, description, variables, process_response
 
 
-def get_dataset_helper(api: "LiteralAPI", id: str):
-    body = {"id": id}
+def get_dataset_helper(
+    api: "LiteralAPI", id: Optional[str] = None, name: Optional[str] = None
+):
+    if not id and not name:
+        raise ValueError("id or name must be provided")
+
+    body = {}
+
+    if id:
+        body["id"] = id
+    if name:
+        body["name"] = name
 
     def process_response(response):
         dataset_dict = response.get("data")
@@ -80,6 +91,53 @@ def delete_dataset_helper(api: "LiteralAPI", id: str):
     description = "delete dataset"
 
     return gql.DELETE_DATASET, description, variables, process_response
+
+
+def create_experiment_helper(
+    api: "LiteralAPI",
+    dataset_id: str,
+    name: str,
+    prompt_id: Optional[str] = None,
+    params: Optional[Dict] = None,
+):
+    variables = {
+        "datasetId": dataset_id,
+        "name": name,
+        "promptId": prompt_id,
+        "params": params,
+    }
+
+    def process_response(response):
+        return DatasetExperiment.from_dict(
+            api, response["data"]["createDatasetExperiment"]
+        )
+
+    description = "create dataset experiment"
+
+    return gql.CREATE_EXPERIMENT, description, variables, process_response
+
+
+def create_experiment_item_helper(
+    dataset_experiment_id: str,
+    dataset_item_id: str,
+    input: Optional[Dict] = None,
+    output: Optional[Dict] = None,
+):
+    variables = {
+        "datasetExperimentId": dataset_experiment_id,
+        "datasetItemId": dataset_item_id,
+        "input": input,
+        "output": output,
+    }
+
+    def process_response(response):
+        return DatasetExperimentItem.from_dict(
+            response["data"]["createDatasetExperimentItem"]
+        )
+
+    description = "create dataset experiment item"
+
+    return gql.CREATE_EXPERIMENT_ITEM, description, variables, process_response
 
 
 def create_dataset_item_helper(

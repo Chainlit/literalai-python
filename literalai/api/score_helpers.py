@@ -1,7 +1,8 @@
+import math
 from typing import Any, Dict, List, Optional, TypedDict
 
 from literalai.filter import scores_filters, scores_order_by
-from literalai.my_types import PaginatedResponse, Score, ScoreType
+from literalai.my_types import PaginatedResponse, Score, ScoreDict, ScoreType
 
 from . import gql
 
@@ -39,7 +40,7 @@ def get_scores_helper(
 
 def create_score_helper(
     name: str,
-    value: int,
+    value: float,
     type: ScoreType,
     step_id: Optional[str] = None,
     generation_id: Optional[str] = None,
@@ -64,6 +65,56 @@ def create_score_helper(
     description = "create score"
 
     return gql.CREATE_SCORE, description, variables, process_response
+
+
+def create_scores_fields_builder(scores: List[ScoreDict]):
+    generated = ""
+    for id in range(len(scores)):
+        generated += f"""$name_{id}: String!
+        $type_{id}: ScoreType!
+        $value_{id}: Float!
+        $stepId_{id}: String
+        $generationId_{id}: String
+        $datasetExperimentItemId_{id}: String
+        $scorer_{id}: String
+        $comment_{id}: String
+        $tags_{id}: [String!]
+        """
+    return generated
+
+
+def create_scores_args_builder(scores: List[ScoreDict]):
+    generated = ""
+    for id in range(len(scores)):
+        generated += f"""
+            score_{id}: createScore(
+                name: $name_{id}
+                type: $type_{id}
+                value: $value_{id}
+                stepId: $stepId_{id}
+                generationId: $generationId_{id}
+                datasetExperimentItemId: $datasetExperimentItemId_{id}
+                scorer: $scorer_{id}
+                comment: $comment_{id}
+                tags: $tags_{id}
+            ) {{
+                id
+                name
+                type
+                value
+                comment
+                scorer
+            }}
+        """
+    return generated
+
+
+def create_scores_query_builder(scores: List[ScoreDict]):
+    return f"""
+        mutation CreateScores({create_scores_fields_builder(scores)}) {{
+            {create_scores_args_builder(scores)}
+        }}
+    """
 
 
 class ScoreUpdate(TypedDict, total=False):
@@ -94,3 +145,12 @@ def delete_score_helper(id: str):
     description = "delete score"
 
     return gql.DELETE_SCORE, description, variables, process_response
+
+
+def check_scores_finite(scores: List[ScoreDict]):
+    for score in scores:
+        if not math.isfinite(score["value"]):
+            raise ValueError(
+                f"Value {score['value']} for score {score['name']} is not finite"
+            )
+    return True

@@ -445,7 +445,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
             step.generation = generation
             step.end()
         else:
-            await client.api.create_generation(generation)
+            client.api.create_generation(generation)
 
     def async_after_wrapper(metadata: Dict):
         async def after(result, context: AfterContext, *args, **kwargs):
@@ -482,7 +482,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 step.generation = generation
                 step.end()
             else:
-                await client.api.create_generation(generation)
+                client.api.create_generation(generation)
             return result
 
         return after
