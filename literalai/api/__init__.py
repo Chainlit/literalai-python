@@ -12,6 +12,7 @@ from typing import (
     Union,
 )
 
+import numpy as np
 from literalai.dataset import DatasetType
 from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
 from literalai.filter import (
@@ -881,15 +882,19 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     async def create_scores(self, scores: List[ScoreDict]):
         query = create_scores_query_builder(scores)
         variables = {}
+
         for id, score in enumerate(scores):
+            score["value"] = np.nan_to_num(score["value"])
             for k, v in score.items():
                 variables[f"{k}_{id}"] = v
 
         def process_response(response):
             return [Score.from_dict(x) for x in response["data"].values()]
 
-        return await self.gql_helper(query, "create scores", variables, process_response)
-    
+        return await self.gql_helper(
+            query, "create scores", variables, process_response
+        )
+
     async def create_score(
         self,
         name: str,
@@ -1190,8 +1195,12 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         prompt_id: str,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
+        sync_api = LiteralAPI(self.api_key, self.url)
+
         return await self.gql_helper(
-            *create_dataset_experiment_helper(self, dataset_id, name, prompt_id, params)
+            *create_dataset_experiment_helper(
+                sync_api, dataset_id, name, prompt_id, params
+            )
         )
 
     async def create_dataset_experiment_item(
