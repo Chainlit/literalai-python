@@ -250,7 +250,7 @@ class StepContextManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             self.step.error = str(exc_val)
-            self.client.event_processor.flush_sync()
+            self.client.event_processor.flush()
         self.step.end()
 
 
