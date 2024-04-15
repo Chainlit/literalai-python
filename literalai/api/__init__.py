@@ -878,6 +878,18 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *get_scores_helper(first, after, before, filters, order_by)
         )
 
+    async def create_scores(self, scores: List[ScoreDict]):
+        query = create_scores_query_builder(scores)
+        variables = {}
+        for id, score in enumerate(scores):
+            for k, v in score.items():
+                variables[f"{k}_{id}"] = v
+
+        def process_response(response):
+            return [Score.from_dict(x) for x in response["data"].values()]
+
+        return await self.gql_helper(query, "create scores", variables, process_response)
+    
     async def create_score(
         self,
         name: str,
@@ -1168,6 +1180,40 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     async def delete_dataset(self, id: str):
         sync_api = LiteralAPI(self.api_key, self.url)
         return await self.gql_helper(*delete_dataset_helper(sync_api, id))
+
+    # Dataset Experiment APIs
+
+    async def create_dataset_experiment(
+        self,
+        dataset_id: str,
+        name: str,
+        prompt_id: str,
+        params: Optional[Dict] = None,
+    ) -> "DatasetExperiment":
+        return await self.gql_helper(
+            *create_dataset_experiment_helper(self, dataset_id, name, prompt_id, params)
+        )
+
+    async def create_dataset_experiment_item(
+        self, experiment_item: DatasetExperimentItem
+    ) -> DatasetExperimentItem:
+        # Create the dataset experiment item
+        result = await self.gql_helper(
+            *create_dataset_experiment_item_helper(
+                dataset_experiment_id=experiment_item.dataset_experiment_id,
+                dataset_item_id=experiment_item.dataset_item_id,
+                input=experiment_item.input,
+                output=experiment_item.output,
+            )
+        )
+
+        for score in experiment_item.scores:
+            score["datasetExperimentItemId"] = result.id
+
+        # Create the scores and add to experiment item.
+        result.scores = await self.create_scores(experiment_item.scores)
+
+        return result
 
     # DatasetItem API
 
