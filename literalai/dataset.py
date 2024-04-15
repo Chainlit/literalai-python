@@ -112,7 +112,7 @@ class Dataset:
         :param params: The params used on the experiment.
         :return: The created DatasetExperiment instance as a dictionary.
         """
-        experiment = self.api.create_dataset_experiment(
+        experiment = self.api.create_experiment(
             self.id, name, prompt_id, params
         )
         return experiment

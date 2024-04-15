@@ -35,8 +35,8 @@ from .attachment_helpers import (
 from .dataset_helpers import (
     add_generation_to_dataset_helper,
     add_step_to_dataset_helper,
-    create_dataset_experiment_helper,
-    create_dataset_experiment_item_helper,
+    create_experiment_helper,
+    create_experiment_item_helper,
     create_dataset_helper,
     create_dataset_item_helper,
     delete_dataset_helper,
@@ -609,23 +609,23 @@ class LiteralAPI(BaseLiteralAPI):
 
     # Dataset Experiment APIs
 
-    def create_dataset_experiment(
+    def create_experiment(
         self,
         dataset_id: str,
         name: str,
-        prompt_id: str,
+        prompt_id: Optional[str],
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
         return self.gql_helper(
-            *create_dataset_experiment_helper(self, dataset_id, name, prompt_id, params)
+            *create_experiment_helper(self, dataset_id, name, prompt_id, params)
         )
 
-    def create_dataset_experiment_item(
+    def create_experiment_item(
         self, experiment_item: DatasetExperimentItem
     ) -> DatasetExperimentItem:
         # Create the dataset experiment item
         result = self.gql_helper(
-            *create_dataset_experiment_item_helper(
+            *create_experiment_item_helper(
                 dataset_experiment_id=experiment_item.dataset_experiment_id,
                 dataset_item_id=experiment_item.dataset_item_id,
                 input=experiment_item.input,
@@ -1188,7 +1188,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
     # Dataset Experiment APIs
 
-    async def create_dataset_experiment(
+    async def create_experiment(
         self,
         dataset_id: str,
         name: str,
@@ -1198,17 +1198,17 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         sync_api = LiteralAPI(self.api_key, self.url)
 
         return await self.gql_helper(
-            *create_dataset_experiment_helper(
+            *create_experiment_helper(
                 sync_api, dataset_id, name, prompt_id, params
             )
         )
 
-    async def create_dataset_experiment_item(
+    async def create_experiment_item(
         self, experiment_item: DatasetExperimentItem
     ) -> DatasetExperimentItem:
         # Create the dataset experiment item
         result = await self.gql_helper(
-            *create_dataset_experiment_item_helper(
+            *create_experiment_item_helper(
                 dataset_experiment_id=experiment_item.dataset_experiment_id,
                 dataset_item_id=experiment_item.dataset_item_id,
                 input=experiment_item.input,

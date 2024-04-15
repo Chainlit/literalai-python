@@ -80,7 +80,7 @@ class DatasetExperiment:
             }
         )
 
-        item = self.api.create_dataset_experiment_item(dataset_experiment_item)
+        item = self.api.create_experiment_item(dataset_experiment_item)
         self.items.append(item)
         return item
 

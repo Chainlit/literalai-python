@@ -789,7 +789,7 @@ DELETE_DATASET = """
     }
 """
 
-CREATE_DATASET_EXPERIMENT = """
+CREATE_EXPERIMENT = """
     mutation CreateDatasetExperiment(
         $name: String! 
         $datasetId: String!
@@ -810,7 +810,7 @@ CREATE_DATASET_EXPERIMENT = """
     }
 """
 
-CREATE_DATASET_EXPERIMENT_ITEM = """
+CREATE_EXPERIMENT_ITEM = """
     mutation CreateDatasetExperimentItem(
         $datasetExperimentId: String!
         $datasetItemId: String!

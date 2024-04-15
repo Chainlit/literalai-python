@@ -93,7 +93,7 @@ def delete_dataset_helper(api: "LiteralAPI", id: str):
     return gql.DELETE_DATASET, description, variables, process_response
 
 
-def create_dataset_experiment_helper(
+def create_experiment_helper(
     api: "LiteralAPI",
     dataset_id: str,
     name: str,
@@ -114,10 +114,10 @@ def create_dataset_experiment_helper(
 
     description = "create dataset experiment"
 
-    return gql.CREATE_DATASET_EXPERIMENT, description, variables, process_response
+    return gql.CREATE_EXPERIMENT, description, variables, process_response
 
 
-def create_dataset_experiment_item_helper(
+def create_experiment_item_helper(
     dataset_experiment_id: str,
     dataset_item_id: str,
     input: Optional[Dict] = None,
@@ -137,7 +137,7 @@ def create_dataset_experiment_item_helper(
 
     description = "create dataset experiment item"
 
-    return gql.CREATE_DATASET_EXPERIMENT_ITEM, description, variables, process_response
+    return gql.CREATE_EXPERIMENT_ITEM, description, variables, process_response
 
 
 def create_dataset_item_helper(
