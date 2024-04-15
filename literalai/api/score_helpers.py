@@ -39,7 +39,7 @@ def get_scores_helper(
 
 def create_score_helper(
     name: str,
-    value: int,
+    value: float,
     type: ScoreType,
     step_id: Optional[str] = None,
     generation_id: Optional[str] = None,

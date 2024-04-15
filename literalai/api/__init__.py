@@ -324,7 +324,7 @@ class LiteralAPI(BaseLiteralAPI):
     def create_score(
         self,
         name: str,
-        value: int,
+        value: float,
         type: ScoreType,
         step_id: Optional[str] = None,
         generation_id: Optional[str] = None,
@@ -881,7 +881,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     async def create_score(
         self,
         name: str,
-        value: int,
+        value: float,
         type: ScoreType,
         step_id: Optional[str] = None,
         generation_id: Optional[str] = None,
