@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
+from literalai.callback.llama_index_callback import get_llama_index_callback
 from literalai.context import active_steps_var, active_thread_var
 from literalai.event_processor import EventProcessor
 from literalai.instrumentation.openai import instrument_openai
@@ -73,6 +74,16 @@ class BaseLiteralClient:
             self.to_sync(),
             to_ignore=to_ignore,
             to_keep=to_keep,
+            **kwargs,
+        )
+
+    def llama_index_callback(
+        self,
+        **kwargs: Any,
+    ):
+        LlamaIndexTracer = get_llama_index_callback()
+        return LlamaIndexTracer(
+            self.to_sync(),
             **kwargs,
         )
 

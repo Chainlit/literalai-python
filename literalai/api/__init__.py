@@ -34,10 +34,10 @@ from .attachment_helpers import (
 from .dataset_helpers import (
     add_generation_to_dataset_helper,
     add_step_to_dataset_helper,
-    create_experiment_helper,
-    create_experiment_item_helper,
     create_dataset_helper,
     create_dataset_item_helper,
+    create_experiment_helper,
+    create_experiment_item_helper,
     delete_dataset_helper,
     delete_dataset_item_helper,
     get_dataset_helper,
@@ -365,11 +365,13 @@ class LiteralAPI(BaseLiteralAPI):
     def upload_file(
         self,
         content: Union[bytes, str],
-        thread_id: str,
+        thread_id: Optional[str] = None,
         mime: Optional[str] = "application/octet-stream",
     ) -> Dict:
         id = str(uuid.uuid4())
-        body = {"fileName": id, "contentType": mime, "threadId": thread_id}
+        body = {"fileName": id, "contentType": mime}
+        if thread_id:
+            body["threadId"] = thread_id
 
         path = "/api/upload/file"
 
@@ -399,7 +401,9 @@ class LiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = (
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -975,7 +979,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = (
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -1205,9 +1211,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         sync_api = LiteralAPI(self.api_key, self.url)
 
         return await self.gql_helper(
-            *create_experiment_helper(
-                sync_api, dataset_id, name, prompt_id, params
-            )
+            *create_experiment_helper(sync_api, dataset_id, name, prompt_id, params)
         )
 
     async def create_experiment_item(
