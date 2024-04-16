@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypedDict
 import threading
 import logging
 
-logger = logging.getLogger(__name__)
-
 from literalai.context import active_thread_var
 from literalai.my_types import UserDict
 from literalai.step import Step, StepDict
 
 if TYPE_CHECKING:
     from literalai.client import BaseLiteralClient
+
+logger = logging.getLogger(__name__)
 
 
 class ThreadDict(TypedDict, total=False):
