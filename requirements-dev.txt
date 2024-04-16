@@ -5,4 +5,5 @@ python-dotenv
 ruff
 mypy
 langchain
+llama-index
 pytest_httpx
