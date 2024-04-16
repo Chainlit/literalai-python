@@ -1,6 +1,7 @@
 import asyncio
 import queue
 import logging
+import traceback
 import threading
 import time
 from typing import TYPE_CHECKING, List
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
     from literalai.api import LiteralAPI
     from literalai.step import StepDict
 
+DEFAULT_SLEEP_TIME = 0.2
 
 # to_thread is a backport of asyncio.to_thread from Python 3.9
 async def to_thread(func, /, *args, **kwargs):
@@ -60,7 +62,7 @@ class EventProcessor:
 
             # Process the batch if any events are present - in a separate thread
             if batch:
-                threading.Thread(target=self._process_batch, args=(batch,)).start()
+                self._process_batch(batch)
 
             # TODO: Check if separate thread to process the batch is safe wrt the below stop events
 
@@ -71,8 +73,8 @@ class EventProcessor:
     def _try_process_batch(self, batch):
         try:
             return self.api.send_steps(batch)
-        except Exception as e:
-            logger.error(f"Failed to send steps: {e}")
+        except Exception:
+            logger.error(f"Failed to send steps: {traceback.format_exc()}")
         return None
 
     def _process_batch(self, batch):
@@ -80,7 +82,7 @@ class EventProcessor:
         retries = 0
         while not self._try_process_batch(batch) and retries < 1:
             retries += 1
-            time.sleep(0.5)
+            time.sleep(DEFAULT_SLEEP_TIME)
 
     def flush_and_stop(self):
         self.stop_event.set()
@@ -89,7 +91,7 @@ class EventProcessor:
 
     async def aflush(self):
         while not self.event_queue.empty():
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(DEFAULT_SLEEP_TIME)
 
     def flush(self):
         while not self.event_queue.empty():

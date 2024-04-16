@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypedDict
 
 import threading
 import logging
+import traceback
 
 from literalai.context import active_thread_var
 from literalai.my_types import UserDict
@@ -136,8 +137,8 @@ class ThreadContextManager:
     def _try_upsert_thread(self, thread_data_to_upsert):
         try:
             self.client.to_sync().api.upsert_thread(**thread_data_to_upsert)
-        except Exception as e:
-            logger.error(f"Failed to upsert thread: {e}")
+        except Exception:
+            logger.error(f"Failed to upsert thread: {traceback.format_exc()}")
 
     def __call__(self, func):
         return thread_decorator(
