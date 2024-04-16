@@ -1,6 +1,7 @@
 import asyncio
 import os
 import secrets
+import time
 import uuid
 
 import pytest
@@ -24,6 +25,16 @@ class Teste2e:
     Don't change the order of the tests, they are dependend on each other
     Those tests are not meant to be parallelized
     """
+
+    @pytest.fixture(scope="session")
+    def broken_client(self):
+        url = "http://foo.bar"
+        api_key = os.getenv("LITERAL_API_KEY", None)
+        assert url is not None and api_key is not None, "Missing environment variables"
+
+        client = LiteralClient(batch_size=1, url=url, api_key=api_key)
+        yield client
+        client.event_processor.flush_and_stop()
 
     @pytest.fixture(scope="session")
     def client(self):
@@ -553,3 +564,13 @@ is a templated list."""
 is a templated list."""
 
         assert messages[0]["content"] == expected
+
+    @pytest.mark.timeout(5)
+    async def test_gracefulness(
+        self, broken_client: LiteralClient
+    ):
+        with broken_client.thread(name="Conversation"):
+            time.sleep(1)
+
+        broken_client.flush()
+        assert True
