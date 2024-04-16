@@ -1,8 +1,11 @@
 import asyncio
 import queue
+import logging
 import threading
 import time
 from typing import TYPE_CHECKING, List
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
@@ -55,25 +58,29 @@ class EventProcessor:
                 # No more events at the moment, proceed with processing what's in the batch
                 pass
 
-            # Process the batch if any events are present
+            # Process the batch if any events are present - in a separate thread
             if batch:
-                self._process_batch(batch)
+                threading.Thread(target=self._process_batch, args=(batch,)).start()
+
+            # TODO: Check if separate thread to process the batch is safe wrt the below stop events
 
             # Stop if the stop_event is set and the queue is empty
             if self.stop_event.is_set() and self.event_queue.empty():
                 break
 
+    def _try_process_batch(self, batch):
+        try:
+            return self.api.send_steps(batch)
+        except Exception as e:
+            logger.error(f"Failed to send steps: {e}")
+        return None
+
     def _process_batch(self, batch):
-        res = self.api.send_steps(
-            steps=batch,
-        )
-        # simple one-try retry in case of network failure (no retry on graphql errors)
-        if not res:
+        # Simple one-try retry in case of network failure (no retry on graphql errors)
+        retries = 0
+        while not self._try_process_batch(batch) and retries < 1:
+            retries += 1
             time.sleep(0.5)
-            self.api.send_steps(
-                steps=batch,
-            )
-            return
 
     def flush_and_stop(self):
         self.stop_event.set()
