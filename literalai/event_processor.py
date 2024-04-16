@@ -64,8 +64,6 @@ class EventProcessor:
             if batch:
                 self._process_batch(batch)
 
-            # TODO: Check if separate thread to process the batch is safe wrt the below stop events
-
             # Stop if the stop_event is set and the queue is empty
             if self.stop_event.is_set() and self.event_queue.empty():
                 break
