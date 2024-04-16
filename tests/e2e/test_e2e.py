@@ -1,4 +1,3 @@
-import asyncio
 import os
 import secrets
 import time
@@ -252,15 +251,17 @@ class Teste2e:
         self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
         async def assert_delete(thread_id: str):
-            await asyncio.sleep(1)
+            thread = await async_client.api.get_thread(thread_id)
+            assert thread.tags == ["foo"]
+            assert thread.name == "test"
             assert await async_client.api.delete_thread(thread_id) is True
 
-        @async_client.thread(tags=["foo"], metadata={"async": "False"})
+        @async_client.thread(tags=["foo"], name="test", metadata={"async": False})
         def thread_decorated():
             t = async_client.get_current_thread()
             assert t is not None
             assert t.tags == ["foo"]
-            assert t.metadata == {"async": "False"}
+            assert t.metadata == {"async": False}
             return t.id
 
         id = thread_decorated()
@@ -283,7 +284,7 @@ class Teste2e:
         self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
         async def assert_delete(thread_id: str, step_id: str):
-            await asyncio.sleep(1)
+            await async_client.flush()
             assert await async_client.api.delete_step(step_id) is True
             assert await async_client.api.delete_thread(thread_id) is True
 
@@ -324,7 +325,7 @@ class Teste2e:
         self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
         async def assert_delete(step_id: str):
-            await asyncio.sleep(1)
+            await async_client.flush()
             step = await async_client.api.get_step(step_id)
             assert step and step.output is not None
             assert await async_client.api.delete_step(step_id) is True
@@ -566,9 +567,7 @@ is a templated list."""
         assert messages[0]["content"] == expected
 
     @pytest.mark.timeout(5)
-    async def test_gracefulness(
-        self, broken_client: LiteralClient
-    ):
+    async def test_gracefulness(self, broken_client: LiteralClient):
         with broken_client.thread(name="Conversation"):
             time.sleep(1)
 

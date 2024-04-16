@@ -1,11 +1,9 @@
 import inspect
+import logging
+import traceback
 import uuid
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypedDict
-
-import threading
-import logging
-import traceback
 
 from literalai.context import active_thread_var
 from literalai.my_types import UserDict
@@ -130,11 +128,6 @@ class ThreadContextManager:
         if participant_id := thread_data.get("participant_id"):
             thread_data_to_upsert["participant_id"] = participant_id
 
-        threading.Thread(
-            target=self._try_upsert_thread, args=(thread_data_to_upsert,)
-        ).start()
-
-    def _try_upsert_thread(self, thread_data_to_upsert):
         try:
             self.client.to_sync().api.upsert_thread(**thread_data_to_upsert)
         except Exception:
