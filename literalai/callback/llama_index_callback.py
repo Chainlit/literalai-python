@@ -2,10 +2,14 @@ import uuid
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from literalai import ChatGeneration, CompletionGeneration, GenerationMessage
 from literalai.context import active_steps_var
 from literalai.helper import utc_now
-from literalai.my_types import Attachment
+from literalai.my_types import (
+    Attachment,
+    ChatGeneration,
+    CompletionGeneration,
+    GenerationMessage,
+)
 from literalai.step import Step, TrueStepType
 
 if TYPE_CHECKING:
