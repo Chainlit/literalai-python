@@ -610,6 +610,7 @@ mutation UpdateStep(
     $startTime: DateTime,
     $endTime: DateTime,
     $parentId: String,
+    $tags: [String!],
 ) {
     updateStep(
         id: $id,
@@ -620,6 +621,7 @@ mutation UpdateStep(
         output: $output,
         metadata: $metadata,
         name: $name,
+        tags: $tags,
         parentId: $parentId,
     ) {    
 """

@@ -138,9 +138,10 @@ class Teste2e:
         assert step.thread_id == thread.id
 
         updated_step = await async_client.api.update_step(
-            id=step.id, metadata={"foo": "baz"}
+            id=step.id, metadata={"foo": "baz"}, tags=["hello"]
         )
         assert updated_step.metadata == {"foo": "baz"}
+        assert updated_step.tags == ["hello"]
 
         fetched_step = await async_client.api.get_step(id=step.id)
         assert fetched_step and fetched_step.id == step.id
