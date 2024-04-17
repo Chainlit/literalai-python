@@ -238,7 +238,6 @@ def get_llama_index_callback():
             else:
                 step.output = payload
                 step.end()
-                return
 
             self.steps.pop(event_id, None)
 
