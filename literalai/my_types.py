@@ -241,8 +241,8 @@ class ScoreDict(TypedDict, total=False):
 
 class AttachmentDict(TypedDict, total=False):
     id: Optional[str]
-    threadId: str
-    stepId: str
+    stepId: Optional[str]
+    threadId: Optional[str]
     metadata: Optional[Dict]
     mime: Optional[str]
     name: Optional[str]
@@ -304,8 +304,8 @@ class Score:
 
 @dataclass
 class Attachment:
-    thread_id: str
-    step_id: str
+    step_id: Optional[str] = None
+    thread_id: Optional[str] = None
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     metadata: Optional[Dict] = Field(default_factory=lambda: {})
     mime: Optional[str] = None
@@ -316,8 +316,6 @@ class Attachment:
     def to_dict(self):
         return {
             "id": self.id,
-            "threadId": self.thread_id,
-            "stepId": self.step_id,
             "metadata": self.metadata,
             "mime": self.mime,
             "name": self.name,
@@ -328,8 +326,8 @@ class Attachment:
     @classmethod
     def from_dict(cls, attachment_dict: AttachmentDict) -> "Attachment":
         id = attachment_dict.get("id", "")
-        thread_id = attachment_dict.get("threadId", "")
-        step_id = attachment_dict.get("stepId", "")
+        thread_id = attachment_dict.get("threadId", None)
+        step_id = attachment_dict.get("stepId", None)
         metadata = attachment_dict.get("metadata", {})
         mime = attachment_dict.get("mime", "")
         name = attachment_dict.get("name", "")
