@@ -2,7 +2,6 @@ import time
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypedDict, Union
 
-from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import ensure_values_serializable
 from literalai.my_types import ChatGeneration, CompletionGeneration, GenerationMessage
 from literalai.step import Step
@@ -181,9 +180,6 @@ def get_langchain_callback():
             self.parent_id_map = {}
             self.ignored_runs = set()
 
-            self.step_context = active_steps_var.get()
-            self.thread_context = active_thread_var.get()
-
             if to_ignore is None:
                 self.to_ignore = DEFAULT_TO_IGNORE
             else:
@@ -326,9 +322,6 @@ def get_langchain_callback():
 
         def _start_trace(self, run: Run) -> None:
             super()._start_trace(run)
-
-            active_thread_var.set(self.thread_context)
-            active_steps_var.set(self.step_context)
 
             ignore, parent_id = self._should_ignore_run(run)
 
