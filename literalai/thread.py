@@ -32,7 +32,7 @@ class Thread:
     tags: Optional[List[str]]
     steps: Optional[List[Step]]
     participant_id: Optional[str]
-    participant_identifier: Optional[str]
+    participant_identifier: Optional[str] = None
     created_at: Optional[str]  # read-only, set by server
     needs_upsert: Optional[bool]
 
@@ -125,7 +125,7 @@ class ThreadContextManager:
             thread_data_to_upsert["metadata"] = metadata
         if tags := thread_data.get("tags"):
             thread_data_to_upsert["tags"] = tags
-        if participant_id := thread_data.get("participant_id"):
+        if participant_id := thread_data.get("participant")["id"]:
             thread_data_to_upsert["participant_id"] = participant_id
 
         try:
