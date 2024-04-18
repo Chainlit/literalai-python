@@ -55,32 +55,19 @@ def get_llama_index_callback():
                 event_ends_to_ignore=event_ends_to_ignore,
             )
             self.client = client
-            self.active_steps = active_steps_var.get()
 
             self.steps = {}
 
         def _get_parent_id(
             self, event_parent_id: Optional[str] = None
         ) -> Optional[str]:
+            active_steps = active_steps_var.get()
             if event_parent_id and event_parent_id in self.steps:
                 return event_parent_id
-            elif self.active_steps:
-                return self.active_steps[-1].id
+            elif active_steps:
+                return active_steps[-1].id
             else:
                 return None
-
-        def _restore_context(self) -> None:
-            """Restore Chainlit context in the current thread
-
-            Chainlit context is local to the main thread, and LlamaIndex
-            runs the callbacks in its own threads, so they don't have a
-            Chainlit context by default.
-
-            This method restores the context in which the callback handler
-            has been created (it's always created in the main thread), so
-            that we can actually send messages.
-            """
-            active_steps_var.set(self.active_steps)
 
         def on_event_start(
             self,
@@ -91,8 +78,6 @@ def get_llama_index_callback():
             **kwargs: Any,
         ) -> str:
             """Run when an event starts and return id of event."""
-            self._restore_context()
-
             step_type: TrueStepType = "undefined"
             if event_type == CBEventType.RETRIEVE:
                 step_type = "retrieval"
@@ -127,8 +112,6 @@ def get_llama_index_callback():
 
             if payload is None or step is None:
                 return
-
-            self._restore_context()
 
             step.end_time = utc_now()
 
