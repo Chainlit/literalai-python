@@ -579,4 +579,4 @@ is a templated list."""
     async def test_thread_to_dict(self, client: LiteralClient):
         thread = Thread(id="thread-id", participant_id="participant-id")
         participant = thread.to_dict().get("participant", {})
-        assert participant["id"] == "participant-id"
+        assert participant and participant["id"] == "participant-id"
