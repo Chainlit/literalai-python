@@ -64,7 +64,7 @@ class Thread:
                 id=self.participant_id, identifier=self.participant_identifier
             )
             if self.participant_id
-            else None,
+            else UserDict(),
             "createdAt": getattr(self, "created_at", None),
         }
 
