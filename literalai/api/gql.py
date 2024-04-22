@@ -183,6 +183,7 @@ query GetThreads(
     $first: Int,
     $last: Int,
     $projectId: String,
+    $stepTypesToKeep: [StepType],
     ) {
     threads(
         after: $after,
@@ -193,6 +194,7 @@ query GetThreads(
         first: $first,
         last: $last,
         projectId: $projectId,
+        stepTypesToKeep: $stepTypesToKeep,
         ) {
         pageInfo {
             startCursor
@@ -224,6 +226,7 @@ $projectId: String
 $filters: [ThreadsInputType!]
 $orderBy: ThreadsOrderByInput
 $cursorAnchor: DateTime
+$stepTypesToKeep: [StepType]
 ) {
 threads(
     first: $first
@@ -235,6 +238,7 @@ threads(
     filters: $filters
     orderBy: $orderBy
     cursorAnchor: $cursorAnchor
+    stepTypesToKeep: $stepTypeToKeep
 ) {
     pageInfo {
     hasNextPage

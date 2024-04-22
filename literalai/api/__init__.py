@@ -235,9 +235,10 @@ class LiteralAPI(BaseLiteralAPI):
         before: Optional[str] = None,
         filters: Optional[threads_filters] = None,
         order_by: Optional[threads_order_by] = None,
+        step_types_to_keep: Optional[List[StepType]] = None,
     ):
         return self.gql_helper(
-            *get_threads_helper(first, after, before, filters, order_by)
+            *get_threads_helper(first, after, before, filters, order_by, step_types_to_keep)
         )
 
     def list_threads(
@@ -247,9 +248,10 @@ class LiteralAPI(BaseLiteralAPI):
         before: Optional[str] = None,
         filters: Optional[threads_filters] = None,
         order_by: Optional[threads_order_by] = None,
+        step_types_to_keep: Optional[List[StepType]] = None,
     ):
         return self.gql_helper(
-            *list_threads_helper(first, after, before, filters, order_by)
+            *list_threads_helper(first, after, before, filters, order_by, step_types_to_keep)
         )
 
     def get_thread(self, id: str):
@@ -812,9 +814,10 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         before: Optional[str] = None,
         filters: Optional[threads_filters] = None,
         order_by: Optional[threads_order_by] = None,
+        step_types_to_keep: Optional[List[StepType]] = None,
     ):
         return await self.gql_helper(
-            *get_threads_helper(first, after, before, filters, order_by)
+            *get_threads_helper(first, after, before, filters, order_by, step_types_to_keep)
         )
 
     async def list_threads(
@@ -824,9 +827,10 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         before: Optional[str] = None,
         filters: Optional[threads_filters] = None,
         order_by: Optional[threads_order_by] = None,
+        step_types_to_keep: Optional[List[StepType]] = None,
     ):
         return await self.gql_helper(
-            *list_threads_helper(first, after, before, filters, order_by)
+            *list_threads_helper(first, after, before, filters, order_by, step_types_to_keep)
         )
 
     async def get_thread(self, id: str):
