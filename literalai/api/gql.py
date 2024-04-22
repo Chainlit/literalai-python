@@ -183,7 +183,7 @@ query GetThreads(
     $first: Int,
     $last: Int,
     $projectId: String,
-    $stepTypesToKeep: [StepType],
+    $stepTypesToKeep: [StepType!],
     ) {
     threads(
         after: $after,
