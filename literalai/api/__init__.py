@@ -238,7 +238,7 @@ class LiteralAPI(BaseLiteralAPI):
         after: Optional[str] = None,
         before: Optional[str] = None,
         filters: Optional[users_filters] = None,
-    ) -> Dict:
+    ):
         """
         Retrieves a list of users based on pagination and optional filters.
 
@@ -1081,7 +1081,7 @@ class LiteralAPI(BaseLiteralAPI):
         input: Dict,
         expected_output: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
-    ) -> Dict:
+    ):
         """
         Creates a new dataset item with the specified properties.
 
@@ -1098,7 +1098,7 @@ class LiteralAPI(BaseLiteralAPI):
             *create_dataset_item_helper(dataset_id, input, expected_output, metadata)
         )
 
-    def get_dataset_item(self, id: str) -> Dict:
+    def get_dataset_item(self, id: str):
         """
         Retrieves a dataset item by its unique identifier.
 
@@ -1110,7 +1110,7 @@ class LiteralAPI(BaseLiteralAPI):
         """
         return self.gql_helper(*get_dataset_item_helper(id))
 
-    def delete_dataset_item(self, id: str) -> Dict:
+    def delete_dataset_item(self, id: str):
         """
         Deletes a dataset item by its unique identifier.
 
@@ -1124,7 +1124,7 @@ class LiteralAPI(BaseLiteralAPI):
 
     def add_step_to_dataset(
         self, dataset_id: str, step_id: str, metadata: Optional[Dict] = None
-    ) -> Dict:
+    ):
         """
         Adds a step to a dataset.
 
@@ -1142,7 +1142,7 @@ class LiteralAPI(BaseLiteralAPI):
 
     def add_generation_to_dataset(
         self, dataset_id: str, generation_id: str, metadata: Optional[Dict] = None
-    ) -> Dict:
+    ):
         """
         Adds a generation to a dataset.
 
