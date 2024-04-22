@@ -226,7 +226,6 @@ $projectId: String
 $filters: [ThreadsInputType!]
 $orderBy: ThreadsOrderByInput
 $cursorAnchor: DateTime
-$stepTypesToKeep: [StepType]
 ) {
 threads(
     first: $first
@@ -238,7 +237,6 @@ threads(
     filters: $filters
     orderBy: $orderBy
     cursorAnchor: $cursorAnchor
-    stepTypesToKeep: $stepTypeToKeep
 ) {
     pageInfo {
     hasNextPage

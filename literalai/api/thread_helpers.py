@@ -50,7 +50,6 @@ def list_threads_helper(
     before: Optional[str] = None,
     filters: Optional[threads_filters] = None,
     order_by: Optional[threads_order_by] = None,
-    step_types_to_keep: Optional[List[StepType]] = None,
 ):
     variables: Dict[str, Any] = {}
 
@@ -64,8 +63,6 @@ def list_threads_helper(
         variables["filters"] = filters
     if order_by:
         variables["orderBy"] = order_by
-    if step_types_to_keep:
-        variables["stepTypesToKeep"] = step_types_to_keep
 
     def process_response(response):
         response_data = response["data"]["threads"]
