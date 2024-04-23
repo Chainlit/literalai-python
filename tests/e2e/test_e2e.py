@@ -8,6 +8,7 @@ import pytest
 from literalai import AsyncLiteralClient, LiteralClient
 from literalai.context import active_steps_var
 from literalai.my_types import ChatGeneration
+from literalai.thread import Thread
 
 """
 End to end tests for the SDK
@@ -573,3 +574,9 @@ is a templated list."""
 
         broken_client.flush()
         assert True
+
+    @pytest.mark.timeout(5)
+    async def test_thread_to_dict(self, client: LiteralClient):
+        thread = Thread(id="thread-id", participant_id="participant-id")
+        participant = thread.to_dict().get("participant", {})
+        assert participant and participant["id"] == "participant-id"
