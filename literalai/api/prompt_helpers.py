@@ -42,8 +42,8 @@ def create_prompt_helper(
     return gql.CREATE_PROMPT_VERSION, description, variables, process_response
 
 
-def get_prompt_helper(api: "LiteralAPI", name: str, version: Optional[int] = None):
-    variables = {"name": name, "version": version}
+def get_prompt_helper(api: "LiteralAPI", id: Optional[str] = None, name: Optional[str] = None, version: Optional[int] = 0):
+    variables = {"id": id, "name": name, "version": version}
 
     def process_response(response):
         prompt = response["data"]["promptVersion"]

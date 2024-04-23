@@ -969,8 +969,8 @@ CREATE_PROMPT_VERSION = """mutation createPromptVersion(
   }"""
 
 GET_PROMPT_VERSION = """
-query GetPrompt($name: String!, $version: Int) {
-    promptVersion(name: $name, version: $version) {
+query GetPrompt($id: String, $name: String, $version: Int) {
+    promptVersion(id: $id, name: $name, version: $version) {
         id
         createdAt
         updatedAt
