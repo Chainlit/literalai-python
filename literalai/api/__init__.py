@@ -12,7 +12,7 @@ from typing import (
     Union,
 )
 
-from deprecated import deprecated
+from typing_extensions import deprecated
 
 from literalai.dataset import DatasetType
 from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
@@ -1200,9 +1200,7 @@ class LiteralAPI(BaseLiteralAPI):
             *create_prompt_helper(self, lineage_id, template_messages, settings)
         )
 
-    @deprecated(
-        reason="The `create_prompt` API is deprecated. Please use `get_or_create_prompt` instead."
-    )
+    @deprecated('Please use "get_or_create_prompt" instead.')
     def create_prompt(
         self,
         name: str,
@@ -2347,9 +2345,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *create_prompt_helper(sync_api, lineage_id, template_messages, settings)
         )
 
-    @deprecated(
-        reason="The `create_prompt` API is deprecated. Please use `get_or_create_prompt` instead."
-    )
+    @deprecated('Please use "get_or_create_prompt" instead.')
     async def create_prompt(
         self,
         name: str,
@@ -2384,6 +2380,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         if id:
             return await self.gql_helper(*get_prompt_helper(sync_api, id=id))
         elif name:
-            return await self.gql_helper(*get_prompt_helper(sync_api, name=name, version=version))
+            return await self.gql_helper(
+                *get_prompt_helper(sync_api, name=name, version=version)
+            )
         else:
             raise ValueError("Either the `id` or the `name` must be provided.")

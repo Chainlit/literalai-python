@@ -121,7 +121,7 @@ class Prompt:
 
     def format(
         self, variables: Optional[Dict[str, Any]] = None
-    ) -> List[LiteralMessageDict]:
+    ) -> List[Any]:
         variables_with_defaults = {
             **(self.variables_default_values or {}),
             **(variables or {}),
