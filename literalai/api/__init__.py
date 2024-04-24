@@ -337,6 +337,7 @@ class LiteralAPI(BaseLiteralAPI):
         before: Optional[str] = None,
         filters: Optional[threads_filters] = None,
         order_by: Optional[threads_order_by] = None,
+        step_types_to_keep: Optional[List[StepType]] = None,
     ):
         """
         Fetches a list of threads based on pagination and optional filters.
@@ -352,7 +353,7 @@ class LiteralAPI(BaseLiteralAPI):
             A list of threads that match the criteria.
         """
         return self.gql_helper(
-            *get_threads_helper(first, after, before, filters, order_by)
+            *get_threads_helper(first, after, before, filters, order_by, step_types_to_keep)
         )
 
     def list_threads(
@@ -1449,6 +1450,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         before: Optional[str] = None,
         filters: Optional[threads_filters] = None,
         order_by: Optional[threads_order_by] = None,
+        step_types_to_keep: Optional[List[StepType]] = None,
     ):
         """
         Asynchronously fetches a list of threads based on pagination and optional filters and ordering.
@@ -1464,7 +1466,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             The result of the GraphQL helper function for fetching threads.
         """
         return await self.gql_helper(
-            *get_threads_helper(first, after, before, filters, order_by)
+            *get_threads_helper(first, after, before, filters, order_by, step_types_to_keep)
         )
 
     async def list_threads(

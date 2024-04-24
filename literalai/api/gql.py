@@ -183,6 +183,7 @@ query GetThreads(
     $first: Int,
     $last: Int,
     $projectId: String,
+    $stepTypesToKeep: [StepType!],
     ) {
     threads(
         after: $after,
@@ -193,6 +194,7 @@ query GetThreads(
         first: $first,
         last: $last,
         projectId: $projectId,
+        stepTypesToKeep: $stepTypesToKeep,
         ) {
         pageInfo {
             startCursor

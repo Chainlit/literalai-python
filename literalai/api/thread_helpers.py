@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from literalai.filter import threads_filters, threads_order_by
 from literalai.my_types import PaginatedResponse
+from literalai.step import StepType
 from literalai.thread import Thread
 
 from . import gql
@@ -13,6 +14,7 @@ def get_threads_helper(
     before: Optional[str] = None,
     filters: Optional[threads_filters] = None,
     order_by: Optional[threads_order_by] = None,
+    step_types_to_keep: Optional[List[StepType]] = None,
 ):
     variables: Dict[str, Any] = {}
 
@@ -26,6 +28,8 @@ def get_threads_helper(
         variables["filters"] = filters
     if order_by:
         variables["orderBy"] = order_by
+    if step_types_to_keep:
+        variables["stepTypesToKeep"] = step_types_to_keep
 
     def process_response(response):
         processed_response = response["data"]["threads"]
