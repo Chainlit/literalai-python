@@ -36,7 +36,6 @@ def get_generations_helper(
         processed_response["data"] = list(
             map(lambda x: x["node"], processed_response["edges"])
         )
-        del processed_response["edges"]
         return PaginatedResponse[BaseGeneration].from_dict(
             processed_response, BaseGeneration
         )

@@ -36,7 +36,6 @@ def get_threads_helper(
         processed_response["data"] = [
             edge["node"] for edge in processed_response["edges"]
         ]
-        del processed_response["edges"]
         return PaginatedResponse[Thread].from_dict(processed_response, Thread)
 
     description = "get threads"
@@ -67,7 +66,6 @@ def list_threads_helper(
     def process_response(response):
         response_data = response["data"]["threads"]
         response_data["data"] = list(map(lambda x: x["node"], response_data["edges"]))
-        del response_data["edges"]
         return PaginatedResponse[Thread].from_dict(response_data, Thread)
 
     description = "get threads"

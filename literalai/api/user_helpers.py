@@ -24,8 +24,8 @@ def get_users_helper(
         variables["filters"] = filters
 
     def process_response(response):
-        paginated_response = response["data"]["participants"]
-        response["data"] = list(map(lambda x: x["node"], paginated_response["edges"]))
+        response = response["data"]["participants"]
+        response["data"] = list(map(lambda x: x["node"], response["edges"]))
         return PaginatedResponse[User].from_dict(response, User)
 
     description = "get users"
