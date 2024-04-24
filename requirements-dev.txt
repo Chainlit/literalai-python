@@ -7,4 +7,3 @@ mypy
 langchain
 llama-index
 pytest_httpx
-types-Deprecated
