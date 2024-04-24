@@ -1183,7 +1183,7 @@ class LiteralAPI(BaseLiteralAPI):
         tools: Optional[List[Dict]] = None,
     ) -> Prompt:
         """
-        A `Prompt` is fully defined by its `name`, `template_messages` and `settings`.
+        A `Prompt` is fully defined by its `name`, `template_messages`, `settings` and tools.
         If a prompt already exists for the given arguments, it is returned.
         Otherwise, a new prompt is created.
 
@@ -2327,26 +2327,17 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         settings: Optional[ProviderSettings] = None,
         tools: Optional[List[Dict]] = None,
     ) -> Prompt:
-        """
-        A `Prompt` is fully defined by its `name`, `template_messages` and `settings`.
-        If a prompt already exists for the given arguments, it is returned.
-        Otherwise, a new prompt is created.
-
-        Args:
-            name (str): The name of the prompt to retrieve or create.
-            template_messages (List[GenerationMessage]): A list of template messages for the prompt.
-            settings (Optional[Dict]): Optional settings for the prompt.
-
-        Returns:
-            Prompt: The prompt that was retrieved or created.
-        """
         lineage = await self.create_prompt_lineage(name)
         lineage_id = lineage["id"]
 
         sync_api = LiteralAPI(self.api_key, self.url)
         return await self.gql_helper(
-            *create_prompt_helper(sync_api, lineage_id, template_messages, settings, tools)
+            *create_prompt_helper(
+                sync_api, lineage_id, template_messages, settings, tools
+            )
         )
+
+    get_or_create_prompt.__doc__ = LiteralAPI.get_or_create_prompt.__doc__
 
     @deprecated('Please use "get_or_create_prompt" instead.')
     async def create_prompt(
@@ -2364,22 +2355,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         version: Optional[int] = 0,
     ) -> Prompt:
-        """
-        Retrieves a prompt either by:
-        - `id`
-        - or `name` and (optional) `version`
-
-        Either the `id` or the `name` must be provided.
-        If both are provided, the `id` is used.
-
-        Args:
-            id (str): The unique identifier of the prompt to retrieve.
-            name (str): The name of the prompt to retrieve.
-            version (Optional[int]): The version number of the prompt to retrieve.
-
-        Returns:
-            Prompt: The prompt with the given identifier or name.
-        """
         sync_api = LiteralAPI(self.api_key, self.url)
         if id:
             return await self.gql_helper(*get_prompt_helper(sync_api, id=id))
@@ -2389,3 +2364,5 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             )
         else:
             raise ValueError("Either the `id` or the `name` must be provided.")
+    
+    get_prompt.__doc__ = LiteralAPI.get_prompt.__doc__
