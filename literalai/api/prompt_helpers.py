@@ -26,11 +26,13 @@ def create_prompt_helper(
     lineage_id: str,
     template_messages: List[GenerationMessage],
     settings: Optional[Dict] = None,
+    tools: Optional[Dict] = None,
 ):
     variables = {
         "lineageId": lineage_id,
         "templateMessages": template_messages,
         "settings": settings,
+        "tools": tools,
     }
 
     def process_response(response):

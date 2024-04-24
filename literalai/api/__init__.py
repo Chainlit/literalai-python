@@ -1180,6 +1180,7 @@ class LiteralAPI(BaseLiteralAPI):
         name: str,
         template_messages: List[GenerationMessage],
         settings: Optional[Dict] = None,
+        tools: Optional[Dict] = None,
     ) -> Prompt:
         """
         A `Prompt` is fully defined by its `name`, `template_messages` and `settings`.
@@ -1197,7 +1198,7 @@ class LiteralAPI(BaseLiteralAPI):
         lineage = self.create_prompt_lineage(name)
         lineage_id = lineage["id"]
         return self.gql_helper(
-            *create_prompt_helper(self, lineage_id, template_messages, settings)
+            *create_prompt_helper(self, lineage_id, template_messages, settings, tools)
         )
 
     @deprecated('Please use "get_or_create_prompt" instead.')
