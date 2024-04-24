@@ -50,10 +50,12 @@ class HasFromDict(Protocol[T]):
 class PaginatedResponse(Generic[T]):
     pageInfo: PageInfo
     data: List[T]
+    totalCount: Optional[int] = None
 
     def to_dict(self):
         return {
             "pageInfo": self.pageInfo.to_dict(),
+            "totalCount": self.totalCount,
             "data": [
                 (d.to_dict() if hasattr(d, "to_dict") and callable(d.to_dict) else d)
                 for d in self.data
@@ -65,10 +67,9 @@ class PaginatedResponse(Generic[T]):
         cls, paginated_response_dict: Dict, the_class: HasFromDict[T]
     ) -> "PaginatedResponse[T]":
         pageInfo = PageInfo.from_dict(paginated_response_dict.get("pageInfo", {}))
-
         data = [the_class.from_dict(d) for d in paginated_response_dict.get("data", [])]
-
-        return cls(pageInfo=pageInfo, data=data)
+        totalCount = paginated_response_dict.get("totalCount", None)
+        return cls(pageInfo=pageInfo, data=data, totalCount=totalCount)
 
 
 @unique

@@ -30,7 +30,6 @@ def get_scores_helper(
     def process_response(response):
         response_data = response["data"]["scores"]
         response_data["data"] = list(map(lambda x: x["node"], response_data["edges"]))
-        del response_data["edges"]
         return PaginatedResponse[Score].from_dict(response_data, Score)  # type: ignore
 
     description = "get scores"
