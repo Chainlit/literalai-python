@@ -569,7 +569,6 @@ is a templated list."""
 
         assert messages[0]["content"] == expected
 
-
     @pytest.mark.timeout(5)
     async def test_gracefulness(self, broken_client: LiteralClient):
         with broken_client.thread(name="Conversation"):
@@ -577,3 +576,16 @@ is a templated list."""
 
         broken_client.flush()
         assert True
+
+    @pytest.mark.timeout(5)
+    async def test_prompt_unique(self, client: LiteralClient):
+        prompt = client.api.get_prompt(name="Default")
+
+        new_prompt = client.api.get_or_create_prompt(
+            name=prompt.name,
+            template_messages=prompt.template_messages,
+            settings=prompt.settings,
+            tools=prompt.tools,
+        )
+
+        assert new_prompt.id == prompt.id, "Existing prompt should be returned"

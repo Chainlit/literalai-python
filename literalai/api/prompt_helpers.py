@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from literalai.my_types import GenerationMessage
-from literalai.prompt import Prompt
+from literalai.prompt import Prompt, ProviderSettings
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
@@ -25,8 +25,8 @@ def create_prompt_helper(
     api: "LiteralAPI",
     lineage_id: str,
     template_messages: List[GenerationMessage],
-    settings: Optional[Dict] = None,
-    tools: Optional[Dict] = None,
+    settings: Optional[ProviderSettings] = None,
+    tools: Optional[List[Dict]] = None,
 ):
     variables = {
         "lineageId": lineage_id,
@@ -44,7 +44,12 @@ def create_prompt_helper(
     return gql.CREATE_PROMPT_VERSION, description, variables, process_response
 
 
-def get_prompt_helper(api: "LiteralAPI", id: Optional[str] = None, name: Optional[str] = None, version: Optional[int] = 0):
+def get_prompt_helper(
+    api: "LiteralAPI",
+    id: Optional[str] = None,
+    name: Optional[str] = None,
+    version: Optional[int] = 0,
+):
     variables = {"id": id, "name": name, "version": version}
 
     def process_response(response):

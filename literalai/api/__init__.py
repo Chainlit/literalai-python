@@ -25,7 +25,7 @@ from literalai.filter import (
     threads_order_by,
     users_filters,
 )
-from literalai.prompt import Prompt
+from literalai.prompt import Prompt, ProviderSettings
 
 from .attachment_helpers import (
     AttachmentUpload,
@@ -1179,8 +1179,8 @@ class LiteralAPI(BaseLiteralAPI):
         self,
         name: str,
         template_messages: List[GenerationMessage],
-        settings: Optional[Dict] = None,
-        tools: Optional[Dict] = None,
+        settings: Optional[ProviderSettings] = None,
+        tools: Optional[List[Dict]] = None,
     ) -> Prompt:
         """
         A `Prompt` is fully defined by its `name`, `template_messages` and `settings`.
@@ -1206,7 +1206,8 @@ class LiteralAPI(BaseLiteralAPI):
         self,
         name: str,
         template_messages: List[GenerationMessage],
-        settings: Optional[Dict] = None,
+        settings: Optional[ProviderSettings] = None,
+        tools: Optional[List[Dict]] = None,
     ) -> Prompt:
         return self.get_or_create_prompt(name, template_messages, settings)
 
@@ -2323,7 +2324,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         self,
         name: str,
         template_messages: List[GenerationMessage],
-        settings: Optional[Dict] = None,
+        settings: Optional[ProviderSettings] = None,
+        tools: Optional[List[Dict]] = None,
     ) -> Prompt:
         """
         A `Prompt` is fully defined by its `name`, `template_messages` and `settings`.
@@ -2343,7 +2345,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
         sync_api = LiteralAPI(self.api_key, self.url)
         return await self.gql_helper(
-            *create_prompt_helper(sync_api, lineage_id, template_messages, settings)
+            *create_prompt_helper(sync_api, lineage_id, template_messages, settings, tools)
         )
 
     @deprecated('Please use "get_or_create_prompt" instead.')
@@ -2351,7 +2353,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         self,
         name: str,
         template_messages: List[GenerationMessage],
-        settings: Optional[Dict] = None,
+        settings: Optional[ProviderSettings] = None,
+        tools: Optional[List[Dict]] = None,
     ):
         return await self.get_or_create_prompt(name, template_messages, settings)
 

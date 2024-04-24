@@ -112,7 +112,7 @@ class Prompt:
             type=prompt_dict.get("type", GenerationType.CHAT),
             version_desc=prompt_dict.get("versionDesc"),
             template_messages=prompt_dict.get("templateMessages", []),
-            tools=prompt_dict.get("tools", None) or None,
+            tools=prompt_dict.get("tools", []),
             provider=provider,
             settings=settings,
             variables=prompt_dict.get("variables", []),
