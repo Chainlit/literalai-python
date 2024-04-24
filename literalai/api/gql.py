@@ -960,6 +960,9 @@ CREATE_PROMPT_VERSION = """mutation createPromptVersion(
       variablesDefaultValues: $variablesDefaultValues
     ) {
       id
+      lineage {
+        name
+      }
       version
       createdAt
       tools
