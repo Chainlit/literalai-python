@@ -188,6 +188,9 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                     step.input = {"content": generation.messages}
                 else:
                     step.input = {"content": generation.prompt}
+                
+                step.tags = kwargs.get("literal_tags", [])
+                step.metadata = kwargs.get("literal_metadata", None)
 
                 context["step"] = step
 
@@ -211,6 +214,9 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                     step.input = {"content": generation.messages}
                 else:
                     step.input = {"content": generation.prompt}
+
+                step.tags = kwargs.get("literal_tags", [])
+                step.metadata = kwargs.get("literal_metadata", None)
 
                 context["step"] = step
 
