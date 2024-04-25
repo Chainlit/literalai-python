@@ -41,7 +41,7 @@ def get_completion(welcome_message, text):
 @sdk.thread
 def run():
     global thread_id
-    thread_id = sdk.get_current_thread_id()
+    thread_id = sdk.get_current_thread().id
 
     welcome_message = "What's your name? "
     sdk.message(content=welcome_message, type="system_message")
@@ -62,7 +62,7 @@ sdk.flush_and_stop()
 # Get the steps from the API for the demo
 async def main():
     print("\nSearching for the thread", thread_id, "...")
-    thread = await sdk.api.get_thread(id=thread_id)
+    thread = sdk.api.get_thread(id=thread_id)
 
     print(json.dumps(thread.to_dict(), indent=2))
 
@@ -74,7 +74,7 @@ async def main():
         return
 
     # attach a score
-    await sdk.api.create_score(
+    sdk.api.create_score(
         step_id=llm_step.id,
         name="user-feedback",
         type="HUMAN",
@@ -83,7 +83,7 @@ async def main():
     )
 
     # get the updated steps
-    thread = await sdk.api.get_thread(id=thread_id)
+    thread = sdk.api.get_thread(id=thread_id)
 
     print(
         json.dumps(
