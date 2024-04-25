@@ -1208,7 +1208,6 @@ class LiteralAPI(BaseLiteralAPI):
         name: str,
         template_messages: List[GenerationMessage],
         settings: Optional[ProviderSettings] = None,
-        tools: Optional[List[Dict]] = None,
     ) -> Prompt:
         return self.get_or_create_prompt(name, template_messages, settings)
 
@@ -2347,7 +2346,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         name: str,
         template_messages: List[GenerationMessage],
         settings: Optional[ProviderSettings] = None,
-        tools: Optional[List[Dict]] = None,
     ):
         return await self.get_or_create_prompt(name, template_messages, settings)
 
