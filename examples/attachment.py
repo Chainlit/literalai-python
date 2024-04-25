@@ -3,7 +3,6 @@ import asyncio
 from dotenv import load_dotenv
 
 from literalai import LiteralClient
-from literalai.my_types import Attachment
 
 load_dotenv()
 
