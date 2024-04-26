@@ -130,6 +130,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 tools=tools,
                 settings=settings,
                 messages=messages,
+                tags=kwargs.get("literal_tags"),
             )
 
         elif generation_type == GenerationType.COMPLETION:
@@ -156,6 +157,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 model=model,
                 settings=settings,
                 prompt=kwargs.get("prompt"),
+                tags=kwargs.get("literal_tags"),
             )
 
     def update_step_after(
