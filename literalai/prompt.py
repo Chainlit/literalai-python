@@ -164,7 +164,7 @@ class Prompt:
     @deprecated('Please use "format_messages" instead')
     def format(
         self, variables: Optional[Dict[str, Any]] = None
-    ) -> List[LiteralMessageDict]:
+    ) -> List[Any]:
         return self.format_messages(variables)
 
     def to_langchain_chat_prompt_template(self):
