@@ -543,6 +543,9 @@ class Teste2e:
         assert prompt.version == 0
         assert prompt.provider == "openai"
 
+        prompt = await async_client.api.get_prompt(id=prompt.id)
+        assert prompt is not None
+
         messages = prompt.format()
 
         expected = """Hello, this is a test value and this
@@ -580,3 +583,16 @@ is a templated list."""
         thread = Thread(id="thread-id", participant_id="participant-id")
         participant = thread.to_dict().get("participant", {})
         assert participant and participant["id"] == "participant-id"
+
+    @pytest.mark.timeout(5)
+    async def test_prompt_unique(self, client: LiteralClient):
+        prompt = client.api.get_prompt(name="Default")
+
+        new_prompt = client.api.get_or_create_prompt(
+            name=prompt.name,
+            template_messages=prompt.template_messages,
+            settings=prompt.settings,
+            tools=prompt.tools,
+        )
+
+        assert new_prompt.id == prompt.id, "Existing prompt should be returned"

@@ -12,6 +12,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import deprecated
+
 from literalai.dataset import DatasetType
 from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
 from literalai.filter import (
@@ -23,6 +25,7 @@ from literalai.filter import (
     threads_order_by,
     users_filters,
 )
+from literalai.prompt import Prompt, ProviderSettings
 
 from .attachment_helpers import (
     AttachmentUpload,
@@ -150,6 +153,7 @@ class LiteralAPI(BaseLiteralAPI):
         Raises:
             Exception: If the GraphQL call fails or returns errors.
         """
+
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
@@ -265,7 +269,7 @@ class LiteralAPI(BaseLiteralAPI):
             The user data as returned by the GraphQL helper function.
         """
         return self.gql_helper(*get_user_helper(id, identifier))
-    
+
     def create_user(self, identifier: str, metadata: Optional[Dict] = None):
         """
         Creates a new user with the specified identifier and optional metadata.
@@ -323,7 +327,7 @@ class LiteralAPI(BaseLiteralAPI):
             return user
 
         return self.create_user(identifier, metadata)
-    
+
     # Thread API
 
     def get_threads(
@@ -479,7 +483,7 @@ class LiteralAPI(BaseLiteralAPI):
             The result of the deletion operation.
         """
         return self.gql_helper(*delete_thread_helper(id))
-    
+
     # Score API
 
     def get_scores(
@@ -631,9 +635,7 @@ class LiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = (
-            {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -1174,41 +1176,69 @@ class LiteralAPI(BaseLiteralAPI):
         """
         return self.gql_helper(*create_prompt_lineage_helper(name, description))
 
-    def create_prompt(
+    def get_or_create_prompt(
         self,
         name: str,
         template_messages: List[GenerationMessage],
-        settings: Optional[Dict] = None,
-    ):
+        settings: Optional[ProviderSettings] = None,
+        tools: Optional[List[Dict]] = None,
+    ) -> Prompt:
         """
-        Creates a prompt with the specified name, template messages, and optional settings.
+        A `Prompt` is fully defined by its `name`, `template_messages`, `settings` and tools.
+        If a prompt already exists for the given arguments, it is returned.
+        Otherwise, a new prompt is created.
 
         Args:
-            name (str): The name of the prompt.
+            name (str): The name of the prompt to retrieve or create.
             template_messages (List[GenerationMessage]): A list of template messages for the prompt.
             settings (Optional[Dict]): Optional settings for the prompt.
 
         Returns:
-            Dict: The result of the prompt creation operation.
+            Prompt: The prompt that was retrieved or created.
         """
         lineage = self.create_prompt_lineage(name)
         lineage_id = lineage["id"]
         return self.gql_helper(
-            *create_prompt_helper(self, lineage_id, template_messages, settings)
+            *create_prompt_helper(self, lineage_id, template_messages, settings, tools)
         )
 
-    def get_prompt(self, name: str, version: Optional[int] = None):
+    @deprecated('Please use "get_or_create_prompt" instead.')
+    def create_prompt(
+        self,
+        name: str,
+        template_messages: List[GenerationMessage],
+        settings: Optional[ProviderSettings] = None,
+    ) -> Prompt:
+        return self.get_or_create_prompt(name, template_messages, settings)
+
+    def get_prompt(
+        self,
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        version: Optional[int] = 0,
+    ) -> Prompt:
         """
-        Retrieves a prompt by its name and optional version.
+        Gets a prompt either by:
+        - `id`
+        - or `name` and (optional) `version`
+
+        Either the `id` or the `name` must be provided.
+        If both are provided, the `id` is used.
 
         Args:
+            id (str): The unique identifier of the prompt to retrieve.
             name (str): The name of the prompt to retrieve.
             version (Optional[int]): The version number of the prompt to retrieve.
 
         Returns:
-            Dict: The prompt data retrieved.
+            Prompt: The prompt with the given identifier or name.
         """
-        return self.gql_helper(*get_prompt_helper(self, name, version))
+        if id:
+            return self.gql_helper(*get_prompt_helper(self, id=id))
+        elif name:
+            return self.gql_helper(*get_prompt_helper(self, name=name, version=version))
+        else:
+            raise ValueError("Either the `id` or the `name` must be provided.")
 
 
 class AsyncLiteralAPI(BaseLiteralAPI):
@@ -1231,6 +1261,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         Raises:
             Exception: If the GraphQL call fails or returns errors.
         """
+
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
@@ -1739,9 +1770,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = (
-            {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -2292,40 +2321,48 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         """
         return await self.gql_helper(*create_prompt_lineage_helper(name, description))
 
+    async def get_or_create_prompt(
+        self,
+        name: str,
+        template_messages: List[GenerationMessage],
+        settings: Optional[ProviderSettings] = None,
+        tools: Optional[List[Dict]] = None,
+    ) -> Prompt:
+        lineage = await self.create_prompt_lineage(name)
+        lineage_id = lineage["id"]
+
+        sync_api = LiteralAPI(self.api_key, self.url)
+        return await self.gql_helper(
+            *create_prompt_helper(
+                sync_api, lineage_id, template_messages, settings, tools
+            )
+        )
+
+    get_or_create_prompt.__doc__ = LiteralAPI.get_or_create_prompt.__doc__
+
+    @deprecated('Please use "get_or_create_prompt" instead.')
     async def create_prompt(
         self,
         name: str,
         template_messages: List[GenerationMessage],
-        settings: Optional[Dict] = None,
+        settings: Optional[ProviderSettings] = None,
     ):
-        """
-        Asynchronously creates a prompt.
+        return await self.get_or_create_prompt(name, template_messages, settings)
 
-        Args:
-            name (str): The name of the prompt.
-            template_messages (List[GenerationMessage]): A list of template messages for the prompt.
-            settings (Optional[Dict]): Optional settings for the prompt.
-
-        Returns:
-            The result of the GraphQL helper function for creating a prompt.
-        """
-        lineage = await self.create_prompt_lineage(name)
-        lineage_id = lineage["id"]
+    async def get_prompt(
+        self,
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        version: Optional[int] = 0,
+    ) -> Prompt:
         sync_api = LiteralAPI(self.api_key, self.url)
-        return await self.gql_helper(
-            *create_prompt_helper(sync_api, lineage_id, template_messages, settings)
-        )
-
-    async def get_prompt(self, name: str, version: Optional[int] = None):
-        """
-        Asynchronously retrieves a prompt by its name and optional version.
-
-        Args:
-            name (str): The name of the prompt to retrieve.
-            version (Optional[int]): The version number of the prompt, if specified.
-
-        Returns:
-            The result of the GraphQL helper function for fetching a prompt.
-        """
-        sync_api = LiteralAPI(self.api_key, self.url)
-        return await self.gql_helper(*get_prompt_helper(sync_api, name, version))
+        if id:
+            return await self.gql_helper(*get_prompt_helper(sync_api, id=id))
+        elif name:
+            return await self.gql_helper(
+                *get_prompt_helper(sync_api, name=name, version=version)
+            )
+        else:
+            raise ValueError("Either the `id` or the `name` must be provided.")
+    
+    get_prompt.__doc__ = LiteralAPI.get_prompt.__doc__
