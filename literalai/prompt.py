@@ -120,12 +120,17 @@ class Prompt:
             variables_default_values=prompt_dict.get("variablesDefaultValues"),
         )
 
-    def format_messages(self, variables: Optional[Dict[str, Any]] = None) -> List[Any]:
+    def format_messages(
+        self, variables: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> List[Any]:
         """
         Formats the prompt's template messages with the given variables.
+        Variables may be passed as a dictionary or as keyword arguments.
+        Keyword arguments take precedence over variables passed as a dictionary.
 
         Args:
             variables (Optional[Dict[str, Any]]): Optional variables to resolve in the template messages.
+
 
         Returns:
             List[Any]: List of formatted chat completion messages.
@@ -133,6 +138,7 @@ class Prompt:
         variables_with_defaults = {
             **(self.variables_default_values or {}),
             **(variables or {}),
+            **kwargs,
         }
         formatted_messages = []
 
