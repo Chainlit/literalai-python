@@ -11,12 +11,12 @@ sdk = LiteralClient(batch_size=2)
 
 
 async def main():
-    user = await sdk.api.create_user(identifier="test-user", metadata={"name": "123"})
+    user = sdk.api.create_user(identifier="test-user-example", metadata={"name": "123"})
 
     id = user.id
     print(id, user.to_dict())
 
-    user = await sdk.api.update_user(
+    user = sdk.api.update_user(
         id=id,
         identifier="user",
         metadata={"test": "test"},
@@ -24,18 +24,18 @@ async def main():
 
     print(user.to_dict())
 
-    user = await sdk.api.get_user(id=id)
+    user = sdk.api.get_user(id=id)
 
     print(user.to_dict())
 
-    user = await sdk.api.get_user(identifier="user")
+    user = sdk.api.get_user(identifier="user")
 
     print(user.to_dict())
 
-    await sdk.api.delete_user(id=id)
+    sdk.api.delete_user(id=id)
 
     try:
-        user = await sdk.api.update_user(
+        user = sdk.api.update_user(
             id=id,
             identifier="user",
             metadata={"test": "test"},
