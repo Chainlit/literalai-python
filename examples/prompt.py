@@ -15,7 +15,7 @@ prompt = client.api.create_prompt(
     name="hello",
     template_messages=[{"role": "user", "content": "Hello, how are you {{name}}?"}],
 )
-messages = prompt.format({"name": "Alice"})
+messages = prompt.format_messages(name="Alice")
 
 
 res = openai.chat.completions.create(

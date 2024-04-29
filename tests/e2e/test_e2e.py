@@ -546,7 +546,7 @@ class Teste2e:
         prompt = await async_client.api.get_prompt(id=prompt.id)
         assert prompt is not None
 
-        messages = prompt.format()
+        messages = prompt.format_messages()
 
         expected = """Hello, this is a test value and this
 
@@ -558,7 +558,7 @@ is a templated list."""
 
         assert messages[0]["content"] == expected
 
-        messages = prompt.format({"test_var": "Edited value"})
+        messages = prompt.format_messages(test_var="Edited value")
 
         expected = """Hello, this is a Edited value and this
 

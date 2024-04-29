@@ -2,6 +2,7 @@ import sys
 from dataclasses import dataclass
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
+from typing_extensions import deprecated
 
 if sys.version_info < (3, 12):
     from typing_extensions import TypedDict
@@ -119,12 +120,22 @@ class Prompt:
             variables_default_values=prompt_dict.get("variablesDefaultValues"),
         )
 
-    def format(
-        self, variables: Optional[Dict[str, Any]] = None
-    ) -> List[Any]:
+    def format_messages(self, **kwargs: Any) -> List[Any]:
+        """
+        Formats the prompt's template messages with the given variables.
+        Variables may be passed as a dictionary or as keyword arguments.
+        Keyword arguments take precedence over variables passed as a dictionary.
+
+        Args:
+            variables (Optional[Dict[str, Any]]): Optional variables to resolve in the template messages.
+
+
+        Returns:
+            List[Any]: List of formatted chat completion messages.
+        """
         variables_with_defaults = {
             **(self.variables_default_values or {}),
-            **(variables or {}),
+            **(kwargs or {}),
         }
         formatted_messages = []
 
@@ -146,6 +157,10 @@ class Prompt:
             formatted_messages.append(formatted_message)
 
         return formatted_messages
+
+    @deprecated('Please use "format_messages" instead')
+    def format(self, variables: Optional[Dict[str, Any]] = None) -> List[Any]:
+        return self.format_messages(**(variables or {}))
 
     def to_langchain_chat_prompt_template(self):
         try:
