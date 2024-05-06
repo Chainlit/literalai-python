@@ -85,7 +85,7 @@ class TextContent(TypedDict, total=False):
 
 class ImageUrlContent(TypedDict, total=False):
     type: Literal["image_url"]
-    image_url: str
+    image_url: Dict
 
 
 class GenerationMessage(TypedDict, total=False):
