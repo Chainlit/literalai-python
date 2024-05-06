@@ -798,7 +798,7 @@ CREATE_EXPERIMENT = """
         $name: String! 
         $datasetId: String!
         $promptId: String
-        $params: Json!
+        $params: Json
     ) {
         createDatasetExperiment(
             name: $name

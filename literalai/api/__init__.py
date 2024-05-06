@@ -2171,23 +2171,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         prompt_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
-        """
-        Asynchronously creates an experiment within a dataset.
-
-        Args:
-            dataset_id (str): The unique identifier of the dataset.
-            name (str): The name of the experiment.
-            prompt_id (Optional[str]): The identifier of the prompt associated with the experiment.
-            params (Optional[Dict]): Additional parameters for the experiment.
-
-        Returns:
-            DatasetExperiment: The created experiment object.
-        """
         sync_api = LiteralAPI(self.api_key, self.url)
 
         return await self.gql_helper(
             *create_experiment_helper(sync_api, dataset_id, name, prompt_id, params)
         )
+    
+    create_experiment.__doc__ = LiteralAPI.create_experiment.__doc__
 
     async def create_experiment_item(
         self, experiment_item: DatasetExperimentItem

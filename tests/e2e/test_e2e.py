@@ -596,3 +596,12 @@ is a templated list."""
         )
 
         assert new_prompt.id == prompt.id, "Existing prompt should be returned"
+
+    @pytest.mark.timeout(5)
+    async def test_experiment_params_optional(self, client: LiteralClient):
+        dataset = client.api.create_dataset(
+            name="test-dataset", description="test-description"
+        )
+        experiment = dataset.create_experiment(name="test-experiment")
+        assert experiment.params is None
+        dataset.delete()
