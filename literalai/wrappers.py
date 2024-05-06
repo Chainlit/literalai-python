@@ -23,17 +23,17 @@ class AfterContext(TypedDict):
     start: float
 
 
-def remove_literal_args(kargs):
-    '''Remove argument prefixed with "literal_" from kwargs and return them in a separate dict'''
+def remove_literalai_args(kargs):
+    '''Remove argument prefixed with "literalai_" from kwargs and return them in a separate dict'''
     largs = {}
     for key in list(kargs.keys()):
-        if key.startswith("literal_"):
+        if key.startswith("literalai_"):
             value = kargs.pop(key)
             largs[key] = value
     return largs
 
-def restore_literal_args(kargs, largs):
-    '''Reverse the effect of remove_literal_args by merging the literal arguments into kwargs'''
+def restore_literalai_args(kargs, largs):
+    '''Reverse the effect of remove_literalai_args by merging the literal arguments into kwargs'''
     for key in list(largs.keys()):
         kargs[key] = largs[key]
 
@@ -47,7 +47,7 @@ def sync_wrapper(before_func=None, after_func=None):
             if before_func:
                 before_func(context, *args, **kwargs)
             # Remove literal arguments before calling the original function
-            literal_args = remove_literal_args(kwargs)
+            literalai_args = remove_literalai_args(kwargs)
             context["start"] = time.time()
             try:
                 result = original_func(*args, **kwargs)
@@ -61,7 +61,7 @@ def sync_wrapper(before_func=None, after_func=None):
                 raise e
             # If an after_func is provided, call it with the result and the shared context.
             if after_func:
-                restore_literal_args(kwargs, literal_args)
+                restore_literalai_args(kwargs, literalai_args)
                 result = after_func(result, context, *args, **kwargs)
 
             return result
@@ -81,7 +81,7 @@ def async_wrapper(before_func=None, after_func=None):
                 await before_func(context, *args, **kwargs)
 
             # Remove literal arguments before calling the original function
-            literal_args = remove_literal_args(kwargs)
+            literalai_args = remove_literalai_args(kwargs)
             context["start"] = time.time()
             try:
                 result = await original_func(*args, **kwargs)
@@ -96,7 +96,7 @@ def async_wrapper(before_func=None, after_func=None):
 
             # If an after_func is provided, call it with the result and the shared context.
             if after_func:
-                restore_literal_args(kwargs, literal_args)
+                restore_literalai_args(kwargs, literalai_args)
                 result = await after_func(result, context, *args, **kwargs)
 
             return result
