@@ -1,4 +1,5 @@
 import inspect
+import json
 import uuid
 from copy import deepcopy
 from functools import wraps
@@ -156,6 +157,9 @@ class Step:
             "scores": [score.to_dict() for score in self.scores],
             "attachments": [attachment.to_dict() for attachment in self.attachments],
         }
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), sort_keys=True, indent=4)
 
     @classmethod
     def from_dict(cls, step_dict: StepDict) -> "Step":

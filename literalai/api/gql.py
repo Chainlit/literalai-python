@@ -10,6 +10,7 @@ STEP_FIELDS = """
         startTime
         endTime
         createdAt
+        participantIdentifier
         type
         error
         input
@@ -629,6 +630,48 @@ mutation UpdateStep(
 """
     + STEP_FIELDS
     + """
+    }
+}
+"""
+)
+
+GET_STEPS = (
+    """
+query GetSteps(
+    $after: ID,
+    $before: ID,
+    $cursorAnchor: DateTime,
+    $filters: [stepsInputType!],
+    $orderBy: StepsOrderByInput,
+    $first: Int,
+    $last: Int,
+    $projectId: String,
+    ) {
+    steps(
+        after: $after,
+        before: $before,
+        cursorAnchor: $cursorAnchor,
+        filters: $filters,
+        orderBy: $orderBy,
+        first: $first,
+        last: $last,
+        projectId: $projectId,
+        ) {
+        pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+            hasPreviousPage
+        }
+        totalCount
+        edges {
+            cursor
+            node {
+"""
+    + STEP_FIELDS
+    + """
+            }
+        }
     }
 }
 """

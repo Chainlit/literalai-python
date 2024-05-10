@@ -57,6 +57,24 @@ threads_orderable_fields = Literal["createdAt", "tokenCount"]
 threads_filters = List[Filter[threads_filterable_fields]]
 threads_order_by = OrderBy[threads_orderable_fields]
 
+steps_filterable_fields = Literal[
+    "id",
+    "name",
+    "input",
+    "output",
+    "participantIdentifier",
+    "startTime",
+    "endTime",
+    "metadata",
+    "parentId",
+    "threadId",
+    "error",
+    "tags",
+]
+steps_orderable_fields = Literal["createdAt"]
+steps_filters = List[Filter[steps_filterable_fields]]
+steps_order_by = OrderBy[steps_orderable_fields]
+
 users_filterable_fields = Literal[
     "id",
     "createdAt",

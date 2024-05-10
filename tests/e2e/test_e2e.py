@@ -165,6 +165,28 @@ class Teste2e:
 
         assert deleted_step is None
 
+    async def test_steps(self, client: LiteralClient):
+        thread = client.api.create_thread()
+        step = client.api.create_step(
+            thread_id=thread.id, tags=["to_score"], name="test"
+        )
+        assert step.id is not None
+
+        steps = client.api.get_steps(
+            first=1,
+            filters=[{
+                "field": "tags",
+                "operator": "in",
+                "value": ["to_score"]
+            }]
+        )
+        assert len(steps.data) == 1
+        assert steps.data[0].id == step.id
+
+        client.api.delete_step(id=step.id)
+        deleted_step = client.api.get_step(id=step.id)
+        assert deleted_step is None
+
     async def test_score(self, client: LiteralClient, async_client: AsyncLiteralClient):
         thread = await async_client.api.create_thread()
         step = await async_client.api.create_step(
