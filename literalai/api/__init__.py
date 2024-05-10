@@ -132,6 +132,24 @@ class BaseLiteralAPI:
             "x-client-version": __version__,
         }
 
+    def _prepare_variables(self, variables: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Recursively checks and converts bytes objects in variables.
+        """
+
+        def handle_bytes(item):
+            if isinstance(item, bytes):
+                return "STRIPPED_BINARY_DATA"
+            elif isinstance(item, dict):
+                return {k: handle_bytes(v) for k, v in item.items()}
+            elif isinstance(item, list):
+                return [handle_bytes(i) for i in item]
+            elif isinstance(item, tuple):
+                return tuple(handle_bytes(i) for i in item)
+            return item
+
+        return handle_bytes(variables)
+
 
 class LiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
@@ -157,6 +175,8 @@ class LiteralAPI(BaseLiteralAPI):
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
+
+        variables = self._prepare_variables(variables)
 
         with httpx.Client() as client:
             response = client.post(
@@ -353,7 +373,9 @@ class LiteralAPI(BaseLiteralAPI):
             A list of threads that match the criteria.
         """
         return self.gql_helper(
-            *get_threads_helper(first, after, before, filters, order_by, step_types_to_keep)
+            *get_threads_helper(
+                first, after, before, filters, order_by, step_types_to_keep
+            )
         )
 
     def list_threads(
@@ -635,7 +657,9 @@ class LiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = (
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -1266,6 +1290,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
 
+        variables = self._prepare_variables(variables)
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 self.graphql_endpoint,
@@ -1465,7 +1491,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             The result of the GraphQL helper function for fetching threads.
         """
         return await self.gql_helper(
-            *get_threads_helper(first, after, before, filters, order_by, step_types_to_keep)
+            *get_threads_helper(
+                first, after, before, filters, order_by, step_types_to_keep
+            )
         )
 
     async def list_threads(
@@ -1770,7 +1798,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
-        form_data = {}  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        form_data = (
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -2176,7 +2206,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(
             *create_experiment_helper(sync_api, dataset_id, name, prompt_id, params)
         )
-    
+
     create_experiment.__doc__ = LiteralAPI.create_experiment.__doc__
 
     async def create_experiment_item(
@@ -2354,5 +2384,5 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             )
         else:
             raise ValueError("Either the `id` or the `name` must be provided.")
-    
+
     get_prompt.__doc__ = LiteralAPI.get_prompt.__doc__
