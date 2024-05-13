@@ -111,6 +111,7 @@ class BaseLiteralClient:
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
+        **kwargs,
     ):
         if original_function:
             return step_decorator(
@@ -121,6 +122,7 @@ class BaseLiteralClient:
                 id=id,
                 parent_id=parent_id,
                 thread_id=thread_id,
+                **kwargs,
             )
         else:
             return StepContextManager(
@@ -130,6 +132,7 @@ class BaseLiteralClient:
                 id=id,
                 parent_id=parent_id,
                 thread_id=thread_id,
+                **kwargs,
             )
 
     def run(
@@ -185,6 +188,7 @@ class BaseLiteralClient:
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
+        **kwargs,
     ):
         step = Step(
             name=name,
@@ -193,6 +197,7 @@ class BaseLiteralClient:
             parent_id=parent_id,
             thread_id=thread_id,
             processor=self.event_processor,
+            **kwargs,
         )
         step.start()
         return step

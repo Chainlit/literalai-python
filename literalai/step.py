@@ -86,6 +86,7 @@ class Step:
         thread_id: Optional[str] = None,
         parent_id: Optional[str] = None,
         processor: Optional["EventProcessor"] = None,
+        tags: Optional[List[str]] = None,
     ):
         from time import sleep
 
@@ -102,6 +103,8 @@ class Step:
 
         # priority for parent_id: parent_id > parent_step.id
         self.parent_id = parent_id
+
+        self.tags = tags
 
     def start(self):
         active_steps = active_steps_var.get()
@@ -209,6 +212,7 @@ class StepContextManager:
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
+        **kwargs,
     ):
         self.client = client
         self.step_name = name
@@ -216,6 +220,7 @@ class StepContextManager:
         self.id = id
         self.parent_id = parent_id
         self.thread_id = thread_id
+        self.kwargs = kwargs
 
     def __call__(self, func):
         return step_decorator(
@@ -232,6 +237,7 @@ class StepContextManager:
             id=self.id,
             parent_id=self.parent_id,
             thread_id=self.thread_id,
+            **self.kwargs
         )
         return self.step
 
@@ -248,6 +254,7 @@ class StepContextManager:
             id=self.id,
             parent_id=self.parent_id,
             thread_id=self.thread_id,
+            **self.kwargs
         )
         return self.step
 
@@ -267,6 +274,7 @@ def step_decorator(
     parent_id: Optional[str] = None,
     thread_id: Optional[str] = None,
     ctx_manager: Optional[StepContextManager] = None,
+    **decorator_kwargs
 ):
     if not name:
         name = func.__name__
@@ -278,6 +286,7 @@ def step_decorator(
             id=id,
             parent_id=parent_id,
             thread_id=thread_id,
+            **decorator_kwargs
         )
     else:
         ctx_manager.step_name = name
