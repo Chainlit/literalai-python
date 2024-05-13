@@ -25,6 +25,8 @@ from literalai.filter import (
     threads_order_by,
     users_filters,
 )
+
+from literalai.filter import steps_filters, steps_order_by
 from literalai.prompt import Prompt, ProviderSettings
 
 from .attachment_helpers import (
@@ -66,6 +68,7 @@ from .step_helpers import (
     create_step_helper,
     delete_step_helper,
     get_step_helper,
+    get_steps_helper,
     send_steps_helper,
     update_step_helper,
 )
@@ -96,6 +99,7 @@ from literalai.my_types import (
     ChatGeneration,
     CompletionGeneration,
     GenerationMessage,
+    PaginatedResponse,
     Score,
     ScoreDict,
     ScoreType,
@@ -883,6 +887,31 @@ class LiteralAPI(BaseLiteralAPI):
                 end_time=end_time,
                 parent_id=parent_id,
             )
+        )
+
+    def get_steps(
+        self,
+        first: Optional[int] = None,
+        after: Optional[str] = None,
+        before: Optional[str] = None,
+        filters: Optional[steps_filters] = None,
+        order_by: Optional[steps_order_by] = None,
+    ) -> PaginatedResponse[Step]:
+        """
+        Fetches a list of steps based on pagination and optional filters.
+
+        Args:
+            first (Optional[int]): Number of steps to fetch.
+            after (Optional[str]): Cursor for pagination, fetch steps after this cursor.
+            before (Optional[str]): Cursor for pagination, fetch steps before this cursor.
+            filters (Optional[steps_filters]): Filters to apply on the steps query.
+            order_by (Optional[steps_order_by]): Order by clause for steps.
+
+        Returns:
+            A list of steps that match the criteria.
+        """
+        return self.gql_helper(
+            *get_steps_helper(first, after, before, filters, order_by)
         )
 
     def get_step(
@@ -2027,6 +2056,20 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 parent_id=parent_id,
             )
         )
+
+    async def get_steps(
+        self,
+        first: Optional[int] = None,
+        after: Optional[str] = None,
+        before: Optional[str] = None,
+        filters: Optional[steps_filters] = None,
+        order_by: Optional[steps_order_by] = None,
+    ) -> PaginatedResponse[Step]:
+        return await self.gql_helper(
+            *get_steps_helper(first, after, before, filters, order_by)
+        )
+
+    get_steps.__doc__ = LiteralAPI.get_steps.__doc__
 
     async def get_step(
         self,

@@ -1,5 +1,7 @@
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
+from literalai.filter import steps_filters, steps_order_by
+from literalai.my_types import PaginatedResponse
 from literalai.step import Step, StepDict, StepType
 
 from . import gql
@@ -70,6 +72,36 @@ def update_step_helper(
 
     return gql.UPDATE_STEP, description, variables, process_response
 
+def get_steps_helper(
+    first: Optional[int] = None,
+    after: Optional[str] = None,
+    before: Optional[str] = None,
+    filters: Optional[steps_filters] = None,
+    order_by: Optional[steps_order_by] = None,
+):
+    variables: Dict[str, Any] = {}
+
+    if first:
+        variables["first"] = first
+    if after:
+        variables["after"] = after
+    if before:
+        variables["before"] = before
+    if filters:
+        variables["filters"] = filters
+    if order_by:
+        variables["orderBy"] = order_by
+
+    def process_response(response):
+        processed_response = response["data"]["steps"]
+        processed_response["data"] = [
+            edge["node"] for edge in processed_response["edges"]
+        ]
+        return PaginatedResponse[Step].from_dict(processed_response, Step)
+
+    description = "get steps"
+
+    return gql.GET_STEPS, description, variables, process_response
 
 def get_step_helper(id: str):
     variables = {"id": id}
