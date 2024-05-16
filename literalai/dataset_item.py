@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional, TypedDict
 
+from literalai.my_types import Utils
+
 
 class DatasetItemDict(TypedDict, total=False):
     id: str
@@ -13,7 +15,7 @@ class DatasetItemDict(TypedDict, total=False):
 
 
 @dataclass
-class DatasetItem:
+class DatasetItem(Utils):
     id: str
     created_at: str
     dataset_id: str

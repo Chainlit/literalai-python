@@ -1,5 +1,6 @@
 import sys
 import uuid
+import json
 from enum import Enum, unique
 from typing import Any, Dict, Generic, List, Literal, Optional, Protocol, TypeVar, Union
 
@@ -14,8 +15,12 @@ GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system
 ScoreType = Literal["HUMAN", "AI"]
 
 
+class Utils:
+    def __repr__(self):
+        return json.dumps(self.to_dict(), sort_keys=True, indent=4)
+
 @dataclass
-class PageInfo:
+class PageInfo(Utils):
     hasNextPage: bool
     startCursor: Optional[str]
     endCursor: Optional[str]
@@ -47,7 +52,7 @@ class HasFromDict(Protocol[T]):
 
 
 @dataclass
-class PaginatedResponse(Generic[T]):
+class PaginatedResponse(Generic[T], Utils):
     pageInfo: PageInfo
     data: List[T]
     totalCount: Optional[int] = None
@@ -100,7 +105,7 @@ class GenerationMessage(TypedDict, total=False):
 
 
 @dataclass
-class BaseGeneration:
+class BaseGeneration(Utils):
     id: Optional[str] = None
     prompt_id: Optional[str] = None
     provider: Optional[str] = None
@@ -149,7 +154,7 @@ class BaseGeneration:
 
 
 @dataclass
-class CompletionGeneration(BaseGeneration):
+class CompletionGeneration(BaseGeneration, Utils):
     prompt: Optional[str] = None
     completion: Optional[str] = None
     type = GenerationType.COMPLETION
@@ -189,7 +194,7 @@ class CompletionGeneration(BaseGeneration):
 
 
 @dataclass
-class ChatGeneration(BaseGeneration):
+class ChatGeneration(BaseGeneration, Utils):
     type = GenerationType.CHAT
     messages: Optional[List[GenerationMessage]] = Field(default_factory=list)
     message_completion: Optional[GenerationMessage] = None
@@ -252,7 +257,7 @@ class AttachmentDict(TypedDict, total=False):
 
 
 @dataclass
-class Score:
+class Score(Utils):
     name: str
     type: ScoreType
     value: float
@@ -304,7 +309,7 @@ class Score:
 
 
 @dataclass
-class Attachment:
+class Attachment(Utils):
     step_id: Optional[str] = None
     thread_id: Optional[str] = None
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -357,7 +362,7 @@ class UserDict(TypedDict, total=False):
 
 
 @dataclass
-class User:
+class User(Utils):
     id: Optional[str] = None
     created_at: Optional[str] = None
     identifier: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))

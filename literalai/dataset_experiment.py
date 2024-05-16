@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, TypedDict
 from typing import TYPE_CHECKING
 
-from literalai.my_types import ScoreDict
+from literalai.my_types import ScoreDict, Utils
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
@@ -18,7 +18,7 @@ class DatasetExperimentItemDict(TypedDict, total=False):
 
 
 @dataclass
-class DatasetExperimentItem:
+class DatasetExperimentItem(Utils):
     id: str
     dataset_experiment_id: str
     dataset_item_id: str
@@ -59,7 +59,7 @@ class DatasetExperimentDict(TypedDict, total=False):
 
 
 @dataclass
-class DatasetExperiment:
+class DatasetExperiment(Utils):
     api: "LiteralAPI"
     id: str
     created_at: str

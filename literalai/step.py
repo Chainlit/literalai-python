@@ -29,6 +29,7 @@ from literalai.my_types import (
     CompletionGeneration,
     Score,
     ScoreDict,
+    Utils,
 )
 
 TrueStepType = Literal[
@@ -59,7 +60,7 @@ class StepDict(TypedDict, total=False):
     attachments: Optional[List[AttachmentDict]]
 
 
-class Step:
+class Step(Utils):
     id: Optional[str] = None
     name: Optional[str] = ""
     type: Optional[StepType] = None
@@ -160,9 +161,6 @@ class Step:
             "scores": [score.to_dict() for score in self.scores],
             "attachments": [attachment.to_dict() for attachment in self.attachments],
         }
-
-    def __repr__(self):
-        return json.dumps(self.to_dict(), sort_keys=True, indent=4)
 
     @classmethod
     def from_dict(cls, step_dict: StepDict) -> "Step":

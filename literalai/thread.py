@@ -6,7 +6,7 @@ from functools import wraps
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypedDict
 
 from literalai.context import active_thread_var
-from literalai.my_types import UserDict
+from literalai.my_types import UserDict, Utils
 from literalai.step import Step, StepDict
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ class ThreadDict(TypedDict, total=False):
     participant: Optional[UserDict]
 
 
-class Thread:
+class Thread(Utils):
     id: str
     name: Optional[str]
     metadata: Optional[Dict]
