@@ -16,10 +16,13 @@ ScoreType = Literal["HUMAN", "AI"]
 
 
 class Utils:
+    def __str__(self):
+        return json.dumps(self.to_dict(), sort_keys=True, indent=4)
+
     def __repr__(self):
         return json.dumps(self.to_dict(), sort_keys=True, indent=4)
 
-@dataclass
+@dataclass(repr=False)
 class PageInfo(Utils):
     hasNextPage: bool
     startCursor: Optional[str]
@@ -51,7 +54,7 @@ class HasFromDict(Protocol[T]):
         raise NotImplementedError()
 
 
-@dataclass
+@dataclass(repr=False)
 class PaginatedResponse(Generic[T], Utils):
     pageInfo: PageInfo
     data: List[T]
@@ -104,7 +107,7 @@ class GenerationMessage(TypedDict, total=False):
     tool_call_id: Optional[str]
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseGeneration(Utils):
     id: Optional[str] = None
     prompt_id: Optional[str] = None
@@ -153,7 +156,7 @@ class BaseGeneration(Utils):
         }
 
 
-@dataclass
+@dataclass(repr=False)
 class CompletionGeneration(BaseGeneration, Utils):
     prompt: Optional[str] = None
     completion: Optional[str] = None
@@ -193,7 +196,7 @@ class CompletionGeneration(BaseGeneration, Utils):
         )
 
 
-@dataclass
+@dataclass(repr=False)
 class ChatGeneration(BaseGeneration, Utils):
     type = GenerationType.CHAT
     messages: Optional[List[GenerationMessage]] = Field(default_factory=list)
@@ -256,7 +259,7 @@ class AttachmentDict(TypedDict, total=False):
     url: Optional[str]
 
 
-@dataclass
+@dataclass(repr=False)
 class Score(Utils):
     name: str
     type: ScoreType
@@ -308,7 +311,7 @@ class Score(Utils):
         return score
 
 
-@dataclass
+@dataclass(repr=False)
 class Attachment(Utils):
     step_id: Optional[str] = None
     thread_id: Optional[str] = None
@@ -361,7 +364,7 @@ class UserDict(TypedDict, total=False):
     createdAt: Optional[str]
 
 
-@dataclass
+@dataclass(repr=False)
 class User(Utils):
     id: Optional[str] = None
     created_at: Optional[str] = None

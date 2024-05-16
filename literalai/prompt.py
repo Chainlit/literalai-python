@@ -62,7 +62,7 @@ class PromptDict(TypedDict, total=False):
     variablesDefaultValues: Optional[Dict[str, Any]]
 
 
-@dataclass
+@dataclass(repr=False)
 class Prompt(Utils):
     api: "LiteralAPI"
     id: str

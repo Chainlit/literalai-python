@@ -14,7 +14,7 @@ class DatasetItemDict(TypedDict, total=False):
     intermediarySteps: Optional[List[Dict]]
 
 
-@dataclass
+@dataclass(repr=False)
 class DatasetItem(Utils):
     id: str
     created_at: str

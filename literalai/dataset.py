@@ -28,7 +28,7 @@ class DatasetDict(TypedDict, total=False):
     type: DatasetType
 
 
-@dataclass
+@dataclass(repr=False)
 class Dataset(Utils):
     api: "LiteralAPI"
     id: str

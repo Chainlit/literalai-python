@@ -17,7 +17,7 @@ class DatasetExperimentItemDict(TypedDict, total=False):
     output: Optional[Dict]
 
 
-@dataclass
+@dataclass(repr=False)
 class DatasetExperimentItem(Utils):
     id: str
     dataset_experiment_id: str
@@ -58,7 +58,7 @@ class DatasetExperimentDict(TypedDict, total=False):
     items: Optional[List[DatasetExperimentItemDict]]
 
 
-@dataclass
+@dataclass(repr=False)
 class DatasetExperiment(Utils):
     api: "LiteralAPI"
     id: str
