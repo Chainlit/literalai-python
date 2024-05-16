@@ -2,6 +2,8 @@ import sys
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict, List, Literal, Optional
 
+from literalai.my_types import Utils
+
 if sys.version_info < (3, 12):
     from typing_extensions import TypedDict
 else:
@@ -26,8 +28,8 @@ class DatasetDict(TypedDict, total=False):
     type: DatasetType
 
 
-@dataclass
-class Dataset:
+@dataclass(repr=False)
+class Dataset(Utils):
     api: "LiteralAPI"
     id: str
     created_at: str

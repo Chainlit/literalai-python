@@ -14,7 +14,7 @@ import chevron
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
 
-from literalai.my_types import GenerationMessage, GenerationType
+from literalai.my_types import GenerationMessage, GenerationType, Utils
 
 
 class ProviderSettings(TypedDict, total=False):
@@ -62,8 +62,8 @@ class PromptDict(TypedDict, total=False):
     variablesDefaultValues: Optional[Dict[str, Any]]
 
 
-@dataclass
-class Prompt:
+@dataclass(repr=False)
+class Prompt(Utils):
     api: "LiteralAPI"
     id: str
     created_at: str

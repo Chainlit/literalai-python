@@ -6,11 +6,11 @@ if TYPE_CHECKING:
 
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import utc_now
-from literalai.my_types import Attachment, Score
+from literalai.my_types import Attachment, Score, Utils
 from literalai.step import MessageStepType, StepDict
 
 
-class Message:
+class Message(Utils):
     id: Optional[str] = None
     name: Optional[str] = None
     type: Optional[MessageStepType] = None

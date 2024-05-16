@@ -1,5 +1,6 @@
 import sys
 import uuid
+import json
 from enum import Enum, unique
 from typing import Any, Dict, Generic, List, Literal, Optional, Protocol, TypeVar, Union
 
@@ -14,8 +15,15 @@ GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system
 ScoreType = Literal["HUMAN", "AI"]
 
 
-@dataclass
-class PageInfo:
+class Utils:
+    def __str__(self):
+        return json.dumps(self.to_dict(), sort_keys=True, indent=4)
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), sort_keys=True, indent=4)
+
+@dataclass(repr=False)
+class PageInfo(Utils):
     hasNextPage: bool
     startCursor: Optional[str]
     endCursor: Optional[str]
@@ -46,8 +54,8 @@ class HasFromDict(Protocol[T]):
         raise NotImplementedError()
 
 
-@dataclass
-class PaginatedResponse(Generic[T]):
+@dataclass(repr=False)
+class PaginatedResponse(Generic[T], Utils):
     pageInfo: PageInfo
     data: List[T]
     totalCount: Optional[int] = None
@@ -99,8 +107,8 @@ class GenerationMessage(TypedDict, total=False):
     tool_call_id: Optional[str]
 
 
-@dataclass
-class BaseGeneration:
+@dataclass(repr=False)
+class BaseGeneration(Utils):
     id: Optional[str] = None
     prompt_id: Optional[str] = None
     provider: Optional[str] = None
@@ -148,8 +156,8 @@ class BaseGeneration:
         }
 
 
-@dataclass
-class CompletionGeneration(BaseGeneration):
+@dataclass(repr=False)
+class CompletionGeneration(BaseGeneration, Utils):
     prompt: Optional[str] = None
     completion: Optional[str] = None
     type = GenerationType.COMPLETION
@@ -188,8 +196,8 @@ class CompletionGeneration(BaseGeneration):
         )
 
 
-@dataclass
-class ChatGeneration(BaseGeneration):
+@dataclass(repr=False)
+class ChatGeneration(BaseGeneration, Utils):
     type = GenerationType.CHAT
     messages: Optional[List[GenerationMessage]] = Field(default_factory=list)
     message_completion: Optional[GenerationMessage] = None
@@ -251,8 +259,8 @@ class AttachmentDict(TypedDict, total=False):
     url: Optional[str]
 
 
-@dataclass
-class Score:
+@dataclass(repr=False)
+class Score(Utils):
     name: str
     type: ScoreType
     value: float
@@ -303,8 +311,8 @@ class Score:
         return score
 
 
-@dataclass
-class Attachment:
+@dataclass(repr=False)
+class Attachment(Utils):
     step_id: Optional[str] = None
     thread_id: Optional[str] = None
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -356,8 +364,8 @@ class UserDict(TypedDict, total=False):
     createdAt: Optional[str]
 
 
-@dataclass
-class User:
+@dataclass(repr=False)
+class User(Utils):
     id: Optional[str] = None
     created_at: Optional[str] = None
     identifier: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
