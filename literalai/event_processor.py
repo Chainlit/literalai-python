@@ -27,6 +27,8 @@ async def to_thread(func, /, *args, **kwargs):
 
 class EventProcessor:
     event_queue: queue.Queue
+    batch: List["StepDict"]
+
 
     def __init__(self, api: "LiteralAPI", batch_size: int = 5, disabled: bool = False):
         self.batch_size = batch_size
@@ -49,36 +51,36 @@ class EventProcessor:
 
     def _process_events(self):
         while True:
-            batch: List["StepDict"] = []
+            self.batch = []
             try:
                 # Try to fill the batch up to the batch_size
-                while len(batch) < self.batch_size:
+                while len(self.batch) < self.batch_size:
                     # Attempt to get events with a timeout
                     event = self.event_queue.get(timeout=0.5)
-                    batch.append(event)
+                    self.batch.append(event)
             except queue.Empty:
                 # No more events at the moment, proceed with processing what's in the batch
                 pass
 
             # Process the batch if any events are present - in a separate thread
-            if batch:
-                self._process_batch(batch)
+            if self.batch:
+                self._process_batch()
 
             # Stop if the stop_event is set and the queue is empty
             if self.stop_event.is_set() and self.event_queue.empty():
                 break
 
-    def _try_process_batch(self, batch):
+    def _try_process_batch(self):
         try:
-            return self.api.send_steps(batch)
+            return self.api.send_steps(self.batch)
         except Exception:
             logger.error(f"Failed to send steps: {traceback.format_exc()}")
         return None
 
-    def _process_batch(self, batch):
+    def _process_batch(self):
         # Simple one-try retry in case of network failure (no retry on graphql errors)
         retries = 0
-        while not self._try_process_batch(batch) and retries < 1:
+        while not self._try_process_batch() and retries < 1:
             retries += 1
             time.sleep(DEFAULT_SLEEP_TIME)
 
@@ -92,7 +94,7 @@ class EventProcessor:
             await asyncio.sleep(DEFAULT_SLEEP_TIME)
 
     def flush(self):
-        while not self.event_queue.empty():
+        while not self.event_queue.empty() or len(self.batch) > 0:
             time.sleep(0.2)
 
     def __del__(self):
