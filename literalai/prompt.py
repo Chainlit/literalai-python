@@ -120,6 +120,13 @@ class Prompt(Utils):
             variables_default_values=prompt_dict.get("variablesDefaultValues"),
         )
 
+    def promote(self) -> "Prompt":
+        """
+        Promotes this prompt to champion.
+        """
+        self.api.promote_prompt(self.name, self.version)
+        return self
+
     def format_messages(self, **kwargs: Any) -> List[Any]:
         """
         Formats the prompt's template messages with the given variables.

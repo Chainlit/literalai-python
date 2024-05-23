@@ -54,6 +54,7 @@ from .prompt_helpers import (
     create_prompt_helper,
     create_prompt_lineage_helper,
     get_prompt_helper,
+    promote_prompt_helper,
 )
 from .score_helpers import (
     ScoreUpdate,
@@ -1268,7 +1269,7 @@ class LiteralAPI(BaseLiteralAPI):
         self,
         id: Optional[str] = None,
         name: Optional[str] = None,
-        version: Optional[int] = 0,
+        version: Optional[int] = None,
     ) -> Prompt:
         """
         Gets a prompt either by:
@@ -1292,6 +1293,23 @@ class LiteralAPI(BaseLiteralAPI):
             return self.gql_helper(*get_prompt_helper(self, name=name, version=version))
         else:
             raise ValueError("Either the `id` or the `name` must be provided.")
+    
+    def promote_prompt(self, name: str, version: int) -> str:
+        """
+        Promotes the prompt with name to target version.
+
+        Args:
+            name (str): The name of the prompt lineage.
+            version (int): The version number to promote.
+
+        Returns:
+            str: The champion prompt ID.
+        """
+        lineage = self.create_prompt_lineage(name)
+        lineage_id = lineage["id"]
+
+        return self.gql_helper(*promote_prompt_helper(lineage_id, version))
+
 
 
 class AsyncLiteralAPI(BaseLiteralAPI):
@@ -2416,7 +2434,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         self,
         id: Optional[str] = None,
         name: Optional[str] = None,
-        version: Optional[int] = 0,
+        version: Optional[int] = None,
     ) -> Prompt:
         sync_api = LiteralAPI(self.api_key, self.url)
         if id:
@@ -2429,3 +2447,11 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             raise ValueError("Either the `id` or the `name` must be provided.")
 
     get_prompt.__doc__ = LiteralAPI.get_prompt.__doc__
+
+    async def promote_prompt(self, name: str, version: int) -> str:
+        lineage = await self.create_prompt_lineage(name)
+        lineage_id = lineage["id"]
+
+        return await self.gql_helper(*promote_prompt_helper(lineage_id, version))
+
+    promote_prompt.__doc__ = LiteralAPI.promote_prompt.__doc__

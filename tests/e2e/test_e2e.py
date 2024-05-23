@@ -594,6 +594,15 @@ is a templated list."""
         assert messages[0]["content"] == expected
 
     @pytest.mark.timeout(5)
+    async def test_champion_prompt(self, client: LiteralClient):
+        new_prompt = client.api.get_or_create_prompt(name="Default", template_messages=[{"role": "user", "content": "Hello"}])
+        new_prompt.promote()
+
+        prompt = client.api.get_prompt(name="Default")
+        assert prompt is not None
+        assert prompt.version == new_prompt.version
+
+    @pytest.mark.timeout(5)
     async def test_gracefulness(self, broken_client: LiteralClient):
         with broken_client.thread(name="Conversation"):
             time.sleep(1)
