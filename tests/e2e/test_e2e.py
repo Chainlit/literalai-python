@@ -560,13 +560,13 @@ class Teste2e:
     async def test_prompt(
         self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
-        prompt = await async_client.api.get_prompt(name="Default")
+        prompt = await async_client.api.get_prompt(name="Default", version=0)
         assert prompt is not None
         assert prompt.name == "Default"
         assert prompt.version == 0
         assert prompt.provider == "openai"
 
-        prompt = await async_client.api.get_prompt(id=prompt.id)
+        prompt = await async_client.api.get_prompt(id=prompt.id, version=0)
         assert prompt is not None
 
         messages = prompt.format_messages()
