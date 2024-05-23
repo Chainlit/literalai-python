@@ -618,7 +618,7 @@ is a templated list."""
 
     @pytest.mark.timeout(5)
     async def test_prompt_unique(self, client: LiteralClient):
-        prompt = client.api.get_prompt(name="Default")
+        prompt = client.api.get_prompt(name="Default", version=0)
 
         new_prompt = client.api.get_or_create_prompt(
             name=prompt.name,
