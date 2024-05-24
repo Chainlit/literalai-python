@@ -10,7 +10,6 @@ STEP_FIELDS = """
         startTime
         endTime
         createdAt
-        participantIdentifier
         type
         error
         input
