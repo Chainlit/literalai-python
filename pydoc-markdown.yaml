@@ -17,3 +17,10 @@ renderer:
   descriptive_class_title: false
   render_toc: true
   add_module_prefix: false
+  header_level_by_type:
+    module: 1
+    class: 2
+    method: 2
+    function: 2
+    attribute: 3
+    variable: 3
