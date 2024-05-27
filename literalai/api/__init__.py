@@ -21,12 +21,12 @@ from literalai.filter import (
     generations_order_by,
     scores_filters,
     scores_order_by,
+    steps_filters,
+    steps_order_by,
     threads_filters,
     threads_order_by,
     users_filters,
 )
-
-from literalai.filter import steps_filters, steps_order_by
 from literalai.prompt import Prompt, ProviderSettings
 
 from .attachment_helpers import (
@@ -1316,6 +1316,18 @@ class LiteralAPI(BaseLiteralAPI):
         return self.gql_helper(*promote_prompt_helper(lineage_id, version))
 
 
+    # Misc API
+
+    def get_my_project_id(self):
+        """
+        Retrieves the projectId associated to the API key.
+
+        Returns:
+            The projectId associated to the API key.
+        """
+        response = self.make_rest_call("/my-project", {})
+        return response["projectId"]
+
 
 class AsyncLiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
@@ -2456,3 +2468,12 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(*promote_prompt_helper(lineage_id, version))
 
     promote_prompt.__doc__ = LiteralAPI.promote_prompt.__doc__
+
+    # Misc API
+
+    async def get_my_project_id(self):
+        response = await self.make_rest_call("/my-project", {})
+        return response["projectId"]
+
+    get_my_project_id.__doc__ = LiteralAPI.get_my_project_id.__doc__
+
