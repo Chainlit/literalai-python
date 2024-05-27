@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# ./run-docs ../literal-docs/python-client/
+
+# https://github.com/NiklasRosenstein/pydoc-markdown/blob/develop/src/pydoc_markdown/contrib/renderers/markdown.py#L52
+# https://github.com/NiklasRosenstein/pydoc-markdown/blob/develop/src/pydoc_markdown/contrib/processors/filter.py#L31
+
+
 DOCS_DIR=$1
 
 if [ -z "$DOCS_DIR" ]; then
@@ -11,24 +17,23 @@ fi
 apiFiles=(
     "api.__init__"
 )
+# Loop over the list
+for i in "${apiFiles[@]}"; do
+    echo "Generating docs for $i in api/api.mdx"
+    # make parent dir if not exists $DOCS_DIR/api
+
+    pydoc-markdown -I . -m literalai.$i --no-render-toc > $DOCS_DIR/api-reference/api.mdx
+done
+
+
+
 
 clientFiles=(
     "client"
 )
-
-# Loop over the list
-for i in "${apiFiles[@]}"; do
-    echo "Generating docs for $i in api/$i.mdx"
-    # make parent dir if not exists $DOCS_DIR/python-api/$i.mdx
-    mkdir -p $DOCS_DIR/api
-
-    pydoc-markdown -I . -m literalai.$i --no-render-toc > $DOCS_DIR/api/$i.mdx
-done
-
 for i in "${clientFiles[@]}"; do
     echo "Generating docs for $i in client/$i.mdx"
     # make parent dir if not exists $DOCS_DIR/python-client/$i.mdx
-    mkdir -p $DOCS_DIR/client
 
-    pydoc-markdown -I . -m literalai.$i --no-render-toc > $DOCS_DIR/client/$i.mdx
+    pydoc-markdown -I . -m literalai.$i --no-render-toc > $DOCS_DIR/api-reference/$i.mdx
 done
