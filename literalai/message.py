@@ -11,6 +11,23 @@ from literalai.step import MessageStepType, StepDict
 
 
 class Message(Utils):
+    """
+    Class representing a message in the system.
+
+    Attributes:
+        id (Optional[str]): The unique identifier for the message. Defaults to None.
+        name (Optional[str]): The name of the message. Defaults to None.
+        type (Optional[MessageStepType]): The type of the message. Defaults to None.
+        metadata (Optional[Dict]): The metadata associated with the message. Defaults to {}.
+        parent_id (Optional[str]): The identifier of the parent message. Defaults to None.
+        timestamp (Optional[str]): The timestamp of the message. Defaults to None.
+        content (str): The content of the message.
+        thread_id (Optional[str]): The identifier of the thread the message belongs to. Defaults to None.
+        tags (Optional[List[str]]): The tags associated with the message. Defaults to None.
+        created_at (Optional[str]): The time when the message was created. Defaults to None.
+        scores (List[Score]): The scores associated with the message. Defaults to [].
+        attachments (List[Attachment]): The attachments associated with the message. Defaults to [].
+    """
     id: Optional[str] = None
     name: Optional[str] = None
     type: Optional[MessageStepType] = None
@@ -66,6 +83,9 @@ class Message(Utils):
         self.parent_id = parent_id
 
     def end(self):
+        """
+        Ends the message processing and adds the event to the processor.
+        """
         active_steps = active_steps_var.get()
         if len(active_steps) > 0:
             parent_step = active_steps[-1]
@@ -88,7 +108,12 @@ class Message(Utils):
         self.processor.add_event(self.to_dict())
 
     def to_dict(self) -> "StepDict":
-        # Create a correct step Dict from a message
+        """
+        Converts the Message object to a StepDict dictionary.
+
+        Returns:
+            StepDict: The dictionary representation of the Message object.
+        """
         return {
             "id": self.id,
             "metadata": self.metadata,
@@ -108,6 +133,15 @@ class Message(Utils):
 
     @classmethod
     def from_dict(cls, message_dict: Dict) -> "Message":
+        """
+        Creates a Message object from a dictionary.
+
+        Args:
+            message_dict (Dict): The dictionary representation of the Message object.
+
+        Returns:
+            Message: The Message object created from the dictionary.
+        """
         id = message_dict.get("id", None)
         type = message_dict.get("type", None)
         thread_id = message_dict.get("threadId", None)

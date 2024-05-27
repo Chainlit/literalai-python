@@ -393,6 +393,16 @@ class LiteralAPI(BaseLiteralAPI):
         """
         Lists threads based on pagination and optional filters, similar to get_threads but may include additional processing.
 
+        ```
+        from literalai.thread import DateTimeFilter, ThreadFilter
+
+        filters = ThreadFilter(
+            createdAt=DateTimeFilter(operator="gt", value="2023-12-14"),
+        )
+
+        page = 1
+        result = literal_client.api.list_threads(filters=filters)
+        ```
         Args:
             first (Optional[int]): Number of threads to list.
             after (Optional[str]): Cursor for pagination, list threads after this cursor.
@@ -949,7 +959,7 @@ class LiteralAPI(BaseLiteralAPI):
         Sends a list of steps to be processed.
 
         Args:
-            steps (List[Union[StepDict, "Step"]]): A list of steps or step dictionaries to send.
+            steps (List[Union[StepDict, Step]]): A list of steps or step dictionaries to send.
 
         Returns:
             The result of the GraphQL helper function for sending steps.
@@ -2118,7 +2128,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         Asynchronously sends a list of steps to be processed.
 
         Args:
-            steps (List[Union[StepDict, "Step"]]): A list of steps or step dictionaries to send.
+            steps (List[Union[StepDict, Step]]): A list of steps or step dictionaries to send.
 
         Returns:
             The result of the GraphQL helper function for sending steps.

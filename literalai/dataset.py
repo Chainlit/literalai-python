@@ -19,6 +19,18 @@ DatasetType = Literal["key_value", "generation"]
 
 
 class DatasetDict(TypedDict, total=False):
+    """
+    A dictionary representation of a Dataset.
+
+    Attributes (all optional):
+        id (str): The unique identifier for the dataset.
+        createdAt (str): The timestamp when the dataset was created.
+        metadata (Dict[str, Any]): Additional metadata for the dataset.
+        name (str): The name of the dataset.
+        description (str): The description of the dataset.
+        items (List[DatasetItemDict]): The items in the dataset.
+        type (DatasetType): The type of the dataset.
+    """
     id: str
     createdAt: str
     metadata: Dict
@@ -30,6 +42,20 @@ class DatasetDict(TypedDict, total=False):
 
 @dataclass(repr=False)
 class Dataset(Utils):
+    """
+    A class representing a dataset of items.
+
+    Attributes:
+        api (LiteralAPI): The API client to handle the dataset.
+        id (str): The unique identifier for the dataset.
+        created_at (str): The timestamp when the dataset was created.
+        metadata (Dict[str, Any]): Additional metadata for the dataset.
+        name (Optional[str]): The name of the dataset. Defaults to None.
+        description (Optional[str]): The description of the dataset. Defaults to None.
+        items (List[DatasetItem]): The items in the dataset. Defaults to [].
+        type (DatasetType): The type of the dataset. Defaults to "key_value".
+    """
+
     api: "LiteralAPI"
     id: str
     created_at: str
@@ -40,6 +66,12 @@ class Dataset(Utils):
     type: DatasetType = "key_value"
 
     def to_dict(self):
+        """
+        Converts the Dataset object to a DatasetDict dictionary.
+
+        Returns:
+            DatasetDict: The dictionary representation of the Dataset object.
+        """
         return {
             "id": self.id,
             "createdAt": self.created_at,
@@ -52,6 +84,16 @@ class Dataset(Utils):
 
     @classmethod
     def from_dict(cls, api: "LiteralAPI", dataset: DatasetDict) -> "Dataset":
+        """
+        Creates a Dataset object from a DatasetDict dictionary.
+
+        Args:
+            api (LiteralAPI): The API client to handle the dataset.
+            dataset (DatasetDict): The dictionary representation of the Dataset object.
+
+        Returns:
+            Dataset: The Dataset object created from the dictionary.
+        """
         items = dataset.get("items", [])
         if not isinstance(items, list):
             raise Exception("Dataset items should be an array")
@@ -73,6 +115,14 @@ class Dataset(Utils):
         description: Optional[str] = None,
         metadata: Optional[Dict] = None,
     ):
+        """
+        Updates the name, description, and metadata of the dataset.
+
+        Args:
+            name (Optional[str], optional): The new name for the dataset. Defaults to None.
+            description (Optional[str], optional): The new description for the dataset. Defaults to None.
+            metadata (Optional[Dict], optional): The new metadata for the dataset. Defaults to None.
+        """
         updated_dataset = self.api.update_dataset(
             self.id, name=name, description=description, metadata=metadata
         )
@@ -81,6 +131,9 @@ class Dataset(Utils):
         self.metadata = updated_dataset.metadata
 
     def delete(self):
+        """
+        Deletes the dataset.
+        """
         self.api.delete_dataset(self.id)
 
     def create_item(
@@ -91,10 +144,14 @@ class Dataset(Utils):
     ) -> DatasetItem:
         """
         Create a new dataset item and add it to this dataset.
-        :param input: The input data for the dataset item.
-        :param expected_output: The output data for the dataset item (optional).
-        :param metadata: Metadata for the dataset item (optional).
-        :return: The created DatasetItem instance.
+
+        Args:
+            input (Dict): The input data for the dataset item.
+            expected_output (Optional[Dict], optional): The output data for the dataset item. Defaults to None.
+            metadata (Optional[Dict], optional): Metadata for the dataset item. Defaults to None.
+
+        Returns:
+            DatasetItem: The created DatasetItem instance.
         """
         dataset_item = self.api.create_dataset_item(
             self.id, input, expected_output, metadata
@@ -109,10 +166,14 @@ class Dataset(Utils):
     ) -> DatasetExperiment:
         """
         Creates a new dataset experiment based on this dataset.
-        :param name: The name of the experiment .
-        :param prompt_id: The Prompt ID used on LLM calls (optional).
-        :param params: The params used on the experiment.
-        :return: The created DatasetExperiment instance as a dictionary.
+
+        Args:
+            name (str): The name of the experiment.
+            prompt_id (Optional[str], optional): The Prompt ID used on LLM calls. Defaults to None.
+            params (Optional[Dict], optional): The params used on the experiment. Defaults to None.
+
+        Returns:
+            DatasetExperiment: The created DatasetExperiment instance.
         """
         experiment = self.api.create_experiment(
             self.id, name, prompt_id, params
@@ -122,8 +183,9 @@ class Dataset(Utils):
     def delete_item(self, item_id: str):
         """
         Delete a dataset item from this dataset.
-        :param api: An instance of the DatasetAPI to make the call.
-        :param item_id: The ID of the dataset item to delete.
+
+        Args:
+            item_id (str): The ID of the dataset item to delete.
         """
         self.api.delete_dataset_item(item_id)
         if self.items is not None:
@@ -134,9 +196,16 @@ class Dataset(Utils):
     ) -> DatasetItem:
         """
         Create a new dataset item based on a step and add it to this dataset.
-        :param step_id: The id of the step to add to the dataset.
-        :param metadata: Metadata for the dataset item (optional).
-        :return: The created DatasetItem instance.
+
+        Args:
+            step_id (str): The id of the step to add to the dataset.
+            metadata (Optional[Dict], optional): Metadata for the dataset item. Defaults to None.
+
+        Returns:
+            DatasetItem: The created DatasetItem instance.
+
+        Raises:
+            ValueError: If the dataset type is "generation".
         """
         if self.type == "generation":
             raise ValueError("Cannot add a step to a generation dataset")
@@ -152,9 +221,13 @@ class Dataset(Utils):
     ) -> DatasetItem:
         """
         Create a new dataset item based on a generation and add it to this dataset.
-        :param generation_id: The id of the generation to add to the dataset.
-        :param metadata: Metadata for the dataset item (optional).
-        :return: The created DatasetItem instance.
+
+        Args:
+            generation_id (str): The id of the generation to add to the dataset.
+            metadata (Optional[Dict], optional): Metadata for the dataset item. Defaults to None.
+
+        Returns:
+            DatasetItem: The created DatasetItem instance.
         """
         dataset_item = self.api.add_generation_to_dataset(
             self.id, generation_id, metadata

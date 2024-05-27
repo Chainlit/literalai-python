@@ -1,0 +1,14 @@
+loaders:
+  - type: python
+
+renderer:
+  type: markdown
+  descriptive_class_title: false
+  render_toc: false
+  add_module_prefix: false
+  header_level_by_type:
+    class: 2
+    method: 2
+    function: 2
+    attribute: 3
+    variable: 3

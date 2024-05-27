@@ -16,6 +16,18 @@ logger = logging.getLogger(__name__)
 
 
 class ThreadDict(TypedDict, total=False):
+    """
+    A dictionary representation of a Thread.
+
+    Attributes (all optional):
+        id (str): The unique identifier for the thread.
+        name (str): The name of the thread.
+        metadata (Dict[str, Any]): Additional metadata for the thread.
+        tags (List[str]): A list of tags associated with the thread.
+        createdAt (str): The timestamp when the thread was created.
+        steps (List[StepDict]): The steps in the thread.
+        participant (UserDict): The participant in the thread.
+    """
     id: Optional[str]
     name: Optional[str]
     metadata: Optional[Dict]
@@ -26,6 +38,20 @@ class ThreadDict(TypedDict, total=False):
 
 
 class Thread(Utils):
+    """
+    A class representing a thread of steps.
+
+    Attributes:
+        id (str): The unique identifier for the thread.
+        name (Optional[str]): The name of the thread. Defaults to None.
+        metadata (Optional[Dict[str, Any]]): Additional metadata for the thread. Defaults to None.
+        tags (Optional[List[str]]): A list of tags associated with the thread. Defaults to None.
+        steps (Optional[List[Step]]): The steps in the thread. Defaults to None.
+        participant_id (Optional[str]): The identifier of the participant in the thread. Defaults to None.
+        participant_identifier (Optional[str]): The identifier of the participant in the thread. Defaults to None.
+        created_at (Optional[str]): The timestamp when the thread was created. Defaults to None.
+        needs_upsert (Optional[bool]): A flag indicating whether the thread needs to be updated. Defaults to None.
+    """
     id: str
     name: Optional[str]
     metadata: Optional[Dict]
@@ -54,6 +80,13 @@ class Thread(Utils):
         self.needs_upsert = bool(metadata or tags or participant_id or name)
 
     def to_dict(self) -> ThreadDict:
+        """
+        Converts the Thread object to a ThreadDict dictionary.
+
+        Returns:
+            ThreadDict: The dictionary representation of the Thread object.
+        """
+        ...
         return {
             "id": self.id,
             "metadata": self.metadata,
@@ -70,6 +103,15 @@ class Thread(Utils):
 
     @classmethod
     def from_dict(cls, thread_dict: ThreadDict) -> "Thread":
+        """
+        Creates a Thread object from a ThreadDict dictionary.
+
+        Args:
+            thread_dict (ThreadDict): The dictionary representation of the Thread object.
+
+        Returns:
+            Thread: The Thread object created from the dictionary.
+        """
         step_dict_list = thread_dict.get("steps", None) or []
         id = thread_dict.get("id", None) or ""
         name = thread_dict.get("name", None)
@@ -99,6 +141,16 @@ class Thread(Utils):
 
 
 class ThreadContextManager:
+    """
+    A context manager for handling threads.
+
+    Attributes:
+        client (BaseLiteralClient): The client to handle the thread.
+        thread_id (Optional[str]): The unique identifier for the thread. Defaults to None.
+        name (Optional[str]): The name of the thread. Defaults to None.
+        kwargs (Dict[str, Any]): Additional keyword arguments for the thread.
+    """
+
     def __init__(
         self,
         client: "BaseLiteralClient",
@@ -112,6 +164,9 @@ class ThreadContextManager:
         self.kwargs = kwargs
 
     def upsert(self):
+        """
+        Updates the thread on the server, if necessary.
+        """
         if self.client.disabled:
             return
 
@@ -167,6 +222,20 @@ def thread_decorator(
     ctx_manager: Optional[ThreadContextManager] = None,
     **decorator_kwargs,
 ):
+    """
+    A decorator for handling threads.
+
+    Args:
+        client (BaseLiteralClient): The client to handle the thread.
+        func (Callable): The function to decorate.
+        thread_id (Optional[str], optional): The unique identifier for the thread. Defaults to None.
+        name (Optional[str], optional): The name of the thread. Defaults to None.
+        ctx_manager (Optional[ThreadContextManager], optional): The context manager for the thread. Defaults to None.
+        **decorator_kwargs: Additional keyword arguments for the decorator.
+
+    Returns:
+        Callable: The decorated function.
+    """
     if not ctx_manager:
         ctx_manager = ThreadContextManager(
             client, thread_id=thread_id, name=name, **decorator_kwargs

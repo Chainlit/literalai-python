@@ -41,6 +41,27 @@ StepType = Union[TrueStepType, MessageStepType]
 
 
 class StepDict(TypedDict, total=False):
+    """
+    A dictionary representation of a Step.
+
+    Attributes (all optional):
+        id (str): The unique identifier for the step.
+        name (str): The name of the step.
+        type (StepType): The type of the step.
+        threadId (str): The identifier of the thread the step belongs to.
+        error (str): The error message, if any.
+        input (Dict[str, Any]): The input to the step.
+        output (Dict[str, Any]): The output of the step.
+        metadata (Dict[str, Any]): Additional metadata for the step.
+        tags (List[str]): A list of tags associated with the step.
+        parentId (str): The identifier of the parent step.
+        createdAt (str): The timestamp when the step was created.
+        startTime (str): The timestamp when the step started.
+        endTime (str): The timestamp when the step ended.
+        generation (Dict[str, Any]): The generation information, if any.
+        scores (List[ScoreDict]): The scores associated with the step.
+        attachments (List[AttachmentDict]): The attachments associated with the step.
+    """
     id: Optional[str]
     name: Optional[str]
     type: Optional[StepType]
@@ -60,6 +81,27 @@ class StepDict(TypedDict, total=False):
 
 
 class Step(Utils):
+    """
+    A class representing a step in a process.
+
+    Attributes:
+        id (Optional[str]): The unique identifier for the step. Defaults to None.
+        name (Optional[str]): The name of the step. Defaults to "".
+        type (Optional[StepType]): The type of the step. Defaults to None.
+        metadata (Optional[Dict[str, Any]]): Additional metadata for the step. Defaults to None.
+        parent_id (Optional[str]): The identifier of the parent step. Defaults to None.
+        start_time (Optional[str]): The timestamp when the step started. Defaults to None.
+        end_time (Optional[str]): The timestamp when the step ended. Defaults to None.
+        created_at (Optional[str]): The timestamp when the step was created. Defaults to None.
+        error (Optional[str]): The error message, if any. Defaults to None.
+        input (Optional[Dict[str, Any]]): The input to the step. Defaults to None.
+        output (Optional[Dict[str, Any]]): The output of the step. Defaults to None.
+        tags (Optional[List[str]]): A list of tags associated with the step. Defaults to None.
+        thread_id (Optional[str]): The identifier of the thread the step belongs to. Defaults to None.
+        generation (Optional[Union[ChatGeneration, CompletionGeneration]]): The generation information, if any. Defaults to None.
+        scores (Optional[List[Score]]): The scores associated with the step. Defaults to [].
+        attachments (List[Attachment]): The attachments associated with the step. Defaults to [].
+    """
     id: Optional[str] = None
     name: Optional[str] = ""
     type: Optional[StepType] = None
@@ -107,6 +149,9 @@ class Step(Utils):
         self.tags = tags
 
     def start(self):
+        """
+        Starts the step and updates the active steps.
+        """
         active_steps = active_steps_var.get()
         if len(active_steps) > 0:
             parent_step = active_steps[-1]
@@ -123,6 +168,9 @@ class Step(Utils):
         active_steps_var.set(active_steps)
 
     def end(self):
+        """
+        Ends the step, updates the active steps, and adds the event to the processor.
+        """
         self.end_time = utc_now()
 
         # Update active steps
@@ -143,6 +191,12 @@ class Step(Utils):
         self.processor.add_event(self.to_dict())
 
     def to_dict(self):
+        """
+        Converts the Step object to a StepDict dictionary.
+
+        Returns:
+            StepDict: The dictionary representation of the Step object.
+        """
         return {
             "id": self.id,
             "metadata": self.metadata,
@@ -163,6 +217,15 @@ class Step(Utils):
 
     @classmethod
     def from_dict(cls, step_dict: StepDict) -> "Step":
+        """
+        Creates a Step object from a StepDict dictionary.
+
+        Args:
+            step_dict (StepDict): The dictionary representation of the Step object.
+
+        Returns:
+            Step: The Step object created from the dictionary.
+        """
         name = step_dict.get("name") or ""
         step_type = step_dict.get("type", "undefined")
         thread_id = step_dict.get("threadId")
@@ -201,6 +264,19 @@ class Step(Utils):
 
 
 class StepContextManager:
+    """
+    A context manager for handling steps.
+
+    Attributes:
+        client (BaseLiteralClient): The client to handle the step.
+        step_name (str): The name of the step.
+        step_type (TrueStepType): The type of the step.
+        id (Optional[str]): The unique identifier for the step. Defaults to None.
+        parent_id (Optional[str]): The identifier of the parent step. Defaults to None.
+        thread_id (Optional[str]): The identifier of the thread the step belongs to. Defaults to None.
+        kwargs (Dict[str, Any]): Additional keyword arguments for the step.
+    """
+
     def __init__(
         self,
         client: "BaseLiteralClient",
@@ -273,6 +349,23 @@ def step_decorator(
     ctx_manager: Optional[StepContextManager] = None,
     **decorator_kwargs
 ):
+    """
+    A decorator for handling steps.
+
+    Args:
+        client (BaseLiteralClient): The client to handle the step.
+        func (Callable): The function to decorate.
+        type (TrueStepType, optional): The type of the step. Defaults to "undefined".
+        name (str, optional): The name of the step. Defaults to "".
+        id (Optional[str], optional): The unique identifier for the step. Defaults to None.
+        parent_id (Optional[str], optional): The identifier of the parent step. Defaults to None.
+        thread_id (Optional[str], optional): The identifier of the thread the step belongs to. Defaults to None.
+        ctx_manager (Optional[StepContextManager], optional): The context manager for the step. Defaults to None.
+        **decorator_kwargs: Additional keyword arguments for the decorator.
+
+    Returns:
+        Callable: The decorated function.
+    """
     if not name:
         name = func.__name__
     if not ctx_manager:
