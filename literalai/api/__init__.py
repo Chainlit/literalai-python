@@ -54,6 +54,7 @@ from .prompt_helpers import (
     create_prompt_helper,
     create_prompt_lineage_helper,
     get_prompt_helper,
+    promote_prompt_helper,
 )
 from .score_helpers import (
     ScoreUpdate,
@@ -1216,9 +1217,10 @@ class LiteralAPI(BaseLiteralAPI):
 
     # Prompt API
 
-    def create_prompt_lineage(self, name: str, description: Optional[str] = None):
+    def get_or_create_prompt_lineage(self, name: str, description: Optional[str] = None):
         """
         Creates a prompt lineage with the specified name and optional description.
+        If the prompt lineage with that name already exists, it is returned.
 
         Args:
             name (str): The name of the prompt lineage.
@@ -1228,6 +1230,10 @@ class LiteralAPI(BaseLiteralAPI):
             Dict: The result of the prompt lineage creation operation.
         """
         return self.gql_helper(*create_prompt_lineage_helper(name, description))
+
+    @deprecated('Please use "get_or_create_prompt_lineage" instead.')
+    def create_prompt_lineage(self, name: str, description: Optional[str] = None):
+        return self.get_or_create_prompt_lineage(name, description)
 
     def get_or_create_prompt(
         self,
@@ -1249,7 +1255,7 @@ class LiteralAPI(BaseLiteralAPI):
         Returns:
             Prompt: The prompt that was retrieved or created.
         """
-        lineage = self.create_prompt_lineage(name)
+        lineage = self.get_or_create_prompt_lineage(name)
         lineage_id = lineage["id"]
         return self.gql_helper(
             *create_prompt_helper(self, lineage_id, template_messages, settings, tools)
@@ -1268,7 +1274,7 @@ class LiteralAPI(BaseLiteralAPI):
         self,
         id: Optional[str] = None,
         name: Optional[str] = None,
-        version: Optional[int] = 0,
+        version: Optional[int] = None,
     ) -> Prompt:
         """
         Gets a prompt either by:
@@ -1292,6 +1298,23 @@ class LiteralAPI(BaseLiteralAPI):
             return self.gql_helper(*get_prompt_helper(self, name=name, version=version))
         else:
             raise ValueError("Either the `id` or the `name` must be provided.")
+    
+    def promote_prompt(self, name: str, version: int) -> str:
+        """
+        Promotes the prompt with name to target version.
+
+        Args:
+            name (str): The name of the prompt lineage.
+            version (int): The version number to promote.
+
+        Returns:
+            str: The champion prompt ID.
+        """
+        lineage = self.get_or_create_prompt_lineage(name)
+        lineage_id = lineage["id"]
+
+        return self.gql_helper(*promote_prompt_helper(lineage_id, version))
+
 
     # Misc API
 
@@ -2383,18 +2406,14 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
     # Prompt API
 
-    async def create_prompt_lineage(self, name: str, description: Optional[str] = None):
-        """
-        Asynchronously creates a prompt lineage.
-
-        Args:
-            name (str): The name of the prompt lineage.
-            description (Optional[str]): An optional description of the prompt lineage.
-
-        Returns:
-            The result of the GraphQL helper function for creating a prompt lineage.
-        """
+    async def get_or_create_prompt_lineage(self, name: str, description: Optional[str] = None):
         return await self.gql_helper(*create_prompt_lineage_helper(name, description))
+
+    get_or_create_prompt_lineage.__doc__ = LiteralAPI.get_or_create_prompt_lineage.__doc__
+
+    @deprecated('Please use "get_or_create_prompt_lineage" instead.')
+    async def create_prompt_lineage(self, name: str, description: Optional[str] = None):
+        return await self.get_or_create_prompt_lineage(name, description)
 
     async def get_or_create_prompt(
         self,
@@ -2403,7 +2422,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         settings: Optional[ProviderSettings] = None,
         tools: Optional[List[Dict]] = None,
     ) -> Prompt:
-        lineage = await self.create_prompt_lineage(name)
+        lineage = await self.get_or_create_prompt_lineage(name)
         lineage_id = lineage["id"]
 
         sync_api = LiteralAPI(self.api_key, self.url)
@@ -2428,7 +2447,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         self,
         id: Optional[str] = None,
         name: Optional[str] = None,
-        version: Optional[int] = 0,
+        version: Optional[int] = None,
     ) -> Prompt:
         sync_api = LiteralAPI(self.api_key, self.url)
         if id:
@@ -2442,6 +2461,14 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
     get_prompt.__doc__ = LiteralAPI.get_prompt.__doc__
 
+    async def promote_prompt(self, name: str, version: int) -> str:
+        lineage = await self.get_or_create_prompt_lineage(name)
+        lineage_id = lineage["id"]
+
+        return await self.gql_helper(*promote_prompt_helper(lineage_id, version))
+
+    promote_prompt.__doc__ = LiteralAPI.promote_prompt.__doc__
+
     # Misc API
 
     async def get_my_project_id(self):
@@ -2449,3 +2476,4 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return response["projectId"]
 
     get_my_project_id.__doc__ = LiteralAPI.get_my_project_id.__doc__
+

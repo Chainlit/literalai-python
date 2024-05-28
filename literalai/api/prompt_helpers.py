@@ -59,3 +59,18 @@ def get_prompt_helper(
     description = "get prompt"
 
     return gql.GET_PROMPT_VERSION, description, variables, process_response
+
+
+def promote_prompt_helper(
+        lineage_id: str,
+        version: int,
+):
+    variables = {"lineageId": lineage_id, "version": version}
+
+    def process_response(response) -> str:
+        prompt = response["data"]["promotePromptVersion"]
+        return prompt["championId"] if prompt else None
+
+    description = "promote prompt version"
+
+    return gql.PROMOTE_PROMPT_VERSION, description, variables, process_response

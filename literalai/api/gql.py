@@ -1035,6 +1035,19 @@ query GetPrompt($id: String, $name: String, $version: Int) {
 }
 """
 
+PROMOTE_PROMPT_VERSION = """mutation promotePromptVersion(
+    $lineageId: String!
+    $version: Int!
+  ) {
+    promotePromptVersion(
+      lineageId: $lineageId
+      version: $version
+    ) {
+      id
+      championId
+    }
+  }"""
+
 
 def serialize_step(event, id):
     result = {}
