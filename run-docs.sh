@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ./run-docs ../literal-docs/python-client/
+# ./run-docs.sh ../literal-docs/python-client/
 
 # https://github.com/NiklasRosenstein/pydoc-markdown/blob/develop/src/pydoc_markdown/contrib/renderers/markdown.py#L52
 # https://github.com/NiklasRosenstein/pydoc-markdown/blob/develop/src/pydoc_markdown/contrib/processors/filter.py#L31
