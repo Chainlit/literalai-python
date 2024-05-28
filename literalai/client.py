@@ -21,7 +21,7 @@ from literalai.thread import ThreadContextManager, thread_decorator
 
 class BaseLiteralClient:
     """
-    **Use LiteralClient or AsyncLiteralClient in your code. Both classes inherit from BaseLiteralClient and have access to its methods.**
+    <Warning>Use LiteralClient or AsyncLiteralClient in your code. Both classes inherit from BaseLiteralClient and have access to its methods.</Warning>
 
     Attributes:
         api (Union[LiteralAPI, AsyncLiteralAPI]): Instance of the Literal API.
