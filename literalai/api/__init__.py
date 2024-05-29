@@ -182,7 +182,6 @@ class LiteralAPI(BaseLiteralAPI):
             raise Exception(error)
 
         variables = self._prepare_variables(variables)
-
         with httpx.Client() as client:
             response = client.post(
                 self.graphql_endpoint,
@@ -191,8 +190,10 @@ class LiteralAPI(BaseLiteralAPI):
                 timeout=10,
             )
 
-            if response.status_code >= 400:
-                raise_error(response.text)
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError:
+                raise_error(f"Failed to {description}: {response.text}")
 
             json = response.json()
 
@@ -232,7 +233,13 @@ class LiteralAPI(BaseLiteralAPI):
                 timeout=20,
             )
 
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError:
+                message = f"Failed to call {subpath}: {response.text}"
+                logger.error(message)
+                raise Exception(message)
+
             json = response.json()
 
             return json
@@ -1217,7 +1224,9 @@ class LiteralAPI(BaseLiteralAPI):
 
     # Prompt API
 
-    def get_or_create_prompt_lineage(self, name: str, description: Optional[str] = None):
+    def get_or_create_prompt_lineage(
+        self, name: str, description: Optional[str] = None
+    ):
         """
         Creates a prompt lineage with the specified name and optional description.
         If the prompt lineage with that name already exists, it is returned.
@@ -1298,7 +1307,7 @@ class LiteralAPI(BaseLiteralAPI):
             return self.gql_helper(*get_prompt_helper(self, name=name, version=version))
         else:
             raise ValueError("Either the `id` or the `name` must be provided.")
-    
+
     def promote_prompt(self, name: str, version: int) -> str:
         """
         Promotes the prompt with name to target version.
@@ -1314,7 +1323,6 @@ class LiteralAPI(BaseLiteralAPI):
         lineage_id = lineage["id"]
 
         return self.gql_helper(*promote_prompt_helper(lineage_id, version))
-
 
     # Misc API
 
@@ -1364,8 +1372,10 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 timeout=10,
             )
 
-            if response.status_code >= 400:
-                raise_error(response.text)
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError:
+                raise_error(f"Failed to {description}: {response.text}")
 
             json = response.json()
 
@@ -1405,7 +1415,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 timeout=20,
             )
 
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError:
+                message = f"Failed to call {subpath}: {response.text}"
+                logger.error(message)
+                raise Exception(message)
+
             json = response.json()
 
             return json
@@ -2406,10 +2422,14 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
     # Prompt API
 
-    async def get_or_create_prompt_lineage(self, name: str, description: Optional[str] = None):
+    async def get_or_create_prompt_lineage(
+        self, name: str, description: Optional[str] = None
+    ):
         return await self.gql_helper(*create_prompt_lineage_helper(name, description))
 
-    get_or_create_prompt_lineage.__doc__ = LiteralAPI.get_or_create_prompt_lineage.__doc__
+    get_or_create_prompt_lineage.__doc__ = (
+        LiteralAPI.get_or_create_prompt_lineage.__doc__
+    )
 
     @deprecated('Please use "get_or_create_prompt_lineage" instead.')
     async def create_prompt_lineage(self, name: str, description: Optional[str] = None):
@@ -2476,4 +2496,3 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return response["projectId"]
 
     get_my_project_id.__doc__ = LiteralAPI.get_my_project_id.__doc__
-
