@@ -1,24 +1,12 @@
 loaders:
   - type: python
-    search_path: ['.']
-    packages: ['literalai']
-
-processors:
-  - type: filter
-    documented_only: true
-    exclude_private: true
-    #expression: obj.location.filename.endswith('literalai/api/__init__.py')
-    skip_empty_modules: true
-    do_not_filter_modules: false
-    
 
 renderer:
   type: markdown
   descriptive_class_title: false
-  render_toc: true
+  render_toc: false
   add_module_prefix: false
   header_level_by_type:
-    module: 1
     class: 2
     method: 2
     function: 2

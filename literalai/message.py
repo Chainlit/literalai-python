@@ -57,23 +57,6 @@ class Message(Utils):
         tags: Optional[List[str]] = [],
         processor: Optional["EventProcessor"] = None,
     ):
-        """
-        Initializes the Message object.
-
-        Args:
-            content (str): The content of the message.
-            id (Optional[str], optional): The unique identifier for the message. Defaults to None.
-            type (Optional[MessageStepType], optional): The type of the message. Defaults to None.
-            name (Optional[str], optional): The name of the message. Defaults to None.
-            thread_id (Optional[str], optional): The identifier of the thread the message belongs to. Defaults to None.
-            parent_id (Optional[str], optional): The identifier of the parent message. Defaults to None.
-            scores (List[Score], optional): The scores associated with the message. Defaults to [].
-            attachments (List[Attachment], optional): The attachments associated with the message. Defaults to [].
-            metadata (Optional[Dict], optional): The metadata associated with the message. Defaults to {}.
-            timestamp (Optional[str], optional): The timestamp of the message. Defaults to None.
-            tags (Optional[List[str]], optional): The tags associated with the message. Defaults to None.
-            processor (Optional["EventProcessor"], optional): The processor to handle the message. Defaults to None.
-        """
         from time import sleep
 
         sleep(0.001)

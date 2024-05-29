@@ -25,33 +25,28 @@ if [ -z "$CONFIG_FILE" ]; then
 fi
 
 
-# Define your list
-apiFiles=(
+inputFiles=(
     "api.__init__"
-)
-
-clientFiles=(
-    client
-    message
-    step
-    thread
-    dataset
-    dataset_item
+    "client"
+    "message"
+    "step"
+    "thread"
+    "dataset"
+    "dataset_item"
 )
 
 
-mkdir -p $DOCS_DIR/api
-mkdir -p $DOCS_DIR/client
+mkdir -p $DOCS_DIR
 
-for i in "${apiFiles[@]}"; do
+# read all the files in the api directory and generate the docs
+for i in "${inputFiles[@]}"; do
     echo "Generating docs for $i in api/$i.mdx"
-
-    pydoc-markdown -I . -m literalai.$i --no-render-toc > $DOCS_DIR/api/$i.mdx
-done
-
-for i in "${clientFiles[@]}"; do
-    echo "Generating docs for $i in client/$i.mdx"
-
-    pydoc-markdown -I . -m literalai.$i --no-render-toc > $DOCS_DIR/client/$i.mdx
-    # python3 ../pydoc-markdown/src/pydoc_markdown/main.py -I  ~/Documents/CHAINLIT/python-client -m .$i --no-render-toc "$CONFIG_FILE" > $DOCS_DIR/client/$i.mdx
+    
+    if [ "$i" == "api.__init__" ]; then
+        rm -f $DOCS_DIR/api.mdx
+        pydoc-markdown -I . -m literalai.$i --no-render-toc "$CONFIG_FILE" > $DOCS_DIR/api.mdx
+    else
+        rm -f $DOCS_DIR/$i.mdx
+        pydoc-markdown -I . -m literalai.$i --no-render-toc "$CONFIG_FILE" > $DOCS_DIR/$i.mdx
+    fi
 done

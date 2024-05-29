@@ -71,17 +71,6 @@ class Thread(Utils):
         tags: Optional[List[str]] = [],
         participant_id: Optional[str] = None,
     ):
-        """
-        Initializes a Thread object.
-
-        Args:
-            id (str): The unique identifier for the thread.
-            steps (Optional[List[Step]], optional): The steps in the thread. Defaults to [].
-            name (Optional[str], optional): The name of the thread. Defaults to None.
-            metadata (Optional[Dict[str, Any]], optional): Additional metadata for the thread. Defaults to {}.
-            tags (Optional[List[str]], optional): A list of tags associated with the thread. Defaults to [].
-            participant_id (Optional[str], optional): The identifier of the participant in the thread. Defaults to None.
-        """
         self.id = id
         self.steps = steps
         self.name = name
@@ -169,15 +158,6 @@ class ThreadContextManager:
         name: "Optional[str]" = None,
         **kwargs,
     ):
-        """
-        Initializes a ThreadContextManager object.
-
-        Args:
-            client (BaseLiteralClient): The client to handle the thread.
-            thread_id (Optional[str], optional): The unique identifier for the thread. Defaults to None.
-            name (Optional[str], optional): The name of the thread. Defaults to None.
-            **kwargs: Additional keyword arguments for the thread.
-        """
         self.client = client
         self.thread_id = thread_id
         self.name = name
@@ -209,63 +189,26 @@ class ThreadContextManager:
             logger.error(f"Failed to upsert thread: {traceback.format_exc()}")
 
     def __call__(self, func):
-        """
-        Calls the function with the thread context.
-
-        Args:
-            func (Callable): The function to call.
-
-        Returns:
-            Callable: The function with the thread context.
-        """
         return thread_decorator(
             self.client, func=func, name=self.name, ctx_manager=self
         )
 
     def __enter__(self) -> "Optional[Thread]":
-        """
-        Enters the synchronous context and sets the active thread.
-
-        Returns:
-            Optional[Thread]: The active thread.
-        """
         thread_id = self.thread_id if self.thread_id else str(uuid.uuid4())
         active_thread_var.set(Thread(id=thread_id, name=self.name, **self.kwargs))
         return active_thread_var.get()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        Exits the synchronous context, updates the thread if necessary, and resets the active thread.
-
-        Args:
-            exc_type: The type of the exception, if any.
-            exc_val: The exception object, if any.
-            exc_tb: The traceback object, if any.
-        """
         if (thread := active_thread_var.get()) and thread.needs_upsert:
             self.upsert()
         active_thread_var.set(None)
 
     async def __aenter__(self):
-        """
-        Enters the asynchronous context and sets the active thread.
-
-        Returns:
-            Optional[Thread]: The active thread.
-        """
         thread_id = self.thread_id if self.thread_id else str(uuid.uuid4())
         active_thread_var.set(Thread(id=thread_id, name=self.name, **self.kwargs))
         return active_thread_var.get()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """
-        Exits the asynchronous context, updates the thread if necessary, and resets the active thread.
-
-        Args:
-            exc_type: The type of the exception, if any.
-            exc_val: The exception object, if any.
-            exc_tb: The traceback object, if any.
-        """
         if (thread := active_thread_var.get()) and thread.needs_upsert:
             self.upsert()
         active_thread_var.set(None)

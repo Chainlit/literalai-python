@@ -130,18 +130,6 @@ class Step(Utils):
         processor: Optional["EventProcessor"] = None,
         tags: Optional[List[str]] = None,
     ):
-        """
-        Initializes a Step object.
-
-        Args:
-            name (str, optional): The name of the step. Defaults to "".
-            type (Optional[StepType], optional): The type of the step. Defaults to None.
-            id (Optional[str], optional): The unique identifier for the step. Defaults to None.
-            thread_id (Optional[str], optional): The identifier of the thread the step belongs to. Defaults to None.
-            parent_id (Optional[str], optional): The identifier of the parent step. Defaults to None.
-            processor (Optional["EventProcessor"], optional): The processor to handle the step. Defaults to None.
-            tags (Optional[List[str]], optional): A list of tags associated with the step. Defaults to None.
-        """
         from time import sleep
 
         sleep(0.001)
@@ -299,18 +287,6 @@ class StepContextManager:
         thread_id: Optional[str] = None,
         **kwargs,
     ):
-        """
-        Initializes a StepContextManager object.
-
-        Args:
-            client (BaseLiteralClient): The client to handle the step.
-            name (str, optional): The name of the step. Defaults to "".
-            type (TrueStepType, optional): The type of the step. Defaults to "undefined".
-            id (Optional[str], optional): The unique identifier for the step. Defaults to None.
-            parent_id (Optional[str], optional): The identifier of the parent step. Defaults to None.
-            thread_id (Optional[str], optional): The identifier of the thread the step belongs to. Defaults to None.
-            **kwargs: Additional keyword arguments for the step.
-        """
         self.client = client
         self.step_name = name
         self.step_type = type
@@ -320,15 +296,6 @@ class StepContextManager:
         self.kwargs = kwargs
 
     def __call__(self, func):
-        """
-        Calls the function with the step context.
-
-        Args:
-            func (Callable): The function to call.
-
-        Returns:
-            Callable: The function with the step context.
-        """
         return step_decorator(
             self.client,
             func=func,
@@ -337,12 +304,6 @@ class StepContextManager:
         )
 
     async def __aenter__(self):
-        """
-        Enters the asynchronous context and starts the step.
-
-        Returns:
-            Step: The started step.
-        """
         self.step = self.client.start_step(
             name=self.step_name,
             type=self.step_type,
@@ -354,26 +315,12 @@ class StepContextManager:
         return self.step
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """
-        Exits the asynchronous context, handles the error, and ends the step.
-
-        Args:
-            exc_type: The type of the exception, if any.
-            exc_val: The exception object, if any.
-            exc_tb: The traceback object, if any.
-        """
         if exc_type:
             self.step.error = str(exc_val)
             await self.client.event_processor.aflush()
         self.step.end()
 
     def __enter__(self) -> Step:
-        """
-        Enters the synchronous context and starts the step.
-
-        Returns:
-            Step: The started step.
-        """
         self.step = self.client.start_step(
             name=self.step_name,
             type=self.step_type,
@@ -385,14 +332,6 @@ class StepContextManager:
         return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        Exits the synchronous context, handles the error, and ends the step.
-
-        Args:
-            exc_type: The type of the exception, if any.
-            exc_val: The exception object, if any.
-            exc_tb: The traceback object, if any.
-        """
         if exc_type:
             self.step.error = str(exc_val)
             self.client.event_processor.flush()
