@@ -192,8 +192,8 @@ class LiteralAPI(BaseLiteralAPI):
 
             try:
                 response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                raise_error(f"Failed to {description}: {str(e)}")
+            except httpx.HTTPStatusError:
+                raise_error(f"Failed to {description}: {response.text}")
 
             json = response.json()
 
@@ -235,8 +235,8 @@ class LiteralAPI(BaseLiteralAPI):
 
             try:
                 response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                message = f"Failed to call {subpath}: {str(e)}"
+            except httpx.HTTPStatusError:
+                message = f"Failed to call {subpath}: {response.text}"
                 logger.error(message)
                 raise Exception(message)
 
@@ -1374,8 +1374,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
             try:
                 response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                raise_error(f"Failed to {description}: {str(e)}")
+            except httpx.HTTPStatusError:
+                raise_error(f"Failed to {description}: {response.text}")
 
             json = response.json()
 
@@ -1417,8 +1417,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
             try:
                 response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                message = f"Failed to call {subpath}: {str(e)}"
+            except httpx.HTTPStatusError:
+                message = f"Failed to call {subpath}: {response.text}"
                 logger.error(message)
                 raise Exception(message)
 
