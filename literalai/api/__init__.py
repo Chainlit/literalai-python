@@ -177,6 +177,10 @@ class LiteralAPI(BaseLiteralAPI):
             Exception: If the GraphQL call fails or returns errors.
         """
 
+        def raise_error(error):
+            logger.error(f"Failed to {description}: {error}")
+            raise Exception(error)
+
         variables = self._prepare_variables(variables)
         with httpx.Client() as client:
             response = client.post(
@@ -189,18 +193,18 @@ class LiteralAPI(BaseLiteralAPI):
             try:
                 response.raise_for_status()
             except httpx.HTTPStatusError as e:
-                logger.error(f"Failed to {description}: {str(e)}")
+                raise_error(f"Failed to {description}: {str(e)}")
 
             json = response.json()
 
             if json.get("errors"):
-                logger.error(json["errors"])
+                raise_error(json["errors"])
 
             if json.get("data"):
                 if isinstance(json["data"], dict):
                     for key, value in json["data"].items():
                         if value and value.get("ok") is False:
-                            logger.error(
+                            raise_error(
                                 f"Failed to {description}: {value.get('message')}"
                             )
 
@@ -232,7 +236,9 @@ class LiteralAPI(BaseLiteralAPI):
             try:
                 response.raise_for_status()
             except httpx.HTTPStatusError as e:
-                logger.error(f"Failed to call {subpath}: {str(e)}")
+                message = f"Failed to call {subpath}: {str(e)}"
+                logger.error(message)
+                raise Exception(message)
 
             json = response.json()
 
@@ -1352,6 +1358,10 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             Exception: If the GraphQL call fails or returns errors.
         """
 
+        def raise_error(error):
+            logger.error(f"Failed to {description}: {error}")
+            raise Exception(error)
+
         variables = self._prepare_variables(variables)
 
         async with httpx.AsyncClient() as client:
@@ -1365,18 +1375,18 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             try:
                 response.raise_for_status()
             except httpx.HTTPStatusError as e:
-                logger.error(f"Failed to {description}: {str(e)}")
+                raise_error(f"Failed to {description}: {str(e)}")
 
             json = response.json()
 
             if json.get("errors"):
-                logger.error(json["errors"])
+                raise_error(json["errors"])
 
             if json.get("data"):
                 if isinstance(json["data"], dict):
                     for key, value in json["data"].items():
                         if value and value.get("ok") is False:
-                            logger.error(
+                            raise_error(
                                 f"Failed to {description}: {value.get('message')}"
                             )
 
@@ -1408,7 +1418,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             try:
                 response.raise_for_status()
             except httpx.HTTPStatusError as e:
-                logger.error(f"Failed to call {subpath}: {str(e)}")
+                message = f"Failed to call {subpath}: {str(e)}"
+                logger.error(message)
+                raise Exception(message)
 
             json = response.json()
 
