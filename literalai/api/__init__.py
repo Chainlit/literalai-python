@@ -959,7 +959,7 @@ class LiteralAPI(BaseLiteralAPI):
         Sends a list of steps to be processed.
 
         Args:
-            steps (List[Union[StepDict, "Step"]]): A list of steps or step dictionaries to send.
+            steps (List[Union[StepDict, Step]]): A list of steps or step dictionaries to send.
 
         Returns:
             The result of the GraphQL helper function for sending steps.
@@ -2128,7 +2128,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         Asynchronously sends a list of steps to be processed.
 
         Args:
-            steps (List[Union[StepDict, "Step"]]): A list of steps or step dictionaries to send.
+            steps (List[Union[StepDict, Step]]): A list of steps or step dictionaries to send.
 
         Returns:
             The result of the GraphQL helper function for sending steps.
