@@ -182,7 +182,7 @@ class LiteralAPI(BaseLiteralAPI):
             raise Exception(error)
 
         variables = self._prepare_variables(variables)
-        with httpx.Client() as client:
+        with httpx.Client(follow_redirects=True) as client:
             response = client.post(
                 self.graphql_endpoint,
                 json={"query": query, "variables": variables},
@@ -225,7 +225,7 @@ class LiteralAPI(BaseLiteralAPI):
         Returns:
             Dict: The JSON response from the REST API endpoint.
         """
-        with httpx.Client() as client:
+        with httpx.Client(follow_redirects=True) as client:
             response = client.post(
                 self.rest_endpoint + subpath,
                 json=body,
@@ -643,7 +643,7 @@ class LiteralAPI(BaseLiteralAPI):
 
         path = "/api/upload/file"
 
-        with httpx.Client() as client:
+        with httpx.Client(follow_redirects=True) as client:
             response = client.post(
                 f"{self.url}{path}",
                 json=body,
@@ -679,7 +679,7 @@ class LiteralAPI(BaseLiteralAPI):
         # Note: The content_type parameter is not needed here, as the correct MIME type should be set in the 'Content-Type' field from upload_details
         form_data["file"] = (id, content, mime)
 
-        with httpx.Client() as client:
+        with httpx.Client(follow_redirects=True) as client:
             if upload_type == "raw":
                 upload_response = client.request(
                     url=url,
@@ -1364,7 +1364,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
         variables = self._prepare_variables(variables)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.post(
                 self.graphql_endpoint,
                 json={"query": query, "variables": variables},
@@ -1407,7 +1407,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         Returns:
             Dict: The JSON response from the REST API endpoint.
         """
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.post(
                 self.rest_endpoint + subpath,
                 json=body,
@@ -1852,7 +1852,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
         path = "/api/upload/file"
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.post(
                 f"{self.url}{path}",
                 json=body,
@@ -1888,7 +1888,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         # Note: The content_type parameter is not needed here, as the correct MIME type should be set in the 'Content-Type' field from upload_details
         form_data["file"] = (id, content, mime)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             if upload_type == "raw":
                 upload_response = await client.request(
                     url=url,
