@@ -195,7 +195,12 @@ class LiteralAPI(BaseLiteralAPI):
             except httpx.HTTPStatusError:
                 raise_error(f"Failed to {description}: {response.text}")
 
-            json = response.json()
+            try:
+                json = response.json()
+            except ValueError as e:
+                raise_error(
+                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
+                )
 
             if json.get("errors"):
                 raise_error(json["errors"])
@@ -240,9 +245,12 @@ class LiteralAPI(BaseLiteralAPI):
                 logger.error(message)
                 raise Exception(message)
 
-            json = response.json()
-
-            return json
+            try:
+                return response.json()
+            except ValueError as e:
+                raise ValueError(
+                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
+                )
 
     def gql_helper(
         self,
@@ -1377,7 +1385,12 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             except httpx.HTTPStatusError:
                 raise_error(f"Failed to {description}: {response.text}")
 
-            json = response.json()
+            try:
+                json = response.json()
+            except ValueError as e:
+                raise_error(
+                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
+                )
 
             if json.get("errors"):
                 raise_error(json["errors"])
@@ -1422,9 +1435,12 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 logger.error(message)
                 raise Exception(message)
 
-            json = response.json()
-
-            return json
+            try:
+                return response.json()
+            except ValueError as e:
+                raise ValueError(
+                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
+                )
 
     async def gql_helper(
         self,
