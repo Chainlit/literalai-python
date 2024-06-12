@@ -313,13 +313,13 @@ class Teste2e:
 
         @async_client.thread
         def thread_decorated():
-            @async_client.step(name="foo", type="llm", tags=["to_score"])
+            @async_client.step(name="foo", type="run", tags=["to_score"])
             def step_decorated():
                 t = async_client.get_current_thread()
                 s = async_client.get_current_step()
                 assert s is not None
                 assert s.name == "foo"
-                assert s.type == "llm"
+                assert s.type == "run"
                 assert s.tags == ["to_score"]
                 return t.id, s.id
 
@@ -330,13 +330,13 @@ class Teste2e:
 
         @async_client.thread
         async def a_thread_decorated():
-            @async_client.step(name="foo", type="llm")
+            @async_client.step(name="foo", type="run")
             async def a_step_decorated():
                 t = async_client.get_current_thread()
                 s = async_client.get_current_step()
                 assert s is not None
                 assert s.name == "foo"
-                assert s.type == "llm"
+                assert s.type == "run"
                 return t.id, s.id
 
             return await a_step_decorated()

@@ -49,7 +49,12 @@ def create_generation_helper(generation: Union[ChatGeneration, CompletionGenerat
     variables = {"generation": generation.to_dict()}
 
     def process_response(response):
-        return BaseGeneration.from_dict(response["data"]["createGeneration"])
+        generation_as_step = response["data"]["createGeneration"]
+        deprecated_generation = {
+            "id": generation_as_step["id"],
+            "type": generation_as_step["promptType"],
+        }
+        return BaseGeneration.from_dict(deprecated_generation)
 
     description = "create generation"
 
