@@ -55,6 +55,7 @@ def get_llama_index_callback():
                 event_ends_to_ignore=event_ends_to_ignore,
             )
             self.client = client
+            self.is_pristine = True
 
             self.steps = {}
 
@@ -78,7 +79,9 @@ def get_llama_index_callback():
             **kwargs: Any,
         ) -> str:
             """Run when an event starts and return id of event."""
+
             step_type: TrueStepType = "undefined"
+
             if event_type == CBEventType.RETRIEVE:
                 step_type = "retrieval"
             elif event_type == CBEventType.QUERY:
@@ -88,12 +91,26 @@ def get_llama_index_callback():
             else:
                 return event_id
 
+            step_type = (
+                "run" if self.is_pristine and step_type != "llm" else "undefined"
+            )
+
+            self.is_pristine = False
+
             step = self.client.start_step(
                 name=event_type.value,
                 type=step_type,
                 parent_id=self._get_parent_id(parent_id),
                 id=event_id,
             )
+            if event_type == CBEventType.EXCEPTION:
+                step.error = (
+                    payload.get(EventPayload.EXCEPTION, {}).get("message", "")
+                    if payload
+                    else None
+                )
+                step.end()
+                return event_id
             self.steps[event_id] = step
             step.start_time = utc_now()
             step.input = payload or {}

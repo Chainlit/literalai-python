@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="literalai",
-    version="0.0.606",  # update version in literalai/version.py
+    version="0.0.607",  # update version in literalai/version.py
     description="An SDK for observability in Python applications",
     author="Literal AI",
     package_data={"literalai": ["py.typed"]},
