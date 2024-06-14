@@ -767,7 +767,7 @@ CREATE_GENERATION = """
 mutation CreateGeneration($generation: GenerationPayloadInput!) {
     createGeneration(generation: $generation) {
         id
-        promptType
+        type
     }
 }
 """
