@@ -1,7 +1,9 @@
+import html
 import sys
 from dataclasses import dataclass
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
+
 from typing_extensions import deprecated
 
 if sys.version_info < (3, 12):
@@ -151,14 +153,14 @@ class Prompt(Utils):
                 self.id, variables_with_defaults, message.copy()
             )
             if isinstance(formatted_message["content"], str):
-                formatted_message["content"] = chevron.render(
-                    message["content"], variables_with_defaults
+                formatted_message["content"] = html.unescape(
+                    chevron.render(message["content"], variables_with_defaults)
                 )
             else:
                 for content in formatted_message["content"]:
                     if content["type"] == "text":
-                        content["text"] = chevron.render(
-                            content["text"], variables_with_defaults
+                        content["text"] = html.unescape(
+                            chevron.render(content["text"], variables_with_defaults)
                         )
 
             formatted_messages.append(formatted_message)
@@ -206,7 +208,9 @@ class Prompt(Utils):
 
                 for index, message in enumerate(self.messages):
                     template = message.prompt.template  # type: ignore
-                    content = chevron.render(template, variables_with_defaults)
+                    content = html.unescape(
+                        chevron.render(template, variables_with_defaults)
+                    )
                     additonal_kwargs = {}
                     if self.orig_messages and index < len(self.orig_messages):
                         additonal_kwargs = {
