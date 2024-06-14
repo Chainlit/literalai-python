@@ -158,7 +158,7 @@ class BaseLiteralClient:
         content: str = "",
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
-        type: Optional[MessageStepType] = None,
+        type: Optional[MessageStepType] = "assistant_message",
         name: Optional[str] = None,
         thread_id: Optional[str] = None,
         attachments: List[Attachment] = [],

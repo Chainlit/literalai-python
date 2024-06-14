@@ -347,7 +347,7 @@ def get_langchain_callback():
             elif run.run_type == "embedding":
                 step_type = "embedding"
 
-            if not self.steps:
+            if not self.steps and step_type != "llm":
                 step_type = "run"
 
             step = self.client.start_step(

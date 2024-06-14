@@ -29,7 +29,7 @@ class Message(Utils):
         self,
         content: str,
         id: Optional[str] = None,
-        type: Optional[MessageStepType] = None,
+        type: Optional[MessageStepType] = "assistant_message",
         name: Optional[str] = None,
         thread_id: Optional[str] = None,
         parent_id: Optional[str] = None,
@@ -78,8 +78,10 @@ class Message(Utils):
             if active_thread := active_thread_var.get():
                 self.thread_id = active_thread.id
 
-        if not self.thread_id:
-            raise Exception("Message must be initialized with a thread_id.")
+        if not self.thread_id and not self.parent_id:
+            raise Exception(
+                "Message must be initialized with a thread_id or a parent id."
+            )
 
         if self.processor is None:
             raise Exception(
