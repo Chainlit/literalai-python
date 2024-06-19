@@ -48,7 +48,6 @@ def instrument_mistral(client: "LiteralClient"):
 
     def init_generation(generation_type: "GenerationType", kwargs):
         model = kwargs.get("model")
-        tools = kwargs.get("tools")
 
         if generation_type == GenerationType.CHAT:
             orig_messages = kwargs.get("messages")
@@ -61,25 +60,18 @@ def instrument_mistral(client: "LiteralClient"):
                 "temperature": kwargs.get("temperature"),
                 "top_p": kwargs.get("top_p"),
                 "max_tokens": kwargs.get("max_tokens"),
+                "stream": kwargs.get("stream"),
+                "safe_prompt": kwargs.get("safe_prompt"),
+                "random_seed": kwargs.get("random_seed"), 
+                "tool_choice": kwargs.get("tool_choice"),
+                "response_format": kwargs.get("response_format"),
                 
-                # "stream": kwargs.get("stream"),
-                # "stop": kwargs.get("stop"), # TODO: add stop for completion only
-                # "seed": kwargs.get("seed"), # TODO: check Mistral's random seed
-                # TODO: check safe_prompt parameter
-
-                # "tool_choice": kwargs.get("tool_choice"),
+                # TODO: add stop for completion API
                 # TODO: check stream for function calling
-                # "frequency_penalty": kwargs.get("frequency_penalty"),
-                # "logit_bias": kwargs.get("logit_bias"),
-                # "logprobs": kwargs.get("logprobs"),
-                # "top_logprobs": kwargs.get("top_logprobs"),
-                # "n": kwargs.get("n"),
-                # "presence_penalty": kwargs.get("presence_penalty"),
-                # "response_format": kwargs.get("response_format"),
             }
             settings = {k: v for k, v in settings.items() if v is not None}
             return ChatGeneration(
-                # TODOL add prompt id and variables
+                # TODO add prompt id and variables
                 provider="mistral",
                 model=model,
                 settings=settings,
