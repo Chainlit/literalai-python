@@ -130,3 +130,21 @@ def wrap_all(
             )(original_method)
 
         setattr(target_object, str(patch["method"]), wrapped_method)
+
+def wrap_sync(
+    to_wrap: list,
+    before_wrapper,
+    after_wrapper,
+):
+    for patch in to_wrap:
+        module = import_module(str(patch["module"]))
+        target_object = getattr(module, str(patch["object"]))
+        original_method = getattr(target_object, str(patch["method"]))
+
+        if not patch["async"]:
+            wrapped_method = sync_wrapper(
+                before_func=before_wrapper(metadata=patch["metadata"]),
+                after_func=after_wrapper(metadata=patch["metadata"]),
+            )(original_method)
+
+        setattr(target_object, str(patch["method"]), wrapped_method)
