@@ -23,8 +23,7 @@ from literalai.wrappers import AfterContext, BeforeContext, wrap_all
 
 REQUIREMENTS = ["mistralai>=0.2.0"]
 
-
-TO_WRAP = [
+APIS_TO_WRAP = [
     {
         "module": "mistralai.client",
         "object": "MistralClient",
@@ -37,18 +36,36 @@ TO_WRAP = [
     {
         "module": "mistralai.client",
         "object": "MistralClient",
-        "method": "completion",
+        "method": "chat_stream",
         "metadata": {
-            "type": GenerationType.COMPLETION,
+            "type": GenerationType.CHAT,
         },
         "async": False,
     },
     {
-        "module": "mistralai.client",
-        "object": "MistralClient",
+        "module": "mistralai.async_client",
+        "object": "MistralAsyncClient",
+        "method": "chat",
+        "metadata": {
+            "type": GenerationType.CHAT,
+        },
+        "async": True,
+    },
+    {
+        "module": "mistralai.async_client",
+        "object": "MistralAsyncClient",
         "method": "chat_stream",
         "metadata": {
             "type": GenerationType.CHAT,
+        },
+        "async": True,
+    },
+    {
+        "module": "mistralai.client",
+        "object": "MistralClient",
+        "method": "completion",
+        "metadata": {
+            "type": GenerationType.COMPLETION,
         },
         "async": False,
     },
@@ -64,27 +81,9 @@ TO_WRAP = [
     {
         "module": "mistralai.async_client",
         "object": "MistralAsyncClient",
-        "method": "chat",
-        "metadata": {
-            "type": GenerationType.CHAT,
-        },
-        "async": True,
-    },
-    {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
         "method": "completion",
         "metadata": {
             "type": GenerationType.COMPLETION,
-        },
-        "async": True,
-    },
-    {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
-        "method": "chat_stream",
-        "metadata": {
-            "type": GenerationType.CHAT,
         },
         "async": True,
     },
@@ -504,7 +503,7 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
         return after
 
     wrap_all(
-        TO_WRAP,
+        APIS_TO_WRAP,
         before_wrapper,
         after_wrapper,
         async_before_wrapper,
