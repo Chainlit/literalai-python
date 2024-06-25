@@ -17,6 +17,14 @@ def ensure_values_serializable(data):
     except ImportError:
         pass
 
+    try:
+        from mistralai.models.chat_completion import ChatMessage
+
+        if isinstance(data, ChatMessage):
+            return filter_none_values(data.model_dump())
+    except ImportError:
+        pass
+
     if isinstance(data, dict):
         return {key: ensure_values_serializable(value) for key, value in data.items()}
     elif isinstance(data, list):

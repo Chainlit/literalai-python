@@ -174,11 +174,7 @@ class Teste2e:
 
         steps = client.api.get_steps(
             first=1,
-            filters=[{
-                "field": "tags",
-                "operator": "in",
-                "value": ["to_score"]
-            }]
+            filters=[{"field": "tags", "operator": "in", "value": ["to_score"]}],
         )
         assert len(steps.data) == 1
         assert steps.data[0].id == step.id
@@ -595,7 +591,9 @@ is a templated list."""
 
     @pytest.mark.timeout(5)
     async def test_champion_prompt(self, client: LiteralClient):
-        new_prompt = client.api.get_or_create_prompt(name="Default", template_messages=[{"role": "user", "content": "Hello"}])
+        new_prompt = client.api.get_or_create_prompt(
+            name="Default", template_messages=[{"role": "user", "content": "Hello"}]
+        )
         new_prompt.promote()
 
         prompt = client.api.get_prompt(name="Default")

@@ -1,14 +1,13 @@
-import logging
 import time
-from typing import TYPE_CHECKING, Dict, Union
+from typing import AsyncGenerator, Dict, Union
+from typing import TYPE_CHECKING
 
-from literalai.instrumentation import OPENAI_PROVIDER
+from literalai.instrumentation import MISTRALAI_PROVIDER
 from literalai.requirements import check_all_requirements
 
 if TYPE_CHECKING:
     from literalai.client import LiteralClient
 
-from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import ensure_values_serializable
 from literalai.my_types import (
     ChatGeneration,
@@ -16,44 +15,82 @@ from literalai.my_types import (
     GenerationMessage,
     GenerationType,
 )
+
+from types import GeneratorType
+from literalai.context import active_steps_var, active_thread_var
+
 from literalai.wrappers import AfterContext, BeforeContext, wrap_all
 
-logger = logging.getLogger(__name__)
+REQUIREMENTS = ["mistralai>=0.2.0"]
 
-REQUIREMENTS = ["openai>=1.0.0"]
-
-TO_WRAP = [
+APIS_TO_WRAP = [
     {
-        "module": "openai.resources.chat.completions",
-        "object": "Completions",
-        "method": "create",
+        "module": "mistralai.client",
+        "object": "MistralClient",
+        "method": "chat",
         "metadata": {
             "type": GenerationType.CHAT,
         },
         "async": False,
     },
     {
-        "module": "openai.resources.completions",
-        "object": "Completions",
-        "method": "create",
+        "module": "mistralai.client",
+        "object": "MistralClient",
+        "method": "chat_stream",
         "metadata": {
-            "type": GenerationType.COMPLETION,
+            "type": GenerationType.CHAT,
         },
         "async": False,
     },
     {
-        "module": "openai.resources.chat.completions",
-        "object": "AsyncCompletions",
-        "method": "create",
+        "module": "mistralai.async_client",
+        "object": "MistralAsyncClient",
+        "method": "chat",
         "metadata": {
             "type": GenerationType.CHAT,
         },
         "async": True,
     },
     {
-        "module": "openai.resources.completions",
-        "object": "AsyncCompletions",
-        "method": "create",
+        "module": "mistralai.async_client",
+        "object": "MistralAsyncClient",
+        "method": "chat_stream",
+        "metadata": {
+            "type": GenerationType.CHAT,
+        },
+        "async": True,
+    },
+    {
+        "module": "mistralai.client",
+        "object": "MistralClient",
+        "method": "completion",
+        "metadata": {
+            "type": GenerationType.COMPLETION,
+        },
+        "async": False,
+    },
+    {
+        "module": "mistralai.client",
+        "object": "MistralClient",
+        "method": "completion_stream",
+        "metadata": {
+            "type": GenerationType.COMPLETION,
+        },
+        "async": False,
+    },
+    {
+        "module": "mistralai.async_client",
+        "object": "MistralAsyncClient",
+        "method": "completion",
+        "metadata": {
+            "type": GenerationType.COMPLETION,
+        },
+        "async": True,
+    },
+    {
+        "module": "mistralai.async_client",
+        "object": "MistralAsyncClient",
+        "method": "completion_stream",
         "metadata": {
             "type": GenerationType.COMPLETION,
         },
@@ -61,17 +98,17 @@ TO_WRAP = [
     },
 ]
 
-is_openai_instrumented = False
+is_mistralai_instrumented = False
 
 
-def instrument_openai(client: "LiteralClient", on_new_generation=None):
-    global is_openai_instrumented
-    if is_openai_instrumented:
+def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
+    global is_mistralai_instrumented
+    if is_mistralai_instrumented:
         return
 
     if not check_all_requirements(REQUIREMENTS):
         raise Exception(
-            f"OpenAI instrumentation requirements not satisfied: {REQUIREMENTS}"
+            f"Mistral AI instrumentation requirements not satisfied: {REQUIREMENTS}"
         )
 
     import inspect
@@ -84,9 +121,6 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
             raise ValueError(
                 "on_new_generation should take 2 parameters: generation and timing"
             )
-
-    from openai import AsyncStream, Stream
-    from openai.types.chat.chat_completion_chunk import ChoiceDelta
 
     def init_generation(generation_type: "GenerationType", kwargs):
         model = kwargs.get("model")
@@ -109,57 +143,44 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
 
             settings = {
                 "model": model,
-                "frequency_penalty": kwargs.get("frequency_penalty"),
-                "logit_bias": kwargs.get("logit_bias"),
-                "logprobs": kwargs.get("logprobs"),
-                "top_logprobs": kwargs.get("top_logprobs"),
-                "max_tokens": kwargs.get("max_tokens"),
-                "n": kwargs.get("n"),
-                "presence_penalty": kwargs.get("presence_penalty"),
-                "response_format": kwargs.get("response_format"),
-                "seed": kwargs.get("seed"),
-                "stop": kwargs.get("stop"),
-                "stream": kwargs.get("stream"),
                 "temperature": kwargs.get("temperature"),
                 "top_p": kwargs.get("top_p"),
+                "max_tokens": kwargs.get("max_tokens"),
+                "stream": kwargs.get("stream"),
+                "safe_prompt": kwargs.get("safe_prompt"),
+                "random_seed": kwargs.get("random_seed"),
                 "tool_choice": kwargs.get("tool_choice"),
+                "response_format": kwargs.get("response_format"),
             }
             settings = {k: v for k, v in settings.items() if v is not None}
             return ChatGeneration(
                 prompt_id=prompt_id,
                 variables=variables,
-                provider=OPENAI_PROVIDER,
+                provider=MISTRALAI_PROVIDER,
                 model=model,
                 tools=tools,
                 settings=settings,
                 messages=messages,
                 tags=kwargs.get("literalai_tags"),
             )
-
         elif generation_type == GenerationType.COMPLETION:
             settings = {
-                "model": model,
-                "best_of": kwargs.get("best_of"),
-                "echo": kwargs.get("echo"),
-                "frequency_penalty": kwargs.get("frequency_penalty"),
-                "logit_bias": kwargs.get("logit_bias"),
-                "logprobs": kwargs.get("logprobs"),
-                "max_tokens": kwargs.get("max_tokens"),
-                "n": kwargs.get("n"),
-                "presence_penalty": kwargs.get("presence_penalty"),
-                "seed": kwargs.get("seed"),
-                "stop": kwargs.get("stop"),
-                "stream": kwargs.get("stream"),
                 "suffix": kwargs.get("suffix"),
+                "model": model,
                 "temperature": kwargs.get("temperature"),
                 "top_p": kwargs.get("top_p"),
+                "max_tokens": kwargs.get("max_tokens"),
+                "min_tokens": kwargs.get("min_tokens"),
+                "stream": kwargs.get("stream"),
+                "random_seed": kwargs.get("random_seed"),
+                "stop": kwargs.get("stop"),
             }
             settings = {k: v for k, v in settings.items() if v is not None}
             return CompletionGeneration(
-                provider=OPENAI_PROVIDER,
+                provider=MISTRALAI_PROVIDER,
+                prompt=kwargs.get("prompt"),
                 model=model,
                 settings=settings,
-                prompt=kwargs.get("prompt"),
                 tags=kwargs.get("literalai_tags"),
             )
 
@@ -168,10 +189,9 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
     ):
         if generation and isinstance(generation, ChatGeneration):
             generation.message_completion = result.choices[0].message.model_dump()
-
         elif generation and isinstance(generation, CompletionGeneration):
             if generation and generation.type == GenerationType.COMPLETION:
-                generation.completion = result.choices[0].text
+                generation.completion = result.choices[0].message.content
 
         if generation:
             generation.input_token_count = result.usage.prompt_tokens
@@ -188,7 +208,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 step = client.start_step(
                     name=context["original_func"].__name__, type="llm"
                 )
-                step.name = generation.model or OPENAI_PROVIDER
+                step.name = generation.model or MISTRALAI_PROVIDER
                 if isinstance(generation, ChatGeneration):
                     step.input = {"content": generation.messages}
                 else:
@@ -211,7 +231,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 step = client.start_step(
                     name=context["original_func"].__name__, type="llm"
                 )
-                step.name = generation.model or OPENAI_PROVIDER
+                step.name = generation.model or MISTRALAI_PROVIDER
                 if isinstance(generation, ChatGeneration):
                     step.input = {"content": generation.messages}
                 else:
@@ -224,24 +244,10 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
 
         return before
 
-    def process_delta(new_delta: ChoiceDelta, message_completion: GenerationMessage):
-        if new_delta.function_call:
-            if new_delta.function_call.name:
-                message_completion["function_call"] = {
-                    "name": new_delta.function_call.name
-                }
+    from mistralai.models.chat_completion import DeltaMessage
 
-            if not message_completion["function_call"]:
-                return False
-
-            if new_delta.function_call.arguments:
-                if "arguments" not in message_completion["function_call"]:
-                    message_completion["function_call"]["arguments"] = ""
-                message_completion["function_call"][
-                    "arguments"
-                ] += new_delta.function_call.arguments
-            return True
-        elif new_delta.tool_calls:
+    def process_delta(new_delta: DeltaMessage, message_completion: GenerationMessage):
+        if new_delta.tool_calls:
             if "tool_calls" not in message_completion:
                 message_completion["tool_calls"] = []
             delta_tool_call = new_delta.tool_calls[0]
@@ -260,7 +266,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                     }
                 )
             if delta_function.arguments:
-                message_completion["tool_calls"][delta_tool_call.index]["function"][  # type: ignore
+                message_completion["tool_calls"][-1]["function"][  # type: ignore
                     "arguments"
                 ] += delta_function.arguments
 
@@ -274,7 +280,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
 
     def streaming_response(
         generation: Union[ChatGeneration, CompletionGeneration],
-        result,
+        result: GeneratorType,
         context: AfterContext,
     ):
         completion = ""
@@ -296,13 +302,16 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                         ) * 1000
                     token_count += 1
             elif generation and isinstance(generation, CompletionGeneration):
-                if len(chunk.choices) > 0 and chunk.choices[0].text is not None:
+                if (
+                    len(chunk.choices) > 0
+                    and chunk.choices[0].message.content is not None
+                ):
                     if generation.tt_first_token is None:
                         generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                    completion += chunk.choices[0].text
+                    completion += chunk.choices[0].message.content
 
             if (
                 generation
@@ -354,8 +363,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 generation.model = model
                 if generation.settings:
                     generation.settings["model"] = model
-
-            if isinstance(result, Stream):
+            if isinstance(result, GeneratorType):
                 return streaming_response(generation, result, context)
             else:
                 generation.duration = time.time() - context["start"]
@@ -384,7 +392,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
 
     async def async_streaming_response(
         generation: Union[ChatGeneration, CompletionGeneration],
-        result,
+        result: AsyncGenerator,
         context: AfterContext,
     ):
         completion = ""
@@ -406,13 +414,16 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                         ) * 1000
                     token_count += 1
             elif generation and isinstance(generation, CompletionGeneration):
-                if len(chunk.choices) > 0 and chunk.choices[0].text is not None:
+                if (
+                    len(chunk.choices) > 0
+                    and chunk.choices[0].message.content is not None
+                ):
                     if generation.tt_first_token is None:
                         generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                    completion += chunk.choices[0].text
+                    completion += chunk.choices[0].message.content
 
             if (
                 generation
@@ -464,7 +475,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 if generation.settings:
                     generation.settings["model"] = model
 
-            if isinstance(result, AsyncStream):
+            if isinstance(result, AsyncGenerator):
                 return async_streaming_response(generation, result, context)
             else:
                 generation.duration = time.time() - context["start"]
@@ -492,11 +503,11 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
         return after
 
     wrap_all(
-        TO_WRAP,
+        APIS_TO_WRAP,
         before_wrapper,
         after_wrapper,
         async_before_wrapper,
         async_after_wrapper,
     )
 
-    is_openai_instrumented = True
+    is_mistralai_instrumented = True
