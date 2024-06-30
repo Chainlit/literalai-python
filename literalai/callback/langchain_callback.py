@@ -337,7 +337,8 @@ def get_langchain_callback():
             if run.run_type == "agent":
                 step_type = "run"
             elif run.run_type == "chain":
-                pass
+                if not self.steps:
+                    step_type = "run"
             elif run.run_type == "llm":
                 step_type = "llm"
             elif run.run_type == "retriever":
@@ -346,9 +347,6 @@ def get_langchain_callback():
                 step_type = "tool"
             elif run.run_type == "embedding":
                 step_type = "embedding"
-
-            if not self.steps and step_type != "llm":
-                step_type = "run"
 
             step = self.client.start_step(
                 id=str(run.id), name=run.name, type=step_type, parent_id=parent_id

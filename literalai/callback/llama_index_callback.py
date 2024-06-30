@@ -55,7 +55,6 @@ def get_llama_index_callback():
                 event_ends_to_ignore=event_ends_to_ignore,
             )
             self.client = client
-            self.is_pristine = True
 
             self.steps = {}
 
@@ -90,12 +89,6 @@ def get_llama_index_callback():
                 step_type = "llm"
             else:
                 return event_id
-
-            step_type = (
-                "run" if self.is_pristine and step_type != "llm" else "undefined"
-            )
-
-            self.is_pristine = False
 
             step = self.client.start_step(
                 name=event_type.value,
