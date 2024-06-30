@@ -1,12 +1,13 @@
-from asyncio import sleep
-from literalai.client import LiteralClient
-import pytest
 import os
-from pytest_httpx import HTTPXMock
 import urllib.parse
-from mistralai.client import MistralClient
-from mistralai.async_client import MistralAsyncClient
+from asyncio import sleep
 
+import pytest
+from mistralai.async_client import MistralAsyncClient
+from mistralai.client import MistralClient
+from pytest_httpx import HTTPXMock
+
+from literalai.client import LiteralClient
 from literalai.my_types import ChatGeneration, CompletionGeneration
 
 
@@ -92,7 +93,7 @@ class TestMistralAI:
 
         assert step.type == "llm"
         assert step.generation is not None
-        assert type(step.generation) == ChatGeneration
+        assert type(step.generation) is ChatGeneration
         assert step.generation.settings is not None
         assert step.generation.model == "open-mistral-7b"
 
@@ -148,7 +149,7 @@ class TestMistralAI:
 
         assert step.type == "llm"
         assert step.generation is not None
-        assert type(step.generation) == CompletionGeneration
+        assert type(step.generation) is CompletionGeneration
         assert step.generation.settings is not None
         assert step.generation.model == "codestral-2405"
         assert step.generation.completion == "2\n\n"
@@ -187,7 +188,6 @@ class TestMistralAI:
 
         @client.thread
         async def main():
-
             # https://docs.mistral.ai/api/#operation/createChatCompletion
             await mai_client.chat(
                 model="open-mistral-7b",
@@ -213,7 +213,7 @@ class TestMistralAI:
 
         assert step.type == "llm"
         assert step.generation is not None
-        assert type(step.generation) == ChatGeneration
+        assert type(step.generation) is ChatGeneration
         assert step.generation.settings is not None
         assert step.generation.model == "open-mistral-7b"
 
@@ -271,7 +271,7 @@ class TestMistralAI:
 
         assert step.type == "llm"
         assert step.generation is not None
-        assert type(step.generation) == CompletionGeneration
+        assert type(step.generation) is CompletionGeneration
         assert step.generation.settings is not None
         assert step.generation.model == "codestral-2405"
         assert step.generation.completion == "2\n\n"
