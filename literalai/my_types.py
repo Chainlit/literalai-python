@@ -1,6 +1,6 @@
+import json
 import sys
 import uuid
-import json
 from enum import Enum, unique
 from typing import Any, Dict, Generic, List, Literal, Optional, Protocol, TypeVar, Union
 
@@ -21,6 +21,7 @@ class Utils:
 
     def __repr__(self):
         return json.dumps(self.to_dict(), sort_keys=True, indent=4)
+
 
 @dataclass(repr=False)
 class PageInfo(Utils):
@@ -139,6 +140,7 @@ class BaseGeneration(Utils):
 
     def to_dict(self):
         return {
+            "id": self.id,
             "promptId": self.prompt_id,
             "provider": self.provider,
             "model": self.model,
