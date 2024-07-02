@@ -99,7 +99,7 @@ class TestOpenAI:
 
         assert step.type == "llm"
         assert step.generation is not None
-        assert type(step.generation) == ChatGeneration
+        assert type(step.generation) is ChatGeneration
         assert step.generation.settings is not None
         assert step.generation.model == "gpt-3.5-turbo-0613"
 
@@ -155,7 +155,7 @@ class TestOpenAI:
 
         assert step.type == "llm"
         assert step.generation is not None
-        assert type(step.generation) == CompletionGeneration
+        assert type(step.generation) is CompletionGeneration
         assert step.generation.settings is not None
         assert step.generation.model == "gpt-3.5-turbo"
         assert step.generation.completion == "\n\nThis is indeed a test"
@@ -223,7 +223,7 @@ class TestOpenAI:
 
         assert step.type == "llm"
         assert step.generation is not None
-        assert type(step.generation) == ChatGeneration
+        assert type(step.generation) is ChatGeneration
         assert step.generation.settings is not None
         assert step.generation.model == "gpt-3.5-turbo-0613"
 
@@ -281,7 +281,7 @@ class TestOpenAI:
 
         assert step.type == "llm"
         assert step.generation is not None
-        assert type(step.generation) == CompletionGeneration
+        assert type(step.generation) is CompletionGeneration
         assert step.generation.settings is not None
         assert step.generation.model == "gpt-3.5-turbo"
         assert step.generation.completion == "\n\nThis is indeed a test"
@@ -346,7 +346,7 @@ class TestOpenAI:
 
         assert step.type == "llm"
         assert step.generation is not None
-        assert type(step.generation) == CompletionGeneration
+        assert type(step.generation) is CompletionGeneration
         assert step.generation.settings is not None
         assert step.generation.model == "gpt-3.5-turbo"
         assert step.generation.completion == "\n\nThis is indeed a test"
