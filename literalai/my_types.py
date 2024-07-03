@@ -139,8 +139,7 @@ class BaseGeneration(Utils):
             raise ValueError(f"Unknown generation type: {type}")
 
     def to_dict(self):
-        return {
-            "id": self.id,
+        _dict = {
             "promptId": self.prompt_id,
             "provider": self.provider,
             "model": self.model,
@@ -156,6 +155,9 @@ class BaseGeneration(Utils):
             "tokenThroughputInSeconds": self.token_throughput_in_s,
             "duration": self.duration,
         }
+        if self.id:
+            _dict["id"] = self.id
+        return _dict
 
 
 @dataclass(repr=False)
