@@ -154,7 +154,13 @@ def get_langchain_callback():
                 tools = settings["tools"]
             return provider, model, tools, settings
 
-    DEFAULT_TO_IGNORE = ["RunnableSequence", "RunnableParallel", "<lambda>"]
+    DEFAULT_TO_IGNORE = [
+        "RunnableSequence",
+        "RunnableParallel",
+        "RunnableAssign",
+        "RunnableLambda",
+        "<lambda>",
+    ]
     DEFAULT_TO_KEEP = ["retriever", "llm", "agent", "chain", "tool"]
 
     class LangchainTracer(BaseTracer, GenerationHelper):
@@ -377,6 +383,9 @@ def get_langchain_callback():
                 generations = (run.outputs or {}).get("generations", [])
                 generation = generations[0][0]
                 variables = self.generation_inputs.get(str(run.parent_run_id), {})
+                variables = {
+                    k: process_content(v) for k, v in variables.items() if v is not None
+                }
                 if message := generation.get("message"):
                     chat_start = self.chat_generations[str(run.id)]
                     duration = time.time() - chat_start["start"]
@@ -413,7 +422,11 @@ def get_langchain_callback():
                     if prompt_id:
                         current_step.generation.prompt_id = prompt_id
                     if variables_with_defaults:
-                        current_step.generation.variables = variables_with_defaults
+                        current_step.generation.variables = {
+                            k: process_content(v)
+                            for k, v in variables_with_defaults.items()
+                            if v is not None
+                        }
 
                     current_step.output = message_completion
                 else:

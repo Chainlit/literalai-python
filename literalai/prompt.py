@@ -214,9 +214,11 @@ class Prompt(Utils):
                     additonal_kwargs = {}
                     if self.orig_messages and index < len(self.orig_messages):
                         additonal_kwargs = {
-                            "uuid": self.orig_messages[index].get("uuid")
-                            if self.orig_messages
-                            else None,
+                            "uuid": (
+                                self.orig_messages[index].get("uuid")
+                                if self.orig_messages
+                                else None
+                            ),
                             "prompt_id": self.prompt_id,
                             "variables": variables_with_defaults,
                         }
@@ -245,7 +247,7 @@ class Prompt(Utils):
         lc_messages = [(m["role"], m["content"]) for m in self.template_messages]
 
         chat_template = CustomChatPromptTemplate.from_messages(lc_messages)
-        chat_template.input_variables = []
+        chat_template.input_variables = ["agent_scratchpad"]
         chat_template.default_vars = self.variables_default_values
         chat_template.orig_messages = self.template_messages
         chat_template.prompt_id = self.id
