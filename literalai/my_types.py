@@ -140,7 +140,6 @@ class BaseGeneration(Utils):
 
     def to_dict(self):
         return {
-            "id": self.id,
             "promptId": self.prompt_id,
             "provider": self.provider,
             "model": self.model,
