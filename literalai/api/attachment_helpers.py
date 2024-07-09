@@ -7,8 +7,8 @@ from . import gql
 
 
 def create_attachment_helper(
-    thread_id: str,
     step_id: str,
+    thread_id: Optional[str] = None,
     id: Optional[str] = None,
     metadata: Optional[Dict] = None,
     mime: Optional[str] = None,

@@ -14,6 +14,7 @@ from typing import (
 
 from typing_extensions import deprecated
 
+from literalai.context import active_steps_var, active_thread_var
 from literalai.dataset import DatasetType
 from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
 from literalai.filter import (
@@ -711,8 +712,8 @@ class LiteralAPI(BaseLiteralAPI):
 
     def create_attachment(
         self,
-        thread_id: str,
-        step_id: str,
+        thread_id: Optional[str] = None,
+        step_id: Optional[str] = None,
         id: Optional[str] = None,
         metadata: Optional[Dict] = None,
         mime: Optional[str] = None,
@@ -740,6 +741,16 @@ class LiteralAPI(BaseLiteralAPI):
         Returns:
             Attachment: The created or updated attachment object.
         """
+        if not thread_id:
+            if active_thread := active_thread_var.get(None):
+                thread_id = active_thread.id
+
+        if not step_id:
+            if active_steps := active_steps_var.get([]):
+                step_id = active_steps[-1].id
+            else:
+                raise Exception("No step_id provided and no active step found.")
+
         (
             query,
             description,
@@ -1849,7 +1860,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     async def upload_file(
         self,
         content: Union[bytes, str],
-        thread_id: str,
+        thread_id: Optional[str] = None,
         mime: Optional[str] = "application/octet-stream",
     ) -> Dict:
         """
