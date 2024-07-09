@@ -395,7 +395,6 @@ query GetScores(
                 id
                 projectId
                 stepId
-                generationId
                 datasetExperimentItemId
                 type
                 updatedAt
@@ -422,7 +421,6 @@ mutation CreateScore(
     $type: ScoreType!,
     $value: Float!,
     $stepId: String,
-    $generationId: String,
     $datasetExperimentItemId: String,
     $comment: String,
     $tags: [String!],
@@ -433,7 +431,6 @@ mutation CreateScore(
         type: $type,
         value: $value,
         stepId: $stepId,
-        generationId: $generationId,
         datasetExperimentItemId: $datasetExperimentItemId,
         comment: $comment,
         tags: $tags,
@@ -443,7 +440,6 @@ mutation CreateScore(
         type,
         value,
         stepId,
-        generationId,
         datasetExperimentItemId,
         comment,
         tags,
@@ -467,7 +463,6 @@ mutation UpdateScore(
         type,
         value,
         stepId,
-        generationId,
         datasetExperimentItemId,
         comment
     }

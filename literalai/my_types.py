@@ -246,7 +246,6 @@ class ScoreDict(TypedDict, total=False):
     type: ScoreType
     value: float
     stepId: Optional[str]
-    generationId: Optional[str]
     datasetExperimentItemId: Optional[str]
     comment: Optional[str]
     tags: Optional[List[str]]
@@ -269,7 +268,6 @@ class Score(Utils):
     type: ScoreType
     value: float
     step_id: Optional[str]
-    generation_id: Optional[str]
     dataset_experiment_item_id: Optional[str]
     comment: Optional[str]
     tags: Optional[List[str]]
@@ -282,7 +280,6 @@ class Score(Utils):
             "type": self.type,
             "value": self.value,
             "stepId": self.step_id,
-            "generationId": self.generation_id,
             "datasetExperimentItemId": self.dataset_experiment_item_id,
             "comment": self.comment,
             "tags": self.tags,
@@ -295,7 +292,6 @@ class Score(Utils):
         type = score_dict.get("type", "HUMAN")
         value = score_dict.get("value", 0.0)
         step_id = score_dict.get("stepId", "")
-        generation_id = score_dict.get("generationId", "")
         dataset_experiment_item_id = score_dict.get("datasetExperimentItemId", "")
         comment = score_dict.get("comment", "")
         tags = score_dict.get("tags", [])
@@ -306,7 +302,6 @@ class Score(Utils):
             type=type,
             value=value,
             step_id=step_id,
-            generation_id=generation_id,
             dataset_experiment_item_id=dataset_experiment_item_id,
             comment=comment,
             tags=tags,

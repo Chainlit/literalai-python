@@ -42,7 +42,6 @@ def create_score_helper(
     value: float,
     type: ScoreType,
     step_id: Optional[str] = None,
-    generation_id: Optional[str] = None,
     dataset_experiment_item_id: Optional[str] = None,
     comment: Optional[str] = None,
     tags: Optional[List[str]] = None,
@@ -52,7 +51,6 @@ def create_score_helper(
         "type": type,
         "value": value,
         "stepId": step_id,
-        "generationId": generation_id,
         "datasetExperimentItemId": dataset_experiment_item_id,
         "comment": comment,
         "tags": tags,
@@ -73,7 +71,6 @@ def create_scores_fields_builder(scores: List[ScoreDict]):
         $type_{id}: ScoreType!
         $value_{id}: Float!
         $stepId_{id}: String
-        $generationId_{id}: String
         $datasetExperimentItemId_{id}: String
         $scorer_{id}: String
         $comment_{id}: String
@@ -91,7 +88,6 @@ def create_scores_args_builder(scores: List[ScoreDict]):
                 type: $type_{id}
                 value: $value_{id}
                 stepId: $stepId_{id}
-                generationId: $generationId_{id}
                 datasetExperimentItemId: $datasetExperimentItemId_{id}
                 scorer: $scorer_{id}
                 comment: $comment_{id}
