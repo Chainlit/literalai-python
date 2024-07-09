@@ -60,7 +60,7 @@ class StepDict(TypedDict, total=False):
 
 
 class Step(Utils):
-    id: Optional[str] = None
+    id: str
     name: Optional[str] = ""
     type: Optional[StepType] = None
     metadata: Optional[Dict] = None
@@ -169,7 +169,7 @@ class Step(Utils):
 
         step = cls(name=name, type=step_type, thread_id=thread_id)
 
-        step.id = step_dict.get("id")
+        step.id = step_dict.get("id") or ""
         step.input = step_dict.get("input", None)
         step.error = step_dict.get("error", None)
         step.output = step_dict.get("output", None)
@@ -234,7 +234,7 @@ class StepContextManager:
             id=self.id,
             parent_id=self.parent_id,
             thread_id=self.thread_id,
-            **self.kwargs
+            **self.kwargs,
         )
         return self.step
 
@@ -251,7 +251,7 @@ class StepContextManager:
             id=self.id,
             parent_id=self.parent_id,
             thread_id=self.thread_id,
-            **self.kwargs
+            **self.kwargs,
         )
         return self.step
 
@@ -271,7 +271,7 @@ def step_decorator(
     parent_id: Optional[str] = None,
     thread_id: Optional[str] = None,
     ctx_manager: Optional[StepContextManager] = None,
-    **decorator_kwargs
+    **decorator_kwargs,
 ):
     if not name:
         name = func.__name__
@@ -283,7 +283,7 @@ def step_decorator(
             id=id,
             parent_id=parent_id,
             thread_id=thread_id,
-            **decorator_kwargs
+            **decorator_kwargs,
         )
     else:
         ctx_manager.step_name = name
