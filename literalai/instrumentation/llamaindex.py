@@ -151,7 +151,7 @@ class LiteralEventHandler(BaseEventHandler):
             if isinstance(event, EmbeddingStartEvent):
                 retrieval_step = self.get_first_step_of_type(run_id=run_id, step_type="retrieval")
 
-                if run_id:
+                if run_id and retrieval_step:
                     embedding_step = self._client.start_step(
                         type="embedding",
                         name="Query embedding",
@@ -162,80 +162,80 @@ class LiteralEventHandler(BaseEventHandler):
                     self.store_step(run_id=run_id, step=embedding_step)
 
             if isinstance(event, EmbeddingEndEvent):
-                if run_id:
-                    embedding_step = self.get_first_step_of_type(run_id=run_id, step_type="embedding")
+                embedding_step = self.get_first_step_of_type(run_id=run_id, step_type="embedding")
 
-                    if not embedding_step:
-                        return
+                if run_id and embedding_step:
                     embedding_step.input = {"chunks": event.dict().get("chunks")}
                     embedding_step.output = {"embeddings": event.dict().get("embeddings")}
                     embedding_step.end()
 
             if isinstance(event, RetrievalEndEvent):
-                retrieved_documents = extract_document_info(event.dict().get("nodes"))
-                query = extract_query_from_bundle(event.dict().get("str_or_query_bundle"))
-
                 retrieval_step = self.get_first_step_of_type(run_id=run_id, step_type="retrieval")
 
-                if not retrieval_step:
-                    return
+                if run_id and retrieval_step:
+                    retrieved_documents = extract_document_info(event.dict().get("nodes"))
+                    query = extract_query_from_bundle(event.dict().get("str_or_query_bundle"))
 
-                retrieval_step.input = {"query": query}
-                retrieval_step.output = {"retrieved_documents": retrieved_documents}
-                retrieval_step.end()
+                    retrieval_step.input = {"query": query}
+                    retrieval_step.output = {"retrieved_documents": retrieved_documents}
+                    retrieval_step.end()
 
             if isinstance(event, GetResponseStartEvent):
-                self._client.step()
-                llm_step = self._client.start_step(
-                    type="llm",
-                    parent_id=run_id,
-                    thread_id=thread_id,
-                )
-                self.store_step(run_id=run_id, step=llm_step)
+                if run_id:
+                    self._client.step()
+                    llm_step = self._client.start_step(
+                        type="llm",
+                        parent_id=run_id,
+                        thread_id=thread_id,
+                    )
+                    self.store_step(run_id=run_id, step=llm_step)
 
             if isinstance(event, LLMChatStartEvent):
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
 
-                generation = create_generation(event=event)
-                llm_step.generation = generation
-                llm_step.name = event.dict().get("model_dict").get("model")
+                if run_id and llm_step:
+                    generation = create_generation(event=event)
+                    llm_step.generation = generation
+                    llm_step.name = event.dict().get("model_dict").get("model")
 
             if isinstance(event, LLMChatEndEvent):
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
 
-                response = event.dict().get("response")
+                if run_id and llm_step:
+                    response = event.dict().get("response")
 
-                usage = response["raw"]["usage"]
+                    usage = response["raw"]["usage"]
 
-                if isinstance(usage, CompletionUsage):
-                    llm_step.generation.input_token_count = usage.prompt_tokens
-                    llm_step.generation.output_token_count = usage.completion_tokens
+                    if isinstance(usage, CompletionUsage):
+                        llm_step.generation.input_token_count = usage.prompt_tokens
+                        llm_step.generation.output_token_count = usage.completion_tokens
 
             if isinstance(event, SynthesizeEndEvent):
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
                 run = self.get_first_step_of_type(run_id=run_id, step_type="run")
 
-                response = event.dict().get("response")
-                text_response = ""
+                if run_id and llm_step and run:
+                    response = event.dict().get("response")
+                    text_response = ""
 
-                if isinstance(response, StreamingResponse):
-                    text_response = str(response.get_response())
-                if isinstance(response, Response):
-                    text_response = str(response)
+                    if isinstance(response, StreamingResponse):
+                        text_response = str(response.get_response())
+                    if isinstance(response, Response):
+                        text_response = str(response)
 
-                llm_step.generation.message_completion = {
-                    "role": "assistant",
-                    "content": text_response
-                }
+                    llm_step.generation.message_completion = {
+                        "role": "assistant",
+                        "content": text_response
+                    }
 
-                llm_step.end()
-                run.end()
+                    llm_step.end()
+                    run.end()
 
-                self._client.message(
-                    type="assistant_message",
-                    thread_id=thread_id,
-                    content=text_response
-                )
+                    self._client.message(
+                        type="assistant_message",
+                        thread_id=thread_id,
+                        content=text_response
+                    )
 
             if isinstance(event, QueryEndEvent):
                 if run_id in self.runs:
