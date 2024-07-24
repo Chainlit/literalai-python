@@ -16,8 +16,10 @@ sdk.instrument_openai()
 thread_id = None
 
 
+
+
 @sdk.step(type="run")
-def get_completion(welcome_message, text):
+ def get_completion(welcome_message, text):
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[

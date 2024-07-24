@@ -67,6 +67,9 @@ class Message(Utils):
 
     def end(self):
         active_steps = active_steps_var.get()
+        print(self)
+        print("YYYY Active steps")
+        print(active_steps)
         if len(active_steps) > 0:
             parent_step = active_steps[-1]
             if not self.parent_id:
@@ -77,7 +80,7 @@ class Message(Utils):
         if not self.thread_id:
             if active_thread := active_thread_var.get():
                 self.thread_id = active_thread.id
-
+        print(f"XXXX In the middle of the thing : {self.parent_id}")
         if not self.thread_id and not self.parent_id:
             raise Exception(
                 "Message must be initialized with a thread_id or a parent id."
