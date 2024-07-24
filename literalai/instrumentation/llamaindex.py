@@ -1,10 +1,10 @@
-import os
 from typing import Dict, Optional, Any, TypedDict, List
 import uuid
 import logging
 from dotenv import load_dotenv
 from llama_index.core.base.response.schema import StreamingResponse, Response
 from pydantic import Field
+from typing import TYPE_CHECKING
 
 from openai.types import CompletionUsage
 
@@ -35,6 +35,9 @@ from llama_index.core.instrumentation.events.retrieval import (
 
 from literalai.my_types import ChatGeneration
 from literalai.step import StepType, Step
+
+if TYPE_CHECKING:
+    from literalai.client import LiteralClient
 
 literalai_uuid_namespace = uuid.UUID("05f6b2b5-a912-47bd-958f-98a9c4496322")
 
