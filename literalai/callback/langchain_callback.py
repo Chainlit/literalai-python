@@ -19,9 +19,9 @@ def process_content(content: Any) -> Tuple[Dict, Optional[str]]:
     if isinstance(content, dict):
         return content, "json"
     elif isinstance(content, str):
-        return {"content": content}, "text"
+        return content
     else:
-        return {"content": str(content)}, "text"
+        return str(content)
 
 
 def get_langchain_callback():
@@ -78,7 +78,8 @@ def get_langchain_callback():
         ):
             class_name = message["id"][-1]
             kwargs = message.get("kwargs", {})
-            function_call = kwargs.get("additional_kwargs", {}).get("function_call")
+            function_call = kwargs.get(
+                "additional_kwargs", {}).get("function_call")
 
             msg = GenerationMessage(
                 name=kwargs.get("name"),
@@ -142,9 +143,12 @@ def get_langchain_callback():
             }
 
             # make sure there is no api key specification
-            settings = {k: v for k, v in merged.items() if not k.endswith("_api_key")}
-            model_keys = ["azure_deployment", "deployment_name", "model", "model_name"]
-            model = next((settings[k] for k in model_keys if k in settings), None)
+            settings = {k: v for k, v in merged.items()
+                        if not k.endswith("_api_key")}
+            model_keys = ["azure_deployment",
+                          "deployment_name", "model", "model_name"]
+            model = next((settings[k]
+                         for k in model_keys if k in settings), None)
             tools = None
             if "functions" in settings:
                 tools = [
@@ -258,7 +262,8 @@ def get_langchain_callback():
             self,
             token: str,
             *,
-            chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+            chunk: Optional[Union[GenerationChunk,
+                                  ChatGenerationChunk]] = None,
             run_id: "UUID",
             parent_run_id: Optional["UUID"] = None,
             **kwargs: Any,
@@ -266,7 +271,8 @@ def get_langchain_callback():
             if isinstance(chunk, ChatGenerationChunk):
                 start = self.chat_generations[str(run_id)]
             else:
-                start = self.completion_generations[str(run_id)]  # type: ignore
+                start = self.completion_generations[str(
+                    run_id)]  # type: ignore
             start["token_count"] += 1
             if start["tt_first_token"] is None:
                 start["tt_first_token"] = (time.time() - start["start"]) * 1000
@@ -377,12 +383,14 @@ def get_langchain_callback():
 
             if run.run_type == "llm" and current_step:
                 provider, model, tools, llm_settings = self._build_llm_settings(
-                    (run.serialized or {}), (run.extra or {}).get("invocation_params")
+                    (run.serialized or {}), (run.extra or {}).get(
+                        "invocation_params")
                 )
 
                 generations = (run.outputs or {}).get("generations", [])
                 generation = generations[0][0]
-                variables = self.generation_inputs.get(str(run.parent_run_id), {})
+                variables = self.generation_inputs.get(
+                    str(run.parent_run_id), {})
                 variables = {
                     k: process_content(v) for k, v in variables.items() if v is not None
                 }
