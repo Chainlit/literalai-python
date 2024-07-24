@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, TypedDict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict
 
 from literalai.my_types import ScoreDict, Utils
 
@@ -11,7 +10,7 @@ if TYPE_CHECKING:
 class DatasetExperimentItemDict(TypedDict, total=False):
     id: str
     datasetExperimentId: str
-    datasetItemId: str
+    datasetItemId: Optional[str]
     scores: List[ScoreDict]
     input: Optional[Dict]
     output: Optional[Dict]
@@ -21,7 +20,7 @@ class DatasetExperimentItemDict(TypedDict, total=False):
 class DatasetExperimentItem(Utils):
     id: str
     dataset_experiment_id: str
-    dataset_item_id: str
+    dataset_item_id: Optional[str]
     scores: List[ScoreDict]
     input: Optional[Dict]
     output: Optional[Dict]
@@ -41,7 +40,7 @@ class DatasetExperimentItem(Utils):
         return cls(
             id=item.get("id", ""),
             dataset_experiment_id=item.get("datasetExperimentId", ""),
-            dataset_item_id=item.get("datasetItemId", ""),
+            dataset_item_id=item.get("datasetItemId"),
             scores=item.get("scores", []),
             input=item.get("input"),
             output=item.get("output"),
@@ -64,7 +63,7 @@ class DatasetExperiment(Utils):
     id: str
     created_at: str
     name: str
-    dataset_id: str
+    dataset_id: Optional[str]
     params: Optional[Dict]
     prompt_id: Optional[str] = None
     items: List[DatasetExperimentItem] = field(default_factory=lambda: [])
@@ -73,7 +72,7 @@ class DatasetExperiment(Utils):
         dataset_experiment_item = DatasetExperimentItem.from_dict(
             {
                 "datasetExperimentId": self.id,
-                "datasetItemId": item_dict.get("datasetItemId", ""),
+                "datasetItemId": item_dict.get("datasetItemId"),
                 "input": item_dict.get("input", {}),
                 "output": item_dict.get("output", {}),
                 "scores": item_dict.get("scores", []),
@@ -110,8 +109,5 @@ class DatasetExperiment(Utils):
             dataset_id=dataset_experiment.get("datasetId", ""),
             params=dataset_experiment.get("params"),
             prompt_id=dataset_experiment.get("promptId"),
-            items=[
-                DatasetExperimentItem.from_dict(item)
-                for item in items
-            ],
+            items=[DatasetExperimentItem.from_dict(item) for item in items],
         )

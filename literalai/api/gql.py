@@ -833,7 +833,7 @@ DELETE_DATASET = """
 CREATE_EXPERIMENT = """
     mutation CreateDatasetExperiment(
         $name: String! 
-        $datasetId: String!
+        $datasetId: String
         $promptId: String
         $params: Json
     ) {
@@ -854,7 +854,7 @@ CREATE_EXPERIMENT = """
 CREATE_EXPERIMENT_ITEM = """
     mutation CreateDatasetExperimentItem(
         $datasetExperimentId: String!
-        $datasetItemId: String!
+        $datasetItemId: String
         $input: Json
         $output: Json
     ) {
