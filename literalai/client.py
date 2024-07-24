@@ -6,6 +6,7 @@ from literalai.callback.langchain_callback import get_langchain_callback
 from literalai.callback.llama_index_callback import get_llama_index_callback
 from literalai.context import active_steps_var, active_thread_var
 from literalai.event_processor import EventProcessor
+from literalai.instrumentation.llamaindex import instrument_llamaindex
 from literalai.instrumentation.mistralai import instrument_mistralai
 from literalai.instrumentation.openai import instrument_openai
 from literalai.message import Message
@@ -66,6 +67,9 @@ class BaseLiteralClient:
 
     def instrument_mistralai(self):
         instrument_mistralai(self.to_sync())
+
+    def instrument_llamaindex(self):
+        instrument_llamaindex(self)
 
     def langchain_callback(
         self,
