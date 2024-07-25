@@ -261,7 +261,8 @@ class Teste2e:
                 stack = active_steps_var.get()
                 assert len(stack) == 1
 
-        assert async_client.event_processor.event_queue._qsize() == 1
+            assert async_client.event_processor.event_queue._qsize() == 1
+
         stack = active_steps_var.get()
         assert len(stack) == 0
 

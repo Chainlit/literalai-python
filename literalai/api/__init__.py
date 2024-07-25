@@ -1124,7 +1124,13 @@ class LiteralAPI(BaseLiteralAPI):
             DatasetExperiment: The newly created experiment object.
         """
         return self.gql_helper(
-            *create_experiment_helper(self, name, dataset_id, prompt_id, params)
+            *create_experiment_helper(
+                api=self,
+                name=name,
+                dataset_id=dataset_id,
+                prompt_id=prompt_id,
+                params=params,
+            )
         )
 
     def create_experiment_item(
@@ -2319,7 +2325,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         sync_api = LiteralAPI(self.api_key, self.url)
 
         return await self.gql_helper(
-            *create_experiment_helper(sync_api, name, dataset_id, prompt_id, params)
+            *create_experiment_helper(
+                api=sync_api,
+                name=name,
+                dataset_id=dataset_id,
+                prompt_id=prompt_id,
+                params=params,
+            )
         )
 
     create_experiment.__doc__ = LiteralAPI.create_experiment.__doc__
