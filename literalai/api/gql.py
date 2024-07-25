@@ -15,6 +15,7 @@ STEP_FIELDS = """
         input
         output
         metadata
+        environment
         scores {
             id
             type
@@ -848,6 +849,7 @@ CREATE_EXPERIMENT = """
 CREATE_EXPERIMENT_ITEM = """
     mutation CreateDatasetExperimentItem(
         $datasetExperimentId: String!
+        $experimentRunId: String
         $datasetItemId: String
         $input: Json
         $output: Json
@@ -855,12 +857,16 @@ CREATE_EXPERIMENT_ITEM = """
         createDatasetExperimentItem(
             datasetExperimentId: $datasetExperimentId
             datasetItemId: $datasetItemId
+            experimentRunId: $experimentRunId
             input: $input
             output: $output
         ) {
           id
           input
           output
+          datasetExperimentId
+          experimentRunId
+          datasetItemId
         }
       }
 """

@@ -30,19 +30,25 @@ class ExperimentRunContextManager(EnvContextManager, StepContextManager):
         )
 
     async def __aenter__(self):
-        super().__aenter__()
         active_experiment_run_id_var.set(self.id)
+        await EnvContextManager.__aenter__(self)
+        await StepContextManager.__aenter__(self)
 
-    async def __aexit__(self):
-        super().__aexit__()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await StepContextManager.__aexit__(self, exc_type, exc_val, exc_tb)
+        await self.client.event_processor.aflush()
+        await EnvContextManager.__aexit__(self, exc_type, exc_val, exc_tb)
         active_experiment_run_id_var.set(None)
 
     def __enter__(self):
-        super().__enter__()
         active_experiment_run_id_var.set(self.id)
+        EnvContextManager.__enter__(self)
+        StepContextManager.__enter__(self)
 
-    def __exit__(self):
-        super().__exit__()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        StepContextManager.__exit__(self, exc_type, exc_val, exc_tb)
+        self.client.event_processor.flush()
+        EnvContextManager.__exit__(self, exc_type, exc_val, exc_tb)
         active_experiment_run_id_var.set(None)
 
 

@@ -15,7 +15,7 @@ class DatasetExperimentItemDict(TypedDict, total=False):
     scores: List[ScoreDict]
     input: Optional[Dict]
     output: Optional[Dict]
-    runExperimentId: Optional[str]
+    experimentRunId: Optional[str]
 
 
 @dataclass(repr=False)
@@ -26,14 +26,14 @@ class DatasetExperimentItem(Utils):
     scores: List[ScoreDict]
     input: Optional[Dict]
     output: Optional[Dict]
-    run_experiment_id: Optional[str]
+    experiment_run_id: Optional[str]
 
     def to_dict(self):
         return {
             "id": self.id,
             "datasetExperimentId": self.dataset_experiment_id,
             "datasetItemId": self.dataset_item_id,
-            "runExperimentId": self.run_experiment_id,
+            "experimentRunId": self.experiment_run_id,
             "scores": self.scores,
             "input": self.input,
             "output": self.output,
@@ -43,7 +43,7 @@ class DatasetExperimentItem(Utils):
     def from_dict(cls, item: DatasetExperimentItemDict) -> "DatasetExperimentItem":
         return cls(
             id=item.get("id", ""),
-            run_experiment_id=item.get("runExperimentId"),
+            experiment_run_id=item.get("experimentRunId"),
             dataset_experiment_id=item.get("datasetExperimentId", ""),
             dataset_item_id=item.get("datasetItemId"),
             scores=item.get("scores", []),
@@ -77,7 +77,7 @@ class DatasetExperiment(Utils):
         experiment_run_id = active_experiment_run_id_var.get()
         dataset_experiment_item = DatasetExperimentItem.from_dict(
             {
-                "runExperimentId": experiment_run_id,
+                "experimentRunId": experiment_run_id,
                 "datasetExperimentId": self.id,
                 "datasetItemId": item_dict.get("datasetItemId"),
                 "input": item_dict.get("input", {}),

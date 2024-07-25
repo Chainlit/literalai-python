@@ -636,3 +636,29 @@ is a templated list."""
         experiment = dataset.create_experiment(name="test-experiment")
         assert experiment.params is None
         dataset.delete()
+
+    @pytest.mark.timeout(5)
+    async def test_experiment_run(self, client: LiteralClient):
+        experiment = client.api.create_experiment(name="test-experiment-run")
+
+        @client.step(type="run")
+        def agent(input):
+            return {"content": "hello world!"}
+
+        with client.experiment_run():
+            input = {"question": "question"}
+            output = agent(input)
+            item = experiment.log(
+                {
+                    "scores": [
+                        {"name": "context_relevancy", "type": "AI", "value": 0.6}
+                    ],
+                    "input": input,
+                    "output": output,
+                }
+            )
+
+        assert item.experiment_run_id is not None
+        experiment_run = client.api.get_step(item.experiment_run_id)
+        assert experiment_run is not None
+        assert experiment_run.environment == "experiment"

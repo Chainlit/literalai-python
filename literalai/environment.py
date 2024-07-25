@@ -1,4 +1,5 @@
 import inspect
+import os
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Optional
 
@@ -12,7 +13,7 @@ class EnvContextManager:
     def __init__(self, client: "BaseLiteralClient", env: Environment = "prod"):
         self.client = client
         self.env = env
-        self.original_env = client.api.environment
+        self.original_env = os.environ.get("LITERAL_ENV", "")
 
     def __call__(self, func):
         return env_decorator(
@@ -22,16 +23,16 @@ class EnvContextManager:
         )
 
     async def __aenter__(self):
-        self.client.api.environment = self.env
+        os.environ["LITERAL_ENV"] = self.env
 
-    async def __aexit__(self):
-        self.client.api.environment = self.original_env
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        os.environ = self.original_env
 
     def __enter__(self):
-        self.client.api.environment = self.env
+        os.environ["LITERAL_ENV"] = self.env
 
-    def __exit__(self):
-        self.client.api.environment = self.original_env
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.environ["LITERAL_ENV"] = self.original_env
 
 
 def env_decorator(

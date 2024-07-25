@@ -119,11 +119,13 @@ def create_experiment_helper(
 
 def create_experiment_item_helper(
     dataset_experiment_id: str,
+    experiment_run_id: Optional[str] = None,
     dataset_item_id: Optional[str] = None,
     input: Optional[Dict] = None,
     output: Optional[Dict] = None,
 ):
     variables = {
+        "experimentRunId": experiment_run_id,
         "datasetExperimentId": dataset_experiment_id,
         "datasetItemId": dataset_item_id,
         "input": input,

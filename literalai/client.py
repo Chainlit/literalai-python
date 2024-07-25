@@ -34,7 +34,7 @@ class BaseLiteralClient:
         is_async: bool = False,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        environment: Environment = "prod",
+        environment: Optional[Environment] = None,
         disabled: bool = False,
     ):
         if not api_key:
@@ -277,6 +277,7 @@ class LiteralClient(BaseLiteralClient):
         batch_size: int = 5,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        environment: Optional[Environment] = None,
         disabled: bool = False,
     ):
         super().__init__(
@@ -285,6 +286,7 @@ class LiteralClient(BaseLiteralClient):
             api_key=api_key,
             url=url,
             disabled=disabled,
+            environment=environment,
         )
 
     def flush(self):
@@ -299,6 +301,7 @@ class AsyncLiteralClient(BaseLiteralClient):
         batch_size: int = 5,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        environment: Optional[Environment] = None,
         disabled: bool = False,
     ):
         super().__init__(
@@ -307,6 +310,7 @@ class AsyncLiteralClient(BaseLiteralClient):
             api_key=api_key,
             url=url,
             disabled=disabled,
+            environment=environment,
         )
 
     async def flush(self):

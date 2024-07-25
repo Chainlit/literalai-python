@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 from typing import (
     TYPE_CHECKING,
@@ -117,7 +118,7 @@ class BaseLiteralAPI:
         self,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        environment: Environment = "prod",
+        environment: Optional[Environment] = None,
     ):
         if url and url[-1] == "/":
             url = url[:-1]
@@ -129,7 +130,9 @@ class BaseLiteralAPI:
 
         self.api_key = api_key
         self.url = url
-        self.environment = environment
+
+        if environment:
+            os.environ["LITERAL_ENV"] = environment
 
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
@@ -138,13 +141,17 @@ class BaseLiteralAPI:
     def headers(self):
         from literalai.version import __version__
 
-        return {
+        h = {
             "Content-Type": "application/json",
             "x-api-key": self.api_key,
-            "x-env": self.environment,
             "x-client-name": "py-literal-client",
             "x-client-version": __version__,
         }
+
+        if env := os.getenv("LITERAL_ENV"):
+            h["x-env"] = env
+
+        return h
 
     def _prepare_variables(self, variables: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -1150,6 +1157,7 @@ class LiteralAPI(BaseLiteralAPI):
             *create_experiment_item_helper(
                 dataset_experiment_id=experiment_item.dataset_experiment_id,
                 dataset_item_id=experiment_item.dataset_item_id,
+                experiment_run_id=experiment_item.experiment_run_id,
                 input=experiment_item.input,
                 output=experiment_item.output,
             )
@@ -2355,6 +2363,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *create_experiment_item_helper(
                 dataset_experiment_id=experiment_item.dataset_experiment_id,
                 dataset_item_id=experiment_item.dataset_item_id,
+                experiment_run_id=experiment_item.experiment_run_id,
                 input=experiment_item.input,
                 output=experiment_item.output,
             )
