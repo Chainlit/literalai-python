@@ -19,9 +19,9 @@ def process_content(content: Any) -> Tuple[Dict, Optional[str]]:
     if isinstance(content, dict):
         return content, "json"
     elif isinstance(content, str):
-        return content, "text"
+        return {"content": content}, "text"
     else:
-        return str(content), "text"
+        return {"content": str(content)}, "text"
 
 
 def process_variable_value(value: Any) -> str:
