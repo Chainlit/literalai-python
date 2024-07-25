@@ -5,11 +5,16 @@ from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
 from literalai.callback.llama_index_callback import get_llama_index_callback
 from literalai.context import active_steps_var, active_thread_var
+from literalai.environment import EnvContextManager, env_decorator
 from literalai.event_processor import EventProcessor
+from literalai.experiment_run import (
+    ExperimentRunContextManager,
+    experiment_run_decorator,
+)
 from literalai.instrumentation.mistralai import instrument_mistralai
 from literalai.instrumentation.openai import instrument_openai
 from literalai.message import Message
-from literalai.my_types import Attachment
+from literalai.my_types import Attachment, Environment
 from literalai.step import (
     MessageStepType,
     Step,
@@ -29,6 +34,7 @@ class BaseLiteralClient:
         is_async: bool = False,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        environment: Environment = "prod",
         disabled: bool = False,
     ):
         if not api_key:
@@ -38,9 +44,11 @@ class BaseLiteralClient:
         if not url:
             url = os.getenv("LITERAL_API_URL", "https://cloud.getliteral.ai")
         if is_async:
-            self.api = AsyncLiteralAPI(api_key=api_key, url=url)
+            self.api = AsyncLiteralAPI(
+                api_key=api_key, url=url, environment=environment
+            )
         else:
-            self.api = LiteralAPI(api_key=api_key, url=url)
+            self.api = LiteralAPI(api_key=api_key, url=url, environment=environment)
 
         self.disabled = disabled
 
@@ -184,6 +192,43 @@ class BaseLiteralClient:
         step.end()
 
         return step
+
+    def environment(
+        self,
+        original_function=None,
+        env: Environment = "prod",
+        **kwargs,
+    ):
+        if original_function:
+            return env_decorator(
+                self,
+                func=original_function,
+                env=env,
+                **kwargs,
+            )
+        else:
+            return EnvContextManager(
+                self,
+                env=env,
+                **kwargs,
+            )
+
+    def experiment_run(
+        self,
+        original_function=None,
+        **kwargs,
+    ):
+        if original_function:
+            return experiment_run_decorator(
+                self,
+                func=original_function,
+                **kwargs,
+            )
+        else:
+            return ExperimentRunContextManager(
+                self,
+                **kwargs,
+            )
 
     def start_step(
         self,

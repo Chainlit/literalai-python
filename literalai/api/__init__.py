@@ -100,6 +100,7 @@ from literalai.my_types import (
     Attachment,
     ChatGeneration,
     CompletionGeneration,
+    Environment,
     GenerationMessage,
     PaginatedResponse,
     Score,
@@ -112,7 +113,12 @@ logger = logging.getLogger(__name__)
 
 
 class BaseLiteralAPI:
-    def __init__(self, api_key: Optional[str] = None, url: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        environment: Environment = "prod",
+    ):
         if url and url[-1] == "/":
             url = url[:-1]
 
@@ -123,6 +129,7 @@ class BaseLiteralAPI:
 
         self.api_key = api_key
         self.url = url
+        self.environment = environment
 
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
@@ -134,6 +141,7 @@ class BaseLiteralAPI:
         return {
             "Content-Type": "application/json",
             "x-api-key": self.api_key,
+            "x-env": self.environment,
             "x-client-name": "py-literal-client",
             "x-client-version": __version__,
         }
@@ -441,7 +449,6 @@ class LiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -451,14 +458,13 @@ class LiteralAPI(BaseLiteralAPI):
             name (Optional[str]): Name of the thread.
             metadata (Optional[Dict]): Metadata associated with the thread.
             participant_id (Optional[str]): Identifier for the participant.
-            environment (Optional[str]): Environment in which the thread operates.
             tags (Optional[List[str]]): List of tags associated with the thread.
 
         Returns:
             The newly created thread.
         """
         return self.gql_helper(
-            *create_thread_helper(name, metadata, participant_id, environment, tags)
+            *create_thread_helper(name, metadata, participant_id, tags)
         )
 
     def upsert_thread(
@@ -467,7 +473,6 @@ class LiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -478,14 +483,13 @@ class LiteralAPI(BaseLiteralAPI):
             name (Optional[str]): Name of the thread.
             metadata (Optional[Dict]): Metadata associated with the thread.
             participant_id (Optional[str]): Identifier for the participant.
-            environment (Optional[str]): Environment in which the thread operates.
             tags (Optional[List[str]]): List of tags associated with the thread.
 
         Returns:
             The updated or newly created thread.
         """
         return self.gql_helper(
-            *upsert_thread_helper(id, name, metadata, participant_id, environment, tags)
+            *upsert_thread_helper(id, name, metadata, participant_id, tags)
         )
 
     def update_thread(
@@ -494,7 +498,6 @@ class LiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -505,14 +508,13 @@ class LiteralAPI(BaseLiteralAPI):
             name (Optional[str]): New name of the thread.
             metadata (Optional[Dict]): New metadata for the thread.
             participant_id (Optional[str]): New identifier for the participant.
-            environment (Optional[str]): New environment for the thread.
             tags (Optional[List[str]]): New list of tags for the thread.
 
         Returns:
             The updated thread.
         """
         return self.gql_helper(
-            *update_thread_helper(id, name, metadata, participant_id, environment, tags)
+            *update_thread_helper(id, name, metadata, participant_id, tags)
         )
 
     def delete_thread(self, id: str):
@@ -1644,7 +1646,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -1654,14 +1655,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             name (Optional[str]): The name of the thread.
             metadata (Optional[Dict]): Metadata associated with the thread.
             participant_id (Optional[str]): Identifier for the participant associated with the thread.
-            environment (Optional[str]): The environment in which the thread operates.
             tags (Optional[List[str]]): Tags associated with the thread.
 
         Returns:
             The result of the GraphQL helper function for creating a thread.
         """
         return await self.gql_helper(
-            *create_thread_helper(name, metadata, participant_id, environment, tags)
+            *create_thread_helper(name, metadata, participant_id, tags)
         )
 
     async def upsert_thread(
@@ -1670,7 +1670,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -1681,14 +1680,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             name (Optional[str]): The name of the thread.
             metadata (Optional[Dict]): Metadata associated with the thread.
             participant_id (Optional[str]): Identifier for the participant associated with the thread.
-            environment (Optional[str]): The environment in which the thread operates.
             tags (Optional[List[str]]): Tags associated with the thread.
 
         Returns:
             The result of the GraphQL helper function for upserting a thread.
         """
         return await self.gql_helper(
-            *upsert_thread_helper(id, name, metadata, participant_id, environment, tags)
+            *upsert_thread_helper(id, name, metadata, participant_id, tags)
         )
 
     async def update_thread(
@@ -1697,7 +1695,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -1708,14 +1705,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             name (Optional[str]): New name of the thread.
             metadata (Optional[Dict]): New metadata for the thread.
             participant_id (Optional[str]): New identifier for the participant.
-            environment (Optional[str]): New environment for the thread.
             tags (Optional[List[str]]): New list of tags for the thread.
 
         Returns:
             The result of the GraphQL helper function for updating a thread.
         """
         return await self.gql_helper(
-            *update_thread_helper(id, name, metadata, participant_id, environment, tags)
+            *update_thread_helper(id, name, metadata, participant_id, tags)
         )
 
     async def delete_thread(self, id: str):

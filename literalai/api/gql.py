@@ -269,14 +269,12 @@ mutation CreateThread(
     $name: String,
     $metadata: Json,
     $participantId: String,
-    $environment: String,
     $tags: [String!],
 ) {
     createThread(
         name: $name
         metadata: $metadata
         participantId: $participantId
-        environment: $environment
         tags: $tags
     ) {
 """
@@ -294,7 +292,6 @@ mutation UpsertThread(
     $name: String,
     $metadata: Json,
     $participantId: String,
-    $environment: String,
     $tags: [String!],
 ) {
     upsertThread(
@@ -302,7 +299,6 @@ mutation UpsertThread(
         name: $name
         metadata: $metadata
         participantId: $participantId
-        environment: $environment
         tags: $tags
     ) {
 """
@@ -320,7 +316,6 @@ mutation UpdateThread(
     $name: String,
     $metadata: Json,
     $participantId: String,
-    $environment: String,
     $tags: [String!],
 ) {
     updateThread(
@@ -328,7 +323,6 @@ mutation UpdateThread(
         name: $name
         metadata: $metadata
         participantId: $participantId
-        environment: $environment
         tags: $tags
     ) {
 """
