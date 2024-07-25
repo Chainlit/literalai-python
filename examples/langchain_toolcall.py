@@ -1,9 +1,12 @@
-import os
-
 from literalai import LiteralClient
 
 from langchain_openai import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
+
+from langchain.agents import create_tool_calling_agent
+from langchain.agents import AgentExecutor
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.runnables.config import RunnableConfig
 
 from dotenv import load_dotenv
 
@@ -34,18 +37,11 @@ lai_prompt = lai_client.api.get_or_create_prompt(
 )
 prompt = lai_prompt.to_langchain_chat_prompt_template()
 
-
-from langchain.agents import create_tool_calling_agent
-from langchain.agents import AgentExecutor
-
 agent = create_tool_calling_agent(model, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools)
 
 lai_client.reset_context()
 cb = lai_client.langchain_callback()
-
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.runnables.config import RunnableConfig
 
 agent_executor.invoke(
     {
