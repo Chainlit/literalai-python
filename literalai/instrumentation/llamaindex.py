@@ -33,6 +33,7 @@ from llama_index.core.instrumentation.events.retrieval import (
     RetrievalEndEvent,
 )
 
+from literalai.context import active_thread_var
 from literalai.my_types import ChatGeneration
 from literalai.step import StepType, Step
 
@@ -355,6 +356,11 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
 
     def get_thread_id(self, span_id: Optional[str]):
         """Returns the root span ID as a thread ID"""
+        active_thread = active_thread_var.get()
+
+        if active_thread:
+            return active_thread.id
+
         if span_id is None:
             return None
 
