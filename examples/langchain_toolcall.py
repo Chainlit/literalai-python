@@ -7,6 +7,7 @@ from langchain.agents import create_tool_calling_agent
 from langchain.agents import AgentExecutor
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables.config import RunnableConfig
+from langchain.agents.agent import BaseSingleActionAgent
 
 from dotenv import load_dotenv
 
