@@ -32,7 +32,8 @@ class ExperimentRunContextManager(EnvContextManager, StepContextManager):
     async def __aenter__(self):
         active_experiment_run_id_var.set(self.id)
         await EnvContextManager.__aenter__(self)
-        await StepContextManager.__aenter__(self)
+        step = await StepContextManager.__aenter__(self)
+        return step
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await StepContextManager.__aexit__(self, exc_type, exc_val, exc_tb)
@@ -43,7 +44,8 @@ class ExperimentRunContextManager(EnvContextManager, StepContextManager):
     def __enter__(self):
         active_experiment_run_id_var.set(self.id)
         EnvContextManager.__enter__(self)
-        StepContextManager.__enter__(self)
+        step = StepContextManager.__enter__(self)
+        return step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         StepContextManager.__exit__(self, exc_type, exc_val, exc_tb)
