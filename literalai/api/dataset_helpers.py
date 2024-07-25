@@ -95,8 +95,8 @@ def delete_dataset_helper(api: "LiteralAPI", id: str):
 
 def create_experiment_helper(
     api: "LiteralAPI",
-    dataset_id: str,
     name: str,
+    dataset_id: Optional[str] = None,
     prompt_id: Optional[str] = None,
     params: Optional[Dict] = None,
 ):
@@ -119,7 +119,7 @@ def create_experiment_helper(
 
 def create_experiment_item_helper(
     dataset_experiment_id: str,
-    dataset_item_id: str,
+    dataset_item_id: Optional[str] = None,
     input: Optional[Dict] = None,
     output: Optional[Dict] = None,
 ):

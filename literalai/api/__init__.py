@@ -1106,8 +1106,8 @@ class LiteralAPI(BaseLiteralAPI):
 
     def create_experiment(
         self,
-        dataset_id: str,
         name: str,
+        dataset_id: Optional[str] = None,
         prompt_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
@@ -1115,8 +1115,8 @@ class LiteralAPI(BaseLiteralAPI):
         Creates a new experiment associated with a specific dataset.
 
         Args:
-            dataset_id (str): The unique identifier of the dataset.
             name (str): The name of the experiment.
+            dataset_id (Optional[str]): The unique identifier of the dataset.
             prompt_id (Optional[str]): The identifier of the prompt associated with the experiment.
             params (Optional[Dict]): Additional parameters for the experiment.
 
@@ -1124,7 +1124,7 @@ class LiteralAPI(BaseLiteralAPI):
             DatasetExperiment: The newly created experiment object.
         """
         return self.gql_helper(
-            *create_experiment_helper(self, dataset_id, name, prompt_id, params)
+            *create_experiment_helper(self, name, dataset_id, prompt_id, params)
         )
 
     def create_experiment_item(
@@ -2311,15 +2311,15 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
     async def create_experiment(
         self,
-        dataset_id: str,
         name: str,
+        dataset_id: Optional[str] = None,
         prompt_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
         sync_api = LiteralAPI(self.api_key, self.url)
 
         return await self.gql_helper(
-            *create_experiment_helper(sync_api, dataset_id, name, prompt_id, params)
+            *create_experiment_helper(sync_api, name, dataset_id, prompt_id, params)
         )
 
     create_experiment.__doc__ = LiteralAPI.create_experiment.__doc__
