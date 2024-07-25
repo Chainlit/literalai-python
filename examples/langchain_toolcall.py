@@ -1,6 +1,6 @@
 from literalai import LiteralClient
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI  # type: ignore
 from langchain_community.tools.tavily_search import TavilySearchResults
 
 from langchain.agents import create_tool_calling_agent
