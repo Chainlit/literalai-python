@@ -24,6 +24,10 @@ def process_content(content: Any) -> Tuple[Dict, Optional[str]]:
         return str(content), None
 
 
+def process_variable_value(value: Any) -> str:
+    return str(value) if value is not None else ""
+
+
 def get_langchain_callback():
     try:
         version("langchain")
@@ -384,7 +388,9 @@ def get_langchain_callback():
                 generation = generations[0][0]
                 variables = self.generation_inputs.get(str(run.parent_run_id), {})
                 variables = {
-                    k: process_content(v) for k, v in variables.items() if v is not None
+                    k: process_variable_value(v)
+                    for k, v in variables.items()
+                    if v is not None
                 }
                 if message := generation.get("message"):
                     chat_start = self.chat_generations[str(run.id)]
@@ -423,7 +429,7 @@ def get_langchain_callback():
                         current_step.generation.prompt_id = prompt_id
                     if variables_with_defaults:
                         current_step.generation.variables = {
-                            k: process_content(v)
+                            k: process_variable_value(v)
                             for k, v in variables_with_defaults.items()
                             if v is not None
                         }
