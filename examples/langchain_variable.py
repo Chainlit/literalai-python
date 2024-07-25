@@ -26,7 +26,7 @@ prompt = lai.api.get_or_create_prompt(
 )
 messages = prompt.to_langchain_chat_prompt_template()
 
-inp = messages.format_messages(
+input_messages = messages.format_messages(
     user_message="The screen is cracked, there are scratches on the surface, and a component is missing."
 )
 cb = lai.langchain_callback()
@@ -36,6 +36,6 @@ gpt_4o = init_chat_model(
     model_provider=prompt.provider,
     **prompt.settings,
 )
-print(gpt_4o.invoke(inp, config=RunnableConfig(callbacks=[cb])))
+print(gpt_4o.invoke(input_messages, config=RunnableConfig(callbacks=[cb])))
 
 lai.flush_and_stop()
