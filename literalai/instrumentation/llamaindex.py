@@ -1,8 +1,9 @@
+import json
 from typing import Dict, Optional, Any, TypedDict, List
 import uuid
 import logging
-from dotenv import load_dotenv
 from llama_index.core.base.response.schema import StreamingResponse, Response
+from openai.types.chat import ChatCompletion
 from pydantic import Field
 from typing import TYPE_CHECKING
 
@@ -41,8 +42,6 @@ if TYPE_CHECKING:
     from literalai.client import LiteralClient
 
 literalai_uuid_namespace = uuid.UUID("05f6b2b5-a912-47bd-958f-98a9c4496322")
-
-load_dotenv()
 
 
 def extract_query_from_bundle(str_or_query_bundle: str | QueryBundle):
@@ -123,7 +122,10 @@ class LiteralEventHandler(BaseEventHandler):
 
             """The events are presented here roughly in chronological order"""
             if isinstance(event, QueryStartEvent):
-                self._client.api.upsert_thread(id=thread_id)
+                active_thread = active_thread_var.get()
+
+                if not active_thread or not active_thread.name:
+                    self._client.api.upsert_thread(id=thread_id, name=event.dict().get("query"))
 
                 self._client.message(
                     name="User query",
@@ -135,7 +137,7 @@ class LiteralEventHandler(BaseEventHandler):
 
             if isinstance(event, RetrievalStartEvent):
                 run = self._client.start_step(
-                    name="RAG run",
+                    name="RAG",
                     type="run",
                     id=run_id,
                     thread_id=thread_id,
@@ -145,7 +147,7 @@ class LiteralEventHandler(BaseEventHandler):
 
                 retrieval_step = self._client.start_step(
                     type="retrieval",
-                    name="Document retrieval",
+                    name="Retrieval",
                     parent_id=run_id,
                     thread_id=thread_id,
                 )
@@ -158,7 +160,7 @@ class LiteralEventHandler(BaseEventHandler):
                 if run_id and retrieval_step:
                     embedding_step = self._client.start_step(
                         type="embedding",
-                        name="Query embedding",
+                        name="Embedding",
                         parent_id=retrieval_step.id,
                         thread_id=thread_id,
                     )
@@ -169,7 +171,7 @@ class LiteralEventHandler(BaseEventHandler):
                 embedding_step = self.get_first_step_of_type(run_id=run_id, step_type="embedding")
 
                 if run_id and embedding_step:
-                    embedding_step.input = {"chunks": event.dict().get("chunks")}
+                    embedding_step.input = {"query": event.dict().get("chunks")}
                     embedding_step.output = {"embeddings": event.dict().get("embeddings")}
                     embedding_step.end()
 
@@ -208,11 +210,14 @@ class LiteralEventHandler(BaseEventHandler):
                 if run_id and llm_step:
                     response = event.dict().get("response")
 
-                    usage = response["raw"]["usage"]
+                    chat_completion = response.get("raw")
 
-                    if isinstance(usage, CompletionUsage):
-                        llm_step.generation.input_token_count = usage.prompt_tokens
-                        llm_step.generation.output_token_count = usage.completion_tokens
+                    if isinstance(chat_completion, ChatCompletion):
+                        usage = chat_completion.usage
+
+                        if isinstance(usage, CompletionUsage):
+                            llm_step.generation.input_token_count = usage.prompt_tokens
+                            llm_step.generation.output_token_count = usage.completion_tokens
 
             if isinstance(event, SynthesizeEndEvent):
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
@@ -283,7 +288,7 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
     @classmethod
     def class_name(cls) -> str:
         """Class name."""
-        return "ExampleSpanHandler"
+        return "LiteralSpanHandler"
 
     def new_span(
             self,

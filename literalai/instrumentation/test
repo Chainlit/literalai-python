@@ -1,0 +1,8 @@
+{'message': {
+    'role': <MessageRole.ASSISTANT: 'assistant'>,
+    'content': "I'm sorry, but based on the context provided, there is no information about M&Ms.",
+    'additional_kwargs': {}
+    },
+    'raw': ChatCompletion(
+        id='chatcmpl-9pFZd1zVGo97vLRvjWLC74tDNt7VB',
+        choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content="I'm sorry, but based on the context provided, there is no information about M&Ms.", role='assistant', function_call=None, tool_calls=None))], created=1722001621, model='gpt-3.5-turbo-0125', object='chat.completion', service_tier=None, system_fingerprint=None, usage=CompletionUsage(completion_tokens=20, prompt_tokens=405, total_tokens=425)), 'delta': None, 'logprobs': None, 'additional_kwargs': {}}

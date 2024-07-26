@@ -69,7 +69,7 @@ class BaseLiteralClient:
         instrument_mistralai(self.to_sync())
 
     def instrument_llamaindex(self):
-        instrument_llamaindex(self)
+        instrument_llamaindex(self.to_sync())
 
     def langchain_callback(
         self,
