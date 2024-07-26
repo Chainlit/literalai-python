@@ -89,14 +89,12 @@ def create_thread_helper(
     name: Optional[str] = None,
     metadata: Optional[Dict] = None,
     participant_id: Optional[str] = None,
-    environment: Optional[str] = None,
     tags: Optional[List[str]] = None,
 ):
     variables = {
         "name": name,
         "metadata": metadata,
         "participantId": participant_id,
-        "environment": environment,
         "tags": tags,
     }
 
@@ -113,7 +111,6 @@ def upsert_thread_helper(
     name: Optional[str] = None,
     metadata: Optional[Dict] = None,
     participant_id: Optional[str] = None,
-    environment: Optional[str] = None,
     tags: Optional[List[str]] = None,
 ):
     variables = {
@@ -121,7 +118,6 @@ def upsert_thread_helper(
         "name": name,
         "metadata": metadata,
         "participantId": participant_id,
-        "environment": environment,
         "tags": tags,
     }
 
@@ -141,7 +137,6 @@ def update_thread_helper(
     name: Optional[str] = None,
     metadata: Optional[Dict] = None,
     participant_id: Optional[str] = None,
-    environment: Optional[str] = None,
     tags: Optional[List[str]] = None,
 ):
     variables = {
@@ -149,7 +144,6 @@ def update_thread_helper(
         "name": name,
         "metadata": metadata,
         "participantId": participant_id,
-        "environment": environment,
         "tags": tags,
     }
 

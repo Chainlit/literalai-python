@@ -15,6 +15,7 @@ STEP_FIELDS = """
         input
         output
         metadata
+        environment
         scores {
             id
             type
@@ -269,14 +270,12 @@ mutation CreateThread(
     $name: String,
     $metadata: Json,
     $participantId: String,
-    $environment: String,
     $tags: [String!],
 ) {
     createThread(
         name: $name
         metadata: $metadata
         participantId: $participantId
-        environment: $environment
         tags: $tags
     ) {
 """
@@ -294,7 +293,6 @@ mutation UpsertThread(
     $name: String,
     $metadata: Json,
     $participantId: String,
-    $environment: String,
     $tags: [String!],
 ) {
     upsertThread(
@@ -302,7 +300,6 @@ mutation UpsertThread(
         name: $name
         metadata: $metadata
         participantId: $participantId
-        environment: $environment
         tags: $tags
     ) {
 """
@@ -320,7 +317,6 @@ mutation UpdateThread(
     $name: String,
     $metadata: Json,
     $participantId: String,
-    $environment: String,
     $tags: [String!],
 ) {
     updateThread(
@@ -328,7 +324,6 @@ mutation UpdateThread(
         name: $name
         metadata: $metadata
         participantId: $participantId
-        environment: $environment
         tags: $tags
     ) {
 """
@@ -833,7 +828,7 @@ DELETE_DATASET = """
 CREATE_EXPERIMENT = """
     mutation CreateDatasetExperiment(
         $name: String! 
-        $datasetId: String!
+        $datasetId: String
         $promptId: String
         $params: Json
     ) {
@@ -854,19 +849,24 @@ CREATE_EXPERIMENT = """
 CREATE_EXPERIMENT_ITEM = """
     mutation CreateDatasetExperimentItem(
         $datasetExperimentId: String!
-        $datasetItemId: String!
+        $experimentRunId: String
+        $datasetItemId: String
         $input: Json
         $output: Json
     ) {
         createDatasetExperimentItem(
             datasetExperimentId: $datasetExperimentId
             datasetItemId: $datasetItemId
+            experimentRunId: $experimentRunId
             input: $input
             output: $output
         ) {
           id
           input
           output
+          datasetExperimentId
+          experimentRunId
+          datasetItemId
         }
       }
 """

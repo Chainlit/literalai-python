@@ -11,6 +11,7 @@ else:
 
 from pydantic.dataclasses import Field, dataclass
 
+Environment = Literal["dev", "staging", "prod", "experiment"]
 GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system"]
 ScoreType = Literal["HUMAN", "AI"]
 

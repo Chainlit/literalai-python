@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 from typing import (
     TYPE_CHECKING,
@@ -100,6 +101,7 @@ from literalai.my_types import (
     Attachment,
     ChatGeneration,
     CompletionGeneration,
+    Environment,
     GenerationMessage,
     PaginatedResponse,
     Score,
@@ -112,7 +114,12 @@ logger = logging.getLogger(__name__)
 
 
 class BaseLiteralAPI:
-    def __init__(self, api_key: Optional[str] = None, url: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        environment: Optional[Environment] = None,
+    ):
         if url and url[-1] == "/":
             url = url[:-1]
 
@@ -124,6 +131,9 @@ class BaseLiteralAPI:
         self.api_key = api_key
         self.url = url
 
+        if environment:
+            os.environ["LITERAL_ENV"] = environment
+
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
 
@@ -131,12 +141,17 @@ class BaseLiteralAPI:
     def headers(self):
         from literalai.version import __version__
 
-        return {
+        h = {
             "Content-Type": "application/json",
             "x-api-key": self.api_key,
             "x-client-name": "py-literal-client",
             "x-client-version": __version__,
         }
+
+        if env := os.getenv("LITERAL_ENV"):
+            h["x-env"] = env
+
+        return h
 
     def _prepare_variables(self, variables: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -441,7 +456,6 @@ class LiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -451,14 +465,13 @@ class LiteralAPI(BaseLiteralAPI):
             name (Optional[str]): Name of the thread.
             metadata (Optional[Dict]): Metadata associated with the thread.
             participant_id (Optional[str]): Identifier for the participant.
-            environment (Optional[str]): Environment in which the thread operates.
             tags (Optional[List[str]]): List of tags associated with the thread.
 
         Returns:
             The newly created thread.
         """
         return self.gql_helper(
-            *create_thread_helper(name, metadata, participant_id, environment, tags)
+            *create_thread_helper(name, metadata, participant_id, tags)
         )
 
     def upsert_thread(
@@ -467,7 +480,6 @@ class LiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -478,14 +490,13 @@ class LiteralAPI(BaseLiteralAPI):
             name (Optional[str]): Name of the thread.
             metadata (Optional[Dict]): Metadata associated with the thread.
             participant_id (Optional[str]): Identifier for the participant.
-            environment (Optional[str]): Environment in which the thread operates.
             tags (Optional[List[str]]): List of tags associated with the thread.
 
         Returns:
             The updated or newly created thread.
         """
         return self.gql_helper(
-            *upsert_thread_helper(id, name, metadata, participant_id, environment, tags)
+            *upsert_thread_helper(id, name, metadata, participant_id, tags)
         )
 
     def update_thread(
@@ -494,7 +505,6 @@ class LiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -505,14 +515,13 @@ class LiteralAPI(BaseLiteralAPI):
             name (Optional[str]): New name of the thread.
             metadata (Optional[Dict]): New metadata for the thread.
             participant_id (Optional[str]): New identifier for the participant.
-            environment (Optional[str]): New environment for the thread.
             tags (Optional[List[str]]): New list of tags for the thread.
 
         Returns:
             The updated thread.
         """
         return self.gql_helper(
-            *update_thread_helper(id, name, metadata, participant_id, environment, tags)
+            *update_thread_helper(id, name, metadata, participant_id, tags)
         )
 
     def delete_thread(self, id: str):
@@ -1106,8 +1115,8 @@ class LiteralAPI(BaseLiteralAPI):
 
     def create_experiment(
         self,
-        dataset_id: str,
         name: str,
+        dataset_id: Optional[str] = None,
         prompt_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
@@ -1115,8 +1124,8 @@ class LiteralAPI(BaseLiteralAPI):
         Creates a new experiment associated with a specific dataset.
 
         Args:
-            dataset_id (str): The unique identifier of the dataset.
             name (str): The name of the experiment.
+            dataset_id (Optional[str]): The unique identifier of the dataset.
             prompt_id (Optional[str]): The identifier of the prompt associated with the experiment.
             params (Optional[Dict]): Additional parameters for the experiment.
 
@@ -1124,7 +1133,13 @@ class LiteralAPI(BaseLiteralAPI):
             DatasetExperiment: The newly created experiment object.
         """
         return self.gql_helper(
-            *create_experiment_helper(self, dataset_id, name, prompt_id, params)
+            *create_experiment_helper(
+                api=self,
+                name=name,
+                dataset_id=dataset_id,
+                prompt_id=prompt_id,
+                params=params,
+            )
         )
 
     def create_experiment_item(
@@ -1144,6 +1159,7 @@ class LiteralAPI(BaseLiteralAPI):
             *create_experiment_item_helper(
                 dataset_experiment_id=experiment_item.dataset_experiment_id,
                 dataset_item_id=experiment_item.dataset_item_id,
+                experiment_run_id=experiment_item.experiment_run_id,
                 input=experiment_item.input,
                 output=experiment_item.output,
             )
@@ -1646,7 +1662,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -1656,14 +1671,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             name (Optional[str]): The name of the thread.
             metadata (Optional[Dict]): Metadata associated with the thread.
             participant_id (Optional[str]): Identifier for the participant associated with the thread.
-            environment (Optional[str]): The environment in which the thread operates.
             tags (Optional[List[str]]): Tags associated with the thread.
 
         Returns:
             The result of the GraphQL helper function for creating a thread.
         """
         return await self.gql_helper(
-            *create_thread_helper(name, metadata, participant_id, environment, tags)
+            *create_thread_helper(name, metadata, participant_id, tags)
         )
 
     async def upsert_thread(
@@ -1672,7 +1686,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -1683,14 +1696,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             name (Optional[str]): The name of the thread.
             metadata (Optional[Dict]): Metadata associated with the thread.
             participant_id (Optional[str]): Identifier for the participant associated with the thread.
-            environment (Optional[str]): The environment in which the thread operates.
             tags (Optional[List[str]]): Tags associated with the thread.
 
         Returns:
             The result of the GraphQL helper function for upserting a thread.
         """
         return await self.gql_helper(
-            *upsert_thread_helper(id, name, metadata, participant_id, environment, tags)
+            *upsert_thread_helper(id, name, metadata, participant_id, tags)
         )
 
     async def update_thread(
@@ -1699,7 +1711,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         metadata: Optional[Dict] = None,
         participant_id: Optional[str] = None,
-        environment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ):
         """
@@ -1710,14 +1721,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             name (Optional[str]): New name of the thread.
             metadata (Optional[Dict]): New metadata for the thread.
             participant_id (Optional[str]): New identifier for the participant.
-            environment (Optional[str]): New environment for the thread.
             tags (Optional[List[str]]): New list of tags for the thread.
 
         Returns:
             The result of the GraphQL helper function for updating a thread.
         """
         return await self.gql_helper(
-            *update_thread_helper(id, name, metadata, participant_id, environment, tags)
+            *update_thread_helper(id, name, metadata, participant_id, tags)
         )
 
     async def delete_thread(self, id: str):
@@ -2317,15 +2327,21 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
     async def create_experiment(
         self,
-        dataset_id: str,
         name: str,
+        dataset_id: Optional[str] = None,
         prompt_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
         sync_api = LiteralAPI(self.api_key, self.url)
 
         return await self.gql_helper(
-            *create_experiment_helper(sync_api, dataset_id, name, prompt_id, params)
+            *create_experiment_helper(
+                api=sync_api,
+                name=name,
+                dataset_id=dataset_id,
+                prompt_id=prompt_id,
+                params=params,
+            )
         )
 
     create_experiment.__doc__ = LiteralAPI.create_experiment.__doc__
@@ -2349,6 +2365,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *create_experiment_item_helper(
                 dataset_experiment_id=experiment_item.dataset_experiment_id,
                 dataset_item_id=experiment_item.dataset_item_id,
+                experiment_run_id=experiment_item.experiment_run_id,
                 input=experiment_item.input,
                 output=experiment_item.output,
             )

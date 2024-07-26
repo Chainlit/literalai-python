@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, TypedDict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict
 
+from literalai.context import active_experiment_run_id_var
 from literalai.my_types import ScoreDict, Utils
 
 if TYPE_CHECKING:
@@ -11,26 +11,29 @@ if TYPE_CHECKING:
 class DatasetExperimentItemDict(TypedDict, total=False):
     id: str
     datasetExperimentId: str
-    datasetItemId: str
+    datasetItemId: Optional[str]
     scores: List[ScoreDict]
     input: Optional[Dict]
     output: Optional[Dict]
+    experimentRunId: Optional[str]
 
 
 @dataclass(repr=False)
 class DatasetExperimentItem(Utils):
     id: str
     dataset_experiment_id: str
-    dataset_item_id: str
+    dataset_item_id: Optional[str]
     scores: List[ScoreDict]
     input: Optional[Dict]
     output: Optional[Dict]
+    experiment_run_id: Optional[str]
 
     def to_dict(self):
         return {
             "id": self.id,
             "datasetExperimentId": self.dataset_experiment_id,
             "datasetItemId": self.dataset_item_id,
+            "experimentRunId": self.experiment_run_id,
             "scores": self.scores,
             "input": self.input,
             "output": self.output,
@@ -40,8 +43,9 @@ class DatasetExperimentItem(Utils):
     def from_dict(cls, item: DatasetExperimentItemDict) -> "DatasetExperimentItem":
         return cls(
             id=item.get("id", ""),
+            experiment_run_id=item.get("experimentRunId"),
             dataset_experiment_id=item.get("datasetExperimentId", ""),
-            dataset_item_id=item.get("datasetItemId", ""),
+            dataset_item_id=item.get("datasetItemId"),
             scores=item.get("scores", []),
             input=item.get("input"),
             output=item.get("output"),
@@ -64,16 +68,18 @@ class DatasetExperiment(Utils):
     id: str
     created_at: str
     name: str
-    dataset_id: str
+    dataset_id: Optional[str]
     params: Optional[Dict]
     prompt_id: Optional[str] = None
     items: List[DatasetExperimentItem] = field(default_factory=lambda: [])
 
     def log(self, item_dict: DatasetExperimentItemDict) -> DatasetExperimentItem:
+        experiment_run_id = active_experiment_run_id_var.get()
         dataset_experiment_item = DatasetExperimentItem.from_dict(
             {
+                "experimentRunId": experiment_run_id,
                 "datasetExperimentId": self.id,
-                "datasetItemId": item_dict.get("datasetItemId", ""),
+                "datasetItemId": item_dict.get("datasetItemId"),
                 "input": item_dict.get("input", {}),
                 "output": item_dict.get("output", {}),
                 "scores": item_dict.get("scores", []),
@@ -110,8 +116,5 @@ class DatasetExperiment(Utils):
             dataset_id=dataset_experiment.get("datasetId", ""),
             params=dataset_experiment.get("params"),
             prompt_id=dataset_experiment.get("promptId"),
-            items=[
-                DatasetExperimentItem.from_dict(item)
-                for item in items
-            ],
+            items=[DatasetExperimentItem.from_dict(item) for item in items],
         )

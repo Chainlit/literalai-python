@@ -34,7 +34,6 @@ class Thread(Utils):
     participant_id: Optional[str]
     participant_identifier: Optional[str] = None
     created_at: Optional[str]  # read-only, set by server
-    needs_upsert: Optional[bool]
 
     def __init__(
         self,
@@ -51,7 +50,6 @@ class Thread(Utils):
         self.metadata = metadata
         self.tags = tags
         self.participant_id = participant_id
-        self.needs_upsert = bool(metadata or tags or participant_id or name)
 
     def to_dict(self) -> ThreadDict:
         return {
@@ -144,7 +142,7 @@ class ThreadContextManager:
         return active_thread_var.get()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if (thread := active_thread_var.get()) and thread.needs_upsert:
+        if active_thread_var.get():
             self.upsert()
         active_thread_var.set(None)
 
@@ -154,7 +152,7 @@ class ThreadContextManager:
         return active_thread_var.get()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if (thread := active_thread_var.get()) and thread.needs_upsert:
+        if active_thread_var.get():
             self.upsert()
         active_thread_var.set(None)
 

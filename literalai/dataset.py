@@ -112,10 +112,10 @@ class Dataset(Utils):
         :param name: The name of the experiment .
         :param prompt_id: The Prompt ID used on LLM calls (optional).
         :param params: The params used on the experiment.
-        :return: The created DatasetExperiment instance as a dictionary.
+        :return: The created DatasetExperiment instance.
         """
         experiment = self.api.create_experiment(
-            self.id, name, prompt_id, params
+            name=name, dataset_id=self.id, prompt_id=prompt_id, params=params
         )
         return experiment
 
@@ -129,9 +129,7 @@ class Dataset(Utils):
         if self.items is not None:
             self.items = [item for item in self.items if item.id != item_id]
 
-    def add_step(
-        self, step_id: str, metadata: Optional[Dict] = None
-    ) -> DatasetItem:
+    def add_step(self, step_id: str, metadata: Optional[Dict] = None) -> DatasetItem:
         """
         Create a new dataset item based on a step and add it to this dataset.
         :param step_id: The id of the step to add to the dataset.
