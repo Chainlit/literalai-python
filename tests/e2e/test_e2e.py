@@ -47,6 +47,18 @@ class Teste2e:
         client.event_processor.flush_and_stop()
 
     @pytest.fixture(scope="session")
+    def staging_client(self):
+        url = os.getenv("LITERAL_API_URL", None)
+        api_key = os.getenv("LITERAL_API_KEY", None)
+        assert url is not None and api_key is not None, "Missing environment variables"
+
+        client = LiteralClient(
+            batch_size=1, url=url, api_key=api_key, environment="staging"
+        )
+        yield client
+        client.event_processor.flush_and_stop()
+
+    @pytest.fixture(scope="session")
     def async_client(self):
         url = os.getenv("LITERAL_API_URL", None)
         api_key = os.getenv("LITERAL_API_KEY", None)
@@ -261,7 +273,8 @@ class Teste2e:
                 stack = active_steps_var.get()
                 assert len(stack) == 1
 
-        assert async_client.event_processor.event_queue._qsize() == 1
+            assert async_client.event_processor.event_queue._qsize() == 1
+
         stack = active_steps_var.get()
         assert len(stack) == 0
 
@@ -361,9 +374,7 @@ class Teste2e:
         step_id = step_decorated()
         await assert_delete(step_id)
 
-    async def test_parallel_requests(
-        self, client: LiteralClient, async_client: AsyncLiteralClient
-    ):
+    async def test_parallel_requests(self, async_client: AsyncLiteralClient):
         ids = []
 
         @async_client.thread
@@ -392,9 +403,7 @@ class Teste2e:
         )
 
     @pytest.mark.timeout(5)
-    async def test_dataset(
-        self, client: LiteralClient, async_client: AsyncLiteralClient
-    ):
+    async def test_dataset(self, async_client: AsyncLiteralClient):
         dataset_name = str(uuid.uuid4())
         step = await self.create_test_step(async_client)
         dataset = await async_client.api.create_dataset(
@@ -455,9 +464,7 @@ class Teste2e:
         assert deleted_dataset is None
 
     @pytest.mark.timeout(5)
-    async def test_generation_dataset(
-        self, client: LiteralClient, async_client: AsyncLiteralClient
-    ):
+    async def test_generation_dataset(self, async_client: AsyncLiteralClient):
         chat_generation = ChatGeneration(
             provider="test",
             model="test",
@@ -553,9 +560,7 @@ class Teste2e:
         assert client.api.get_dataset(id=fetched_dataset.id) is None
 
     @pytest.mark.timeout(5)
-    async def test_prompt(
-        self, client: LiteralClient, async_client: AsyncLiteralClient
-    ):
+    async def test_prompt(self, async_client: AsyncLiteralClient):
         prompt = await async_client.api.get_prompt(name="Default", version=0)
         assert prompt is not None
         assert prompt.name == "Default"
@@ -629,9 +634,48 @@ is a templated list."""
 
     @pytest.mark.timeout(5)
     async def test_experiment_params_optional(self, client: LiteralClient):
+        if (ds := client.api.get_dataset(name="test-dataset")) is not None:
+            client.api.delete_dataset(id=ds.id)
         dataset = client.api.create_dataset(
             name="test-dataset", description="test-description"
         )
         experiment = dataset.create_experiment(name="test-experiment")
         assert experiment.params is None
         dataset.delete()
+
+    @pytest.mark.timeout(5)
+    async def test_experiment_run(self, client: LiteralClient):
+        experiment = client.api.create_experiment(name="test-experiment-run")
+
+        @client.step(type="run")
+        def agent(input):
+            return {"content": "hello world!"}
+
+        with client.experiment_run():
+            input = {"question": "question"}
+            output = agent(input)
+            item = experiment.log(
+                {
+                    "scores": [
+                        {"name": "context_relevancy", "type": "AI", "value": 0.6}
+                    ],
+                    "input": input,
+                    "output": output,
+                }
+            )
+
+        assert item.experiment_run_id is not None
+        experiment_run = client.api.get_step(item.experiment_run_id)
+        assert experiment_run is not None
+        assert experiment_run.environment == "experiment"
+
+    @pytest.mark.timeout(5)
+    async def test_environment(self, staging_client: LiteralClient):
+        run_id: str
+        with staging_client.run(name="foo") as run:
+            run_id = run.id
+        staging_client.event_processor.flush()
+        assert run_id is not None
+        persisted_run = staging_client.api.get_step(run_id)
+        assert persisted_run is not None
+        assert persisted_run.environment == "staging"

@@ -133,6 +133,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 tools=tools,
                 settings=settings,
                 messages=messages,
+                metadata=kwargs.get("literalai_metadata"),
                 tags=kwargs.get("literalai_tags"),
             )
 
@@ -160,6 +161,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 model=model,
                 settings=settings,
                 prompt=kwargs.get("prompt"),
+                metadata=kwargs.get("literalai_metadata"),
                 tags=kwargs.get("literalai_tags"),
             )
 

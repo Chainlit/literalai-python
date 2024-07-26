@@ -26,6 +26,7 @@ from literalai.my_types import (
     BaseGeneration,
     ChatGeneration,
     CompletionGeneration,
+    Environment,
     Score,
     ScoreDict,
     Utils,
@@ -44,6 +45,7 @@ class StepDict(TypedDict, total=False):
     id: Optional[str]
     name: Optional[str]
     type: Optional[StepType]
+    environment: Optional[Environment]
     threadId: Optional[str]
     error: Optional[str]
     input: Optional[Dict]
@@ -73,6 +75,7 @@ class Step(Utils):
     output: Optional[Dict[str, Any]] = None
     tags: Optional[List[str]] = None
     thread_id: Optional[str] = None
+    environment: Optional[Environment] = None
 
     generation: Optional[Union[ChatGeneration, CompletionGeneration]] = None
     scores: Optional[List[Score]] = []
@@ -173,6 +176,7 @@ class Step(Utils):
         step.input = step_dict.get("input", None)
         step.error = step_dict.get("error", None)
         step.output = step_dict.get("output", None)
+        step.environment = step_dict.get("environment", None)
         step.metadata = step_dict.get("metadata", {})
         step.tags = step_dict.get("tags", [])
         step.parent_id = step_dict.get("parentId", None)

@@ -11,6 +11,7 @@ else:
 
 from pydantic.dataclasses import Field, dataclass
 
+Environment = Literal["dev", "staging", "prod", "experiment"]
 GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system"]
 ScoreType = Literal["HUMAN", "AI"]
 
@@ -118,6 +119,7 @@ class BaseGeneration(Utils):
     settings: Optional[Dict] = Field(default_factory=dict)
     variables: Optional[Dict] = Field(default_factory=dict)
     tags: Optional[List[str]] = Field(default_factory=list)
+    metadata: Optional[Dict] = Field(default_factory=dict)
     tools: Optional[List[Dict]] = None
     token_count: Optional[int] = None
     input_token_count: Optional[int] = None
@@ -147,6 +149,7 @@ class BaseGeneration(Utils):
             "settings": self.settings,
             "variables": self.variables,
             "tags": self.tags,
+            "metadata": self.metadata,
             "tools": self.tools,
             "tokenCount": self.token_count,
             "inputTokenCount": self.input_token_count,

@@ -5,12 +5,17 @@ from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
 from literalai.callback.llama_index_callback import get_llama_index_callback
 from literalai.context import active_steps_var, active_thread_var
+from literalai.environment import EnvContextManager, env_decorator
 from literalai.event_processor import EventProcessor
+from literalai.experiment_run import (
+    ExperimentRunContextManager,
+    experiment_run_decorator,
+)
 from literalai.instrumentation.llamaindex import instrument_llamaindex
 from literalai.instrumentation.mistralai import instrument_mistralai
 from literalai.instrumentation.openai import instrument_openai
 from literalai.message import Message
-from literalai.my_types import Attachment
+from literalai.my_types import Attachment, Environment
 from literalai.step import (
     MessageStepType,
     Step,
@@ -30,6 +35,7 @@ class BaseLiteralClient:
         is_async: bool = False,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        environment: Optional[Environment] = None,
         disabled: bool = False,
     ):
         if not api_key:
@@ -39,9 +45,11 @@ class BaseLiteralClient:
         if not url:
             url = os.getenv("LITERAL_API_URL", "https://cloud.getliteral.ai")
         if is_async:
-            self.api = AsyncLiteralAPI(api_key=api_key, url=url)
+            self.api = AsyncLiteralAPI(
+                api_key=api_key, url=url, environment=environment
+            )
         else:
-            self.api = LiteralAPI(api_key=api_key, url=url)
+            self.api = LiteralAPI(api_key=api_key, url=url, environment=environment)
 
         self.disabled = disabled
 
@@ -189,6 +197,43 @@ class BaseLiteralClient:
 
         return step
 
+    def environment(
+        self,
+        original_function=None,
+        env: Environment = "prod",
+        **kwargs,
+    ):
+        if original_function:
+            return env_decorator(
+                self,
+                func=original_function,
+                env=env,
+                **kwargs,
+            )
+        else:
+            return EnvContextManager(
+                self,
+                env=env,
+                **kwargs,
+            )
+
+    def experiment_run(
+        self,
+        original_function=None,
+        **kwargs,
+    ):
+        if original_function:
+            return experiment_run_decorator(
+                self,
+                func=original_function,
+                **kwargs,
+            )
+        else:
+            return ExperimentRunContextManager(
+                self,
+                **kwargs,
+            )
+
     def start_step(
         self,
         name: str = "",
@@ -236,6 +281,7 @@ class LiteralClient(BaseLiteralClient):
         batch_size: int = 5,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        environment: Optional[Environment] = None,
         disabled: bool = False,
     ):
         super().__init__(
@@ -244,6 +290,7 @@ class LiteralClient(BaseLiteralClient):
             api_key=api_key,
             url=url,
             disabled=disabled,
+            environment=environment,
         )
 
     def flush(self):
@@ -258,6 +305,7 @@ class AsyncLiteralClient(BaseLiteralClient):
         batch_size: int = 5,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        environment: Optional[Environment] = None,
         disabled: bool = False,
     ):
         super().__init__(
@@ -266,6 +314,7 @@ class AsyncLiteralClient(BaseLiteralClient):
             api_key=api_key,
             url=url,
             disabled=disabled,
+            environment=environment,
         )
 
     async def flush(self):

@@ -1,6 +1,5 @@
 import time
-from typing import AsyncGenerator, Dict, Union
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, AsyncGenerator, Dict, Union
 
 from literalai.instrumentation import MISTRALAI_PROVIDER
 from literalai.requirements import check_all_requirements
@@ -8,6 +7,9 @@ from literalai.requirements import check_all_requirements
 if TYPE_CHECKING:
     from literalai.client import LiteralClient
 
+from types import GeneratorType
+
+from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import ensure_values_serializable
 from literalai.my_types import (
     ChatGeneration,
@@ -15,10 +17,6 @@ from literalai.my_types import (
     GenerationMessage,
     GenerationType,
 )
-
-from types import GeneratorType
-from literalai.context import active_steps_var, active_thread_var
-
 from literalai.wrappers import AfterContext, BeforeContext, wrap_all
 
 REQUIREMENTS = ["mistralai>=0.2.0"]
@@ -161,6 +159,7 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
                 tools=tools,
                 settings=settings,
                 messages=messages,
+                metadata=kwargs.get("literalai_metadata"),
                 tags=kwargs.get("literalai_tags"),
             )
         elif generation_type == GenerationType.COMPLETION:
@@ -181,6 +180,7 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
                 prompt=kwargs.get("prompt"),
                 model=model,
                 settings=settings,
+                metadata=kwargs.get("literalai_metadata"),
                 tags=kwargs.get("literalai_tags"),
             )
 
