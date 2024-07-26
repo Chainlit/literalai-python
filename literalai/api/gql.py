@@ -739,6 +739,7 @@ query GetGenerations(
                 error
                 type
                 tags
+                metadata
                 step {
                     threadId
                     thread {
