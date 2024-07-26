@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import deprecated
 
 from literalai.context import active_steps_var, active_thread_var
-from literalai.dataset import DatasetType
+from literalai.dataset import Dataset, DatasetType
 from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
 from literalai.filter import (
     generations_filters,
@@ -1057,7 +1057,9 @@ class LiteralAPI(BaseLiteralAPI):
             *create_dataset_helper(self, name, description, metadata, type)
         )
 
-    def get_dataset(self, id: Optional[str] = None, name: Optional[str] = None):
+    def get_dataset(
+        self, id: Optional[str] = None, name: Optional[str] = None
+    ) -> Optional[Dataset]:
         """
         Retrieves a dataset by its ID or name.
 

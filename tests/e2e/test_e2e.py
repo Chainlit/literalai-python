@@ -634,6 +634,8 @@ is a templated list."""
 
     @pytest.mark.timeout(5)
     async def test_experiment_params_optional(self, client: LiteralClient):
+        if (ds := client.api.get_dataset(name="test-dataset")) is not None:
+            client.api.delete_dataset(id=ds.id)
         dataset = client.api.create_dataset(
             name="test-dataset", description="test-description"
         )

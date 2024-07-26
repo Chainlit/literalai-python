@@ -45,7 +45,7 @@ def get_dataset_helper(
     if name:
         body["name"] = name
 
-    def process_response(response):
+    def process_response(response) -> Optional[Dataset]:
         dataset_dict = response.get("data")
         if dataset_dict is None:
             return None
