@@ -30,7 +30,7 @@ class BaseLiteralClient:
 
     def __init__(
         self,
-        batch_size: int = 5,
+        batch_size: int = 1,
         is_async: bool = False,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -274,7 +274,7 @@ class LiteralClient(BaseLiteralClient):
 
     def __init__(
         self,
-        batch_size: int = 5,
+        batch_size: int = 1,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         environment: Optional[Environment] = None,
@@ -298,7 +298,7 @@ class AsyncLiteralClient(BaseLiteralClient):
 
     def __init__(
         self,
-        batch_size: int = 5,
+        batch_size: int = 1,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         environment: Optional[Environment] = None,

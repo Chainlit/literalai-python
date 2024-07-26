@@ -30,7 +30,7 @@ class EventProcessor:
     event_queue: queue.Queue
     batch: List["StepDict"]
 
-    def __init__(self, api: "LiteralAPI", batch_size: int = 5, disabled: bool = False):
+    def __init__(self, api: "LiteralAPI", batch_size: int = 1, disabled: bool = False):
         self.batch_size = batch_size
         self.api = api
         self.event_queue = queue.Queue()
@@ -95,7 +95,7 @@ class EventProcessor:
 
     def flush(self):
         while not self.event_queue.empty():
-            time.sleep(0.2)
+            time.sleep(DEFAULT_SLEEP_TIME)
 
     def __del__(self):
         self.flush_and_stop()
