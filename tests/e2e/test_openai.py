@@ -33,7 +33,7 @@ class TestOpenAI:
         api_key = os.getenv("LITERAL_API_KEY", None)
         assert url is not None and api_key is not None, "Missing environment variables"
 
-        client = LiteralClient(batch_size=1, url=url, api_key=api_key)
+        client = LiteralClient(batch_size=5, url=url, api_key=api_key)
         client.instrument_openai()
 
         return client

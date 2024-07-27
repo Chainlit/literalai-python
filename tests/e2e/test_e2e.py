@@ -32,7 +32,7 @@ class Teste2e:
         api_key = os.getenv("LITERAL_API_KEY", None)
         assert url is not None and api_key is not None, "Missing environment variables"
 
-        client = LiteralClient(batch_size=1, url=url, api_key=api_key)
+        client = LiteralClient(batch_size=5, url=url, api_key=api_key)
         yield client
         client.event_processor.flush_and_stop()
 
@@ -42,7 +42,7 @@ class Teste2e:
         api_key = os.getenv("LITERAL_API_KEY", None)
         assert url is not None and api_key is not None, "Missing environment variables"
 
-        client = LiteralClient(batch_size=1, url=url, api_key=api_key)
+        client = LiteralClient(batch_size=5, url=url, api_key=api_key)
         yield client
         client.event_processor.flush_and_stop()
 
@@ -53,7 +53,7 @@ class Teste2e:
         assert url is not None and api_key is not None, "Missing environment variables"
 
         client = LiteralClient(
-            batch_size=1, url=url, api_key=api_key, environment="staging"
+            batch_size=5, url=url, api_key=api_key, environment="staging"
         )
         yield client
         client.event_processor.flush_and_stop()
@@ -64,7 +64,7 @@ class Teste2e:
         api_key = os.getenv("LITERAL_API_KEY", None)
         assert url is not None and api_key is not None, "Missing environment variables"
 
-        async_client = AsyncLiteralClient(batch_size=1, url=url, api_key=api_key)
+        async_client = AsyncLiteralClient(batch_size=5, url=url, api_key=api_key)
         yield async_client
         async_client.event_processor.flush_and_stop()
 

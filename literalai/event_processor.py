@@ -38,15 +38,21 @@ class EventProcessor:
             target=self._process_events, daemon=True
         )
         self.disabled = disabled
+        self.processing_counter = 0
+        self.counter_lock = threading.Lock()
         if not self.disabled:
             self.processing_thread.start()
 
         self.stop_event = threading.Event()
 
     def add_event(self, event: "StepDict"):
+        with self.counter_lock:
+            self.processing_counter += 1
         self.event_queue.put(event)
 
     async def a_add_events(self, event: "StepDict"):
+        with self.counter_lock:
+            self.processing_counter += 1
         await to_thread(self.event_queue.put, event)
 
     def _process_events(self):
@@ -62,7 +68,7 @@ class EventProcessor:
                 # No more events at the moment, proceed with processing what's in the batch
                 pass
 
-            # Process the batch if any events are present - in a separate thread
+            # Process the batch if any events are present
             if batch:
                 self._process_batch(batch)
 
@@ -83,6 +89,8 @@ class EventProcessor:
         while not self._try_process_batch(batch) and retries < 1:
             retries += 1
             time.sleep(DEFAULT_SLEEP_TIME)
+        with self.counter_lock:
+            self.processing_counter -= len(batch)
 
     def flush_and_stop(self):
         self.stop_event.set()
@@ -90,12 +98,16 @@ class EventProcessor:
             self.processing_thread.join()
 
     async def aflush(self):
-        while not self.event_queue.empty():
+        while not self.event_queue.empty() or self._is_processing():
             await asyncio.sleep(DEFAULT_SLEEP_TIME)
 
     def flush(self):
-        while not self.event_queue.empty():
+        while not self.event_queue.empty() or self._is_processing():
             time.sleep(DEFAULT_SLEEP_TIME)
+
+    def _is_processing(self):
+        with self.counter_lock:
+            return self.processing_counter > 0
 
     def __del__(self):
         self.flush_and_stop()
