@@ -4,7 +4,10 @@ setup(
     name="literalai",
     version="0.0.609",  # update version in literalai/version.py
     description="An SDK for observability in Python applications",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     author="Literal AI",
+    author_email="contact@literalai.com",
     package_data={"literalai": ["py.typed"]},
     packages=find_packages(),
     license="Apache License 2.0",
