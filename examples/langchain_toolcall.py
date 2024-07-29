@@ -41,7 +41,6 @@ prompt = lai_prompt.to_langchain_chat_prompt_template()
 agent: BaseSingleActionAgent = create_tool_calling_agent(model, tools, prompt)  # type: ignore
 agent_executor = AgentExecutor(agent=agent, tools=tools)
 
-lai_client.reset_context()
 cb = lai_client.langchain_callback()
 
 agent_executor.invoke(
