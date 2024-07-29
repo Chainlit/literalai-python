@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Dict, Optional, Any, TypedDict, List, cast
+from typing import Dict, Optional, Any, TypedDict, List, cast, Union
 from typing import TYPE_CHECKING
 
 from llama_index.core.base.llms.types import MessageRole
@@ -57,7 +57,7 @@ def convert_message_role(role: MessageRole) -> GenerationMessageRole:
     return cast(GenerationMessageRole, mapping.get(role, "user"))
 
 
-def extract_query_from_bundle(str_or_query_bundle: str | QueryBundle):
+def extract_query_from_bundle(str_or_query_bundle: Union[str | QueryBundle]):
     if isinstance(str_or_query_bundle, QueryBundle):
         return str_or_query_bundle.query_str
 
