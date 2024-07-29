@@ -67,6 +67,7 @@ class Message(Utils):
 
     def end(self):
         active_steps = active_steps_var.get()
+
         if len(active_steps) > 0:
             parent_step = active_steps[-1]
             if not self.parent_id:

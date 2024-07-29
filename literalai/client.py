@@ -11,6 +11,7 @@ from literalai.experiment_run import (
     ExperimentRunContextManager,
     experiment_run_decorator,
 )
+from literalai.instrumentation.llamaindex import instrument_llamaindex
 from literalai.instrumentation.mistralai import instrument_mistralai
 from literalai.instrumentation.openai import instrument_openai
 from literalai.message import Message
@@ -74,6 +75,9 @@ class BaseLiteralClient:
 
     def instrument_mistralai(self):
         instrument_mistralai(self.to_sync())
+
+    def instrument_llamaindex(self):
+        instrument_llamaindex(self.to_sync())
 
     def langchain_callback(
         self,

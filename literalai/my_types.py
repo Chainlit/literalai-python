@@ -181,7 +181,7 @@ class CompletionGeneration(BaseGeneration, Utils):
         return _dict
 
     @classmethod
-    def from_dict(self, generation_dict: Dict) -> "CompletionGeneration":
+    def from_dict(self, generation_dict: Dict):
         return CompletionGeneration(
             id=generation_dict.get("id"),
             prompt_id=generation_dict.get("promptId"),
@@ -221,7 +221,7 @@ class ChatGeneration(BaseGeneration, Utils):
         return _dict
 
     @classmethod
-    def from_dict(self, generation_dict: Dict) -> "ChatGeneration":
+    def from_dict(self, generation_dict: Dict):
         return ChatGeneration(
             id=generation_dict.get("id"),
             prompt_id=generation_dict.get("promptId"),
