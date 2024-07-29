@@ -1,22 +1,13 @@
-import json
-from typing import Dict, Optional, Any, TypedDict, List
-import uuid
 import logging
-from llama_index.core.base.response.schema import StreamingResponse, Response
-from openai.types.chat import ChatCompletion
-from pydantic import Field
+import uuid
+from typing import Dict, Optional, Any, TypedDict, List, cast
 from typing import TYPE_CHECKING
 
-from openai.types import CompletionUsage
-
+from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.base.response.schema import StreamingResponse, Response
 from llama_index.core.instrumentation import get_dispatcher
-from llama_index.core.instrumentation.span import SimpleSpan
-from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
-from llama_index.core.instrumentation.events.synthesis import GetResponseStartEvent, SynthesizeEndEvent
-from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.events.embedding import (
     EmbeddingStartEvent,
     EmbeddingEndEvent,
@@ -33,15 +24,37 @@ from llama_index.core.instrumentation.events.retrieval import (
     RetrievalStartEvent,
     RetrievalEndEvent,
 )
+from llama_index.core.instrumentation.events.synthesis import GetResponseStartEvent, SynthesizeEndEvent
+from llama_index.core.instrumentation.span import SimpleSpan
+from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
+from openai.types import CompletionUsage
+from openai.types.chat import ChatCompletion
+from pydantic import Field
 
 from literalai.context import active_thread_var
-from literalai.my_types import ChatGeneration
+from literalai.my_types import ChatGeneration, GenerationMessageRole
 from literalai.step import StepType, Step
 
 if TYPE_CHECKING:
     from literalai.client import LiteralClient
 
 literalai_uuid_namespace = uuid.UUID("05f6b2b5-a912-47bd-958f-98a9c4496322")
+
+
+def convert_message_role(role: MessageRole) -> GenerationMessageRole:
+    mapping = {
+        MessageRole.SYSTEM: "system",
+        MessageRole.USER: "user",
+        MessageRole.ASSISTANT: "assistant",
+        MessageRole.FUNCTION: "function",
+        MessageRole.TOOL: "tool",
+        MessageRole.CHATBOT: "assistant",
+        MessageRole.MODEL: "assistant",
+    }
+
+    return cast(GenerationMessageRole, mapping.get(role, "user"))
 
 
 def extract_query_from_bundle(str_or_query_bundle: str | QueryBundle):
@@ -57,21 +70,25 @@ def extract_document_info(nodes: List[NodeWithScore]):
 
     return [
         {
-            'id_': node['node']['id_'],
-            'metadata': node['node']['metadata'],
-            'text': node['node']['text'],
-            'mimetype': node['node']['mimetype'],
-            'start_char_idx': node['node']['start_char_idx'],
-            'end_char_idx': node['node']['end_char_idx'],
-            'char_length': node['node']['end_char_idx'] - node['node']['start_char_idx'],
-            'score': node['score']
+            'id_': node.id_,
+            'metadata': node.metadata,
+            'text': node.get_text(),
+            'mimetype': node.node.mimetype,
+            'start_char_idx': node.node.start_char_idx,
+            'end_char_idx': node.node.end_char_idx,
+            'char_length': (
+                node.node.end_char_idx - node.node.start_char_idx
+                if node.node.end_char_idx is not None and node.node.start_char_idx is not None
+                else None
+            ),
+            'score': node.get_score()
         }
-        for node in nodes
+        for node in nodes if isinstance(node.node, TextNode)
     ]
 
 
 def create_generation(event: LLMChatStartEvent):
-    model_dict = event.dict().get("model_dict")
+    model_dict = event.model_dict
 
     return ChatGeneration(
         provider=model_dict.get("class_name"),
@@ -85,10 +102,10 @@ def create_generation(event: LLMChatStartEvent):
         },
         messages=[
             {
-                "role": message["role"].value,
-                "content": message["content"]
+                "role": convert_message_role(message.role),
+                "content": message.content
             }
-            for message in event.dict().get("messages")
+            for message in event.messages
         ]
     )
 
@@ -114,7 +131,7 @@ class LiteralEventHandler(BaseEventHandler):
         """Class name."""
         return "LiteralEventHandler"
 
-    def handle(self, event: BaseEvent, undefined="undefined", **kwargs) -> None:
+    def handle(self, event: BaseEvent, **kwargs) -> None:
         """Logic for handling event."""
         try:
             thread_id = self._span_handler.get_thread_id(event.span_id)
@@ -123,16 +140,17 @@ class LiteralEventHandler(BaseEventHandler):
             """The events are presented here roughly in chronological order"""
             if isinstance(event, QueryStartEvent):
                 active_thread = active_thread_var.get()
+                query = extract_query_from_bundle(event.query)
 
                 if not active_thread or not active_thread.name:
-                    self._client.api.upsert_thread(id=thread_id, name=event.dict().get("query"))
+                    self._client.api.upsert_thread(id=thread_id, name=query)
 
                 self._client.message(
                     name="User query",
                     id=str(event.id_),
                     type="user_message",
                     thread_id=thread_id,
-                    content=event.dict().get("query")
+                    content=query
                 )
 
             if isinstance(event, RetrievalStartEvent):
@@ -164,23 +182,23 @@ class LiteralEventHandler(BaseEventHandler):
                         parent_id=retrieval_step.id,
                         thread_id=thread_id,
                     )
-                    embedding_step.metadata = event.dict().get("model_dict")
+                    embedding_step.metadata = event.model_dict
                     self.store_step(run_id=run_id, step=embedding_step)
 
             if isinstance(event, EmbeddingEndEvent):
                 embedding_step = self.get_first_step_of_type(run_id=run_id, step_type="embedding")
 
                 if run_id and embedding_step:
-                    embedding_step.input = {"query": event.dict().get("chunks")}
-                    embedding_step.output = {"embeddings": event.dict().get("embeddings")}
+                    embedding_step.input = {"query": event.chunks}
+                    embedding_step.output = {"embeddings": event.embeddings}
                     embedding_step.end()
 
             if isinstance(event, RetrievalEndEvent):
                 retrieval_step = self.get_first_step_of_type(run_id=run_id, step_type="retrieval")
 
                 if run_id and retrieval_step:
-                    retrieved_documents = extract_document_info(event.dict().get("nodes"))
-                    query = extract_query_from_bundle(event.dict().get("str_or_query_bundle"))
+                    retrieved_documents = extract_document_info(event.nodes)
+                    query = extract_query_from_bundle(event.str_or_query_bundle)
 
                     retrieval_step.input = {"query": query}
                     retrieval_step.output = {"retrieved_documents": retrieved_documents}
@@ -202,15 +220,14 @@ class LiteralEventHandler(BaseEventHandler):
                 if run_id and llm_step:
                     generation = create_generation(event=event)
                     llm_step.generation = generation
-                    llm_step.name = event.dict().get("model_dict").get("model")
+                    llm_step.name = event.model_dict.get("model")
 
             if isinstance(event, LLMChatEndEvent):
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
+                response = event.response
 
-                if run_id and llm_step:
-                    response = event.dict().get("response")
-
-                    chat_completion = response.get("raw")
+                if run_id and llm_step and response:
+                    chat_completion = response.raw
 
                     if isinstance(chat_completion, ChatCompletion):
                         usage = chat_completion.usage
@@ -223,14 +240,14 @@ class LiteralEventHandler(BaseEventHandler):
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
                 run = self.get_first_step_of_type(run_id=run_id, step_type="run")
 
-                if run_id and llm_step and run:
-                    response = event.dict().get("response")
+                if llm_step and run:
+                    synthesized_response = event.response
                     text_response = ""
 
-                    if isinstance(response, StreamingResponse):
-                        text_response = str(response.get_response())
-                    if isinstance(response, Response):
-                        text_response = str(response)
+                    if isinstance(synthesized_response, StreamingResponse):
+                        text_response = str(synthesized_response.get_response())
+                    if isinstance(synthesized_response, Response):
+                        text_response = str(synthesized_response)
 
                     llm_step.generation.message_completion = {
                         "role": "assistant",
@@ -248,7 +265,7 @@ class LiteralEventHandler(BaseEventHandler):
 
             if isinstance(event, QueryEndEvent):
                 if run_id in self.runs:
-                    self.runs[run_id].pop()
+                    del self.runs[run_id]
 
         except Exception as e:
             logging.error("[Literal] Error in Llamaindex instrumentation : %s", str(e), exc_info=True)
@@ -310,7 +327,7 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
         else:
             self.spans[id_]["root_id"] = id_
 
-    def is_run_root(self, instance: Optional[Any], parent_span_id: Optional[str]) -> bool :
+    def is_run_root(self, instance: Optional[Any], parent_span_id: Optional[str]) -> bool:
         """Returns True if the span is of type RetrieverQueryEngine, and it has no run root in its parent chain"""
         if not isinstance(instance, RetrieverQueryEngine):
             return False
@@ -332,6 +349,9 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
 
     def get_root_span_id(self, span_id: Optional[str]):
         """Finds the root span and returns its ID"""
+        if not span_id:
+            return None
+
         current_span = self.spans.get(span_id)
 
         if current_span is None:
@@ -344,8 +364,11 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
 
         return current_span["id"]
 
-    def get_run_id(self, span_id: str):
+    def get_run_id(self, span_id: Optional[str]):
         """Go up the span chain to find a run_root, return its ID (or None)"""
+        if not span_id:
+            return None
+
         current_span = self.spans.get(span_id)
 
         if current_span is None:
@@ -355,7 +378,12 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
             if current_span["is_run_root"]:
                 return str(uuid.uuid5(literalai_uuid_namespace, current_span["id"]))
 
-            current_span = self.spans.get(current_span["parent_id"])
+            parent_id = current_span["parent_id"]
+
+            if parent_id:
+                current_span = self.spans.get(parent_id)
+            else:
+                current_span = None
 
         return None
 
@@ -374,7 +402,12 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
         if current_span is None:
             return None
 
-        root_span = self.spans.get(current_span["root_id"])
+        root_id = current_span["root_id"]
+
+        if not root_id:
+            return None
+
+        root_span = self.spans.get(root_id)
 
         if root_span is None:
             # span is already the root, uuid its own id
@@ -393,7 +426,7 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
     ):
         """Logic for preparing to exit a span."""
         if id in self.spans:
-            self.spans[id].pop()
+            del self.spans[id_]
 
     def prepare_to_drop_span(
             self,
@@ -405,7 +438,7 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
     ):
         """Logic for preparing to drop a span."""
         if id in self.spans:
-            self.spans[id].pop()
+            del self.spans[id_]
 
 
 def instrument_llamaindex(client: "LiteralClient"):
@@ -414,4 +447,3 @@ def instrument_llamaindex(client: "LiteralClient"):
     event_handler = LiteralEventHandler(literal_client=client, llama_index_span_handler=span_handler)
     root_dispatcher.add_event_handler(event_handler)
     root_dispatcher.add_span_handler(span_handler)
-
