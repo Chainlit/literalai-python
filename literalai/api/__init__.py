@@ -560,7 +560,7 @@ class LiteralAPI(BaseLiteralAPI):
                 variables[f"{k}_{id}"] = v
 
         def process_response(response):
-            return [Score.from_dict(x) for x in response["data"].values()]
+            return [x for x in response["data"].values()]
 
         return self.gql_helper(query, "create scores", variables, process_response)
 
