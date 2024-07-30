@@ -10,15 +10,13 @@ from typing import (
     List,
     Literal,
     Optional,
-    TypedDict,
-    Union, cast,
+    Union,
+    cast,
 )
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
 from typing_extensions import TypedDict
-
-from literalai import Utils
 
 if TYPE_CHECKING:
     from literalai.client import BaseLiteralClient
@@ -158,7 +156,6 @@ class Attachment(Utils):
         )
 
         return attachment
-
 
 
 class StepDict(TypedDict, total=False):

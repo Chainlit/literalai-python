@@ -1,13 +1,9 @@
-import sys
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict, List, Literal, Optional, cast
 
 from literalai.my_types import Utils
 
-if sys.version_info < (3, 12):
-    from typing_extensions import TypedDict
-else:
-    from typing import TypedDict
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI

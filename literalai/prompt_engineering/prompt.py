@@ -1,15 +1,9 @@
 import html
-import sys
 from dataclasses import dataclass
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
-from typing_extensions import deprecated
-
-if sys.version_info < (3, 12):
-    from typing_extensions import TypedDict
-else:
-    from typing import TypedDict
+from typing_extensions import deprecated, TypedDict
 
 import chevron
 

@@ -1,13 +1,9 @@
 import json
-import sys
 import uuid
 from typing import Any, Dict, Generic, List, Literal, Optional, Protocol, TypeVar
 from abc import abstractmethod
 
-if sys.version_info < (3, 12):
-    from typing_extensions import TypedDict
-else:
-    from typing import TypedDict
+from typing_extensions import TypedDict
 
 from pydantic.dataclasses import Field, dataclass
 
@@ -45,7 +41,7 @@ class PageInfo(Utils):
         start_cursor = page_info_dict.get("startCursor", None)
         end_cursor = page_info_dict.get("endCursor", None)
         return cls(
-            has_next_page=has_next_page, start_cursor=start_cursor, endCursor=end_cursor
+            has_next_page=has_next_page, start_cursor=start_cursor, end_cursor=end_cursor
         )
 
 

@@ -1,9 +1,4 @@
-import sys
-
-if sys.version_info < (3, 11):
-    from typing_extensions import TypedDict
-else:
-    from typing import TypedDict
+from typing_extensions import TypedDict
 
 from typing import Any, Generic, List, Literal, Optional, TypeVar, Union
 
