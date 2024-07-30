@@ -1,7 +1,7 @@
 import mimetypes
 from typing import Dict, Optional, TypedDict, Union
 
-from literalai.my_types import Attachment
+from ..observability.step import Attachment
 
 from . import gql
 

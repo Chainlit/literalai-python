@@ -10,12 +10,7 @@ if TYPE_CHECKING:
 
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import ensure_values_serializable
-from literalai.my_types import (
-    ChatGeneration,
-    CompletionGeneration,
-    GenerationMessage,
-    GenerationType,
-)
+from literalai.observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration, GenerationType
 from literalai.wrappers import AfterContext, BeforeContext, wrap_all
 
 logger = logging.getLogger(__name__)

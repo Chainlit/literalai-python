@@ -11,12 +11,7 @@ from types import GeneratorType
 
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import ensure_values_serializable
-from literalai.my_types import (
-    ChatGeneration,
-    CompletionGeneration,
-    GenerationMessage,
-    GenerationType,
-)
+from literalai.observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration, GenerationType
 from literalai.wrappers import AfterContext, BeforeContext, wrap_all
 
 REQUIREMENTS = ["mistralai>=0.2.0"]

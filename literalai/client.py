@@ -7,23 +7,23 @@ from literalai.callback.llama_index_callback import get_llama_index_callback
 from literalai.context import active_steps_var, active_thread_var
 from literalai.environment import EnvContextManager, env_decorator
 from literalai.event_processor import EventProcessor
-from literalai.experiment_run import (
+from literalai.evaluation.experiment_run import (
     ExperimentRunContextManager,
     experiment_run_decorator,
 )
 from literalai.instrumentation.llamaindex import instrument_llamaindex
 from literalai.instrumentation.mistralai import instrument_mistralai
 from literalai.instrumentation.openai import instrument_openai
-from literalai.message import Message
-from literalai.my_types import Attachment, Environment
-from literalai.step import (
+from literalai.observability.message import Message
+from literalai.my_types import Environment
+from literalai.observability.step import (
     MessageStepType,
     Step,
     StepContextManager,
     TrueStepType,
-    step_decorator,
+    step_decorator, Attachment,
 )
-from literalai.thread import ThreadContextManager, thread_decorator
+from literalai.observability.thread import ThreadContextManager, thread_decorator
 
 
 class BaseLiteralClient:

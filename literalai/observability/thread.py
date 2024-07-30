@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypedDict
 
 from literalai.context import active_thread_var
 from literalai.my_types import UserDict, Utils
-from literalai.step import Step, StepDict
+from literalai.observability.step import Step, StepDict
 
 if TYPE_CHECKING:
     from literalai.client import BaseLiteralClient

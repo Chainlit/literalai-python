@@ -6,8 +6,8 @@ if TYPE_CHECKING:
 
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import utc_now
-from literalai.my_types import Attachment, Score, Utils
-from literalai.step import MessageStepType, StepDict
+from literalai.my_types import Utils
+from literalai.observability.step import MessageStepType, StepDict, Score, Attachment
 
 
 class Message(Utils):
@@ -118,9 +118,9 @@ class Message(Utils):
         metadata = message_dict.get("metadata", None)
         parent_id = message_dict.get("parentId", None)
         timestamp = message_dict.get("startTime", None)
-        content = message_dict.get("output", None)
+        content = message_dict.get("output")
         name = message_dict.get("name", None)
-        scores = message_dict.get("scores", None)
+        scores = message_dict.get("scores")
         attachments = message_dict.get("attachments", [])
 
         message = cls(

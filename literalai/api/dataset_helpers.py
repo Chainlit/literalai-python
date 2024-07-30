@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Dict, Optional
 
-from literalai.dataset import Dataset, DatasetType
-from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
-from literalai.dataset_item import DatasetItem
+from literalai.evaluation.dataset import Dataset, DatasetType
+from literalai.evaluation.dataset_experiment import DatasetExperiment, DatasetExperimentItem
+from literalai.evaluation.dataset_item import DatasetItem
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI

@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from literalai.my_types import GenerationMessage
-from literalai.prompt import Prompt, ProviderSettings
+from ..observability.generation import GenerationMessage
+from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI

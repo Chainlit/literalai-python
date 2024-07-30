@@ -1,7 +1,7 @@
 from typing import List, Union
 
 from literalai.helper import ensure_values_serializable
-from literalai.step import Step, StepDict
+from literalai.observability.step import Step, StepDict
 
 STEP_FIELDS = """
         id

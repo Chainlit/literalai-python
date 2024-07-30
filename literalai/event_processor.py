@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
-    from literalai.step import StepDict
+    from literalai.observability.step import StepDict
 
 DEFAULT_SLEEP_TIME = 0.2
 

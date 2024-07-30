@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from literalai.filter import threads_filters, threads_order_by
+from literalai.observability.filter import threads_filters, threads_order_by
 from literalai.my_types import PaginatedResponse
-from literalai.step import StepType
-from literalai.thread import Thread
+from literalai.observability.step import StepType
+from literalai.observability.thread import Thread
 
 from . import gql
 

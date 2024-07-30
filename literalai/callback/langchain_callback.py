@@ -1,16 +1,17 @@
 import time
 from importlib.metadata import version
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypedDict, Union, cast
 
 from literalai.helper import ensure_values_serializable
-from literalai.my_types import ChatGeneration, CompletionGeneration, GenerationMessage
-from literalai.step import Step
+from literalai.observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration, \
+    GenerationMessageRole
+from literalai.observability.step import Step
 
 if TYPE_CHECKING:
     from uuid import UUID
 
     from literalai.client import LiteralClient
-    from literalai.step import TrueStepType
+    from literalai.observability.step import TrueStepType
 
 
 def process_content(content: Any) -> Tuple[Dict, Optional[str]]:
@@ -27,6 +28,20 @@ def process_content(content: Any) -> Tuple[Dict, Optional[str]]:
 def process_variable_value(value: Any) -> str:
     return str(value) if value is not None else ""
 
+
+def _convert_message_role(role: str):
+    message_role = "assistant"
+
+    if "human" in role.lower():
+        message_role = "user"
+    elif "system" in role.lower():
+        message_role = "system"
+    elif "function" in role.lower():
+        message_role = "function"
+    elif "tool" in role.lower():
+        message_role = "tool"
+
+    return cast(GenerationMessageRole, message_role)
 
 def get_langchain_callback():
     try:
@@ -64,18 +79,6 @@ def get_langchain_callback():
             self.completion_generations = {}
             self.generation_inputs = {}
 
-        def _convert_message_role(self, role: str):
-            if "human" in role.lower():
-                return "user"
-            elif "system" in role.lower():
-                return "system"
-            elif "function" in role.lower():
-                return "function"
-            elif "tool" in role.lower():
-                return "tool"
-            else:
-                return "assistant"
-
         def _convert_message_dict(
             self,
             message: Dict,
@@ -86,7 +89,7 @@ def get_langchain_callback():
 
             msg = GenerationMessage(
                 name=kwargs.get("name"),
-                role=self._convert_message_role(class_name),
+                role=_convert_message_role(class_name),
                 content="",
             )
 
@@ -108,7 +111,7 @@ def get_langchain_callback():
             function_call = message.additional_kwargs.get("function_call")
             msg = GenerationMessage(
                 name=getattr(message, "name", None),
-                role=self._convert_message_role(message.type),
+                role=_convert_message_role(message.type),
                 content="",
             )
 

@@ -2,7 +2,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict
 
 from literalai.context import active_experiment_run_id_var
-from literalai.my_types import ScoreDict, Utils
+from literalai.my_types import Utils
+from literalai.observability.step import ScoreDict
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI

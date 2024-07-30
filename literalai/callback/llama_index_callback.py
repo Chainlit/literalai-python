@@ -4,13 +4,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from literalai.context import active_steps_var
 from literalai.helper import utc_now
-from literalai.my_types import (
-    Attachment,
-    ChatGeneration,
-    CompletionGeneration,
-    GenerationMessage,
-)
-from literalai.step import Step, TrueStepType
+from literalai.observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration
+from literalai.observability.step import Step, TrueStepType, Attachment
 
 if TYPE_CHECKING:
     from literalai.client import LiteralClient

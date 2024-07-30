@@ -11,8 +11,14 @@ from typing import (
     Literal,
     Optional,
     TypedDict,
-    Union,
+    Union, cast,
 )
+
+from pydantic import Field
+from pydantic.dataclasses import dataclass
+from typing_extensions import TypedDict
+
+from literalai import Utils
 
 if TYPE_CHECKING:
     from literalai.client import BaseLiteralClient
@@ -21,16 +27,10 @@ if TYPE_CHECKING:
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import utc_now
 from literalai.my_types import (
-    Attachment,
-    AttachmentDict,
-    BaseGeneration,
-    ChatGeneration,
-    CompletionGeneration,
     Environment,
-    Score,
-    ScoreDict,
     Utils,
 )
+from literalai.observability.generation import BaseGeneration, CompletionGeneration, ChatGeneration
 
 TrueStepType = Literal[
     "run", "tool", "llm", "embedding", "retrieval", "rerank", "undefined"
@@ -39,6 +39,126 @@ TrueStepType = Literal[
 MessageStepType = Literal["user_message", "assistant_message", "system_message"]
 
 StepType = Union[TrueStepType, MessageStepType]
+
+
+ScoreType = Literal["HUMAN", "AI"]
+
+
+class ScoreDict(TypedDict, total=False):
+    id: Optional[str]
+    name: str
+    type: ScoreType
+    value: float
+    stepId: Optional[str]
+    datasetExperimentItemId: Optional[str]
+    comment: Optional[str]
+    tags: Optional[List[str]]
+
+
+class AttachmentDict(TypedDict, total=False):
+    id: Optional[str]
+    stepId: Optional[str]
+    threadId: Optional[str]
+    metadata: Optional[Dict]
+    mime: Optional[str]
+    name: Optional[str]
+    objectKey: Optional[str]
+    url: Optional[str]
+
+
+@dataclass(repr=False)
+class Score(Utils):
+    name: str
+    type: ScoreType
+    value: float
+    step_id: Optional[str]
+    dataset_experiment_item_id: Optional[str]
+    comment: Optional[str]
+    tags: Optional[List[str]]
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "type": self.type,
+            "value": self.value,
+            "stepId": self.step_id,
+            "datasetExperimentItemId": self.dataset_experiment_item_id,
+            "comment": self.comment,
+            "tags": self.tags,
+        }
+
+    @classmethod
+    def from_dict(cls, score_dict: ScoreDict) -> "Score":
+        id = score_dict.get("id", "")
+        name = score_dict.get("name", "")
+        type = score_dict.get("type", "HUMAN")
+        value = score_dict.get("value", 0.0)
+        step_id = score_dict.get("stepId", "")
+        dataset_experiment_item_id = score_dict.get("datasetExperimentItemId", "")
+        comment = score_dict.get("comment", "")
+        tags = score_dict.get("tags", [])
+
+        score = cls(
+            id=id,
+            name=name,
+            type=type,
+            value=value,
+            step_id=step_id,
+            dataset_experiment_item_id=dataset_experiment_item_id,
+            comment=comment,
+            tags=tags,
+        )
+
+        return score
+
+
+@dataclass(repr=False)
+class Attachment(Utils):
+    step_id: Optional[str] = None
+    thread_id: Optional[str] = None
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    metadata: Optional[Dict] = Field(default_factory=lambda: {})
+    mime: Optional[str] = None
+    name: Optional[str] = None
+    object_key: Optional[str] = None
+    url: Optional[str] = None
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "metadata": self.metadata,
+            "mime": self.mime,
+            "name": self.name,
+            "objectKey": self.object_key,
+            "url": self.url,
+        }
+
+    @classmethod
+    def from_dict(cls, attachment_dict: AttachmentDict) -> "Attachment":
+        id = attachment_dict.get("id", "")
+        thread_id = attachment_dict.get("threadId", None)
+        step_id = attachment_dict.get("stepId", None)
+        metadata = attachment_dict.get("metadata", {})
+        mime = attachment_dict.get("mime", "")
+        name = attachment_dict.get("name", "")
+        object_key = attachment_dict.get("objectKey", "")
+        url = attachment_dict.get("url", "")
+
+        attachment = cls(
+            id=id,
+            thread_id=thread_id,
+            mime=mime,
+            name=name,
+            object_key=object_key,
+            url=url,
+            step_id=step_id,
+            metadata=metadata,
+        )
+
+        return attachment
+
 
 
 class StepDict(TypedDict, total=False):
@@ -167,7 +287,7 @@ class Step(Utils):
     @classmethod
     def from_dict(cls, step_dict: StepDict) -> "Step":
         name = step_dict.get("name") or ""
-        step_type = step_dict.get("type", "undefined")
+        step_type = step_dict.get("type", cast(StepType, "undefined"))
         thread_id = step_dict.get("threadId")
 
         step = cls(name=name, type=step_type, thread_id=thread_id)
@@ -334,3 +454,4 @@ def step_decorator(
                 return result
 
         return sync_wrapper
+

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional
 
-from literalai.filter import users_filters
+from literalai.observability.filter import users_filters
 from literalai.my_types import PaginatedResponse, User
 
 from . import gql

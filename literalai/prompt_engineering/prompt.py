@@ -16,7 +16,8 @@ import chevron
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
 
-from literalai.my_types import GenerationMessage, GenerationType, Utils
+from literalai.my_types import Utils
+from literalai.observability.generation import GenerationMessage, GenerationType
 
 
 class ProviderSettings(TypedDict, total=False):

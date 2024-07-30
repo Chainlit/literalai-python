@@ -7,8 +7,8 @@ import pytest
 
 from literalai import AsyncLiteralClient, LiteralClient
 from literalai.context import active_steps_var
-from literalai.my_types import ChatGeneration
-from literalai.thread import Thread
+from literalai.observability.generation import ChatGeneration
+from literalai.observability.thread import Thread
 
 """
 End to end tests for the SDK

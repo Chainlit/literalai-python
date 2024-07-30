@@ -10,15 +10,15 @@ from typing import (
     Literal,
     Optional,
     TypeVar,
-    Union,
+    Union, cast,
 )
 
 from typing_extensions import deprecated
 
 from literalai.context import active_steps_var, active_thread_var
-from literalai.dataset import Dataset, DatasetType
-from literalai.dataset_experiment import DatasetExperiment, DatasetExperimentItem
-from literalai.filter import (
+from literalai.evaluation.dataset import Dataset, DatasetType
+from literalai.evaluation.dataset_experiment import DatasetExperiment, DatasetExperimentItem
+from literalai.observability.filter import (
     generations_filters,
     generations_order_by,
     scores_filters,
@@ -29,7 +29,7 @@ from literalai.filter import (
     threads_order_by,
     users_filters,
 )
-from literalai.prompt import Prompt, ProviderSettings
+from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 from .attachment_helpers import (
     AttachmentUpload,
@@ -98,19 +98,32 @@ if TYPE_CHECKING:
 import httpx
 
 from literalai.my_types import (
-    Attachment,
-    ChatGeneration,
-    CompletionGeneration,
     Environment,
-    GenerationMessage,
     PaginatedResponse,
-    Score,
-    ScoreDict,
-    ScoreType,
 )
-from literalai.step import Step, StepDict, StepType
+from ..observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration
+from literalai.observability.step import Step, StepDict, StepType, ScoreType, ScoreDict, Score, Attachment
 
 logger = logging.getLogger(__name__)
+
+
+def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively checks and converts bytes objects in variables.
+    """
+
+    def handle_bytes(item):
+        if isinstance(item, bytes):
+            return "STRIPPED_BINARY_DATA"
+        elif isinstance(item, dict):
+            return {k: handle_bytes(v) for k, v in item.items()}
+        elif isinstance(item, list):
+            return [handle_bytes(i) for i in item]
+        elif isinstance(item, tuple):
+            return tuple(handle_bytes(i) for i in item)
+        return item
+
+    return handle_bytes(variables)
 
 
 class BaseLiteralAPI:
@@ -153,24 +166,6 @@ class BaseLiteralAPI:
 
         return h
 
-    def _prepare_variables(self, variables: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Recursively checks and converts bytes objects in variables.
-        """
-
-        def handle_bytes(item):
-            if isinstance(item, bytes):
-                return "STRIPPED_BINARY_DATA"
-            elif isinstance(item, dict):
-                return {k: handle_bytes(v) for k, v in item.items()}
-            elif isinstance(item, list):
-                return [handle_bytes(i) for i in item]
-            elif isinstance(item, tuple):
-                return tuple(handle_bytes(i) for i in item)
-            return item
-
-        return handle_bytes(variables)
-
 
 class LiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
@@ -197,7 +192,7 @@ class LiteralAPI(BaseLiteralAPI):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
 
-        variables = self._prepare_variables(variables)
+        variables = _prepare_variables(variables)
         with httpx.Client(follow_redirects=True) as client:
             response = client.post(
                 self.graphql_endpoint,
@@ -404,6 +399,8 @@ class LiteralAPI(BaseLiteralAPI):
             before (Optional[str]): Cursor for pagination, fetch threads before this cursor.
             filters (Optional[threads_filters]): Filters to apply on the threads query.
             order_by (Optional[threads_order_by]): Order by clause for threads.
+            step_types_to_keep (Optional[List[StepType]]) : If set, only steps of the corresponding types
+                                                            will be returned
 
         Returns:
             A list of threads that match the criteria.
@@ -680,8 +677,9 @@ class LiteralAPI(BaseLiteralAPI):
         headers: Optional[Dict] = request_dict.get("headers")
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
-        upload_type: Literal["raw", "multipart"] = request_dict.get(
-            "uploadType", "multipart"
+        upload_type: Literal["raw", "multipart"] = cast(
+            Literal["raw", "multipart"],
+            request_dict.get("uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
@@ -693,7 +691,8 @@ class LiteralAPI(BaseLiteralAPI):
             form_data[field_name] = (None, field_value)
 
         # Add file to the form_data
-        # Note: The content_type parameter is not needed here, as the correct MIME type should be set in the 'Content-Type' field from upload_details
+        # Note: The content_type parameter is not needed here, as the correct MIME type should be set
+        # in the 'Content-Type' field from upload_details
         form_data["file"] = (id, content, mime)
 
         with httpx.Client(follow_redirects=True) as client:
@@ -747,7 +746,7 @@ class LiteralAPI(BaseLiteralAPI):
             path (Optional[str]): Path where the file should be stored.
 
         Returns:
-            Attachment: The created or updated attachment object.
+            literalai.observability.step.Attachment: The created or updated attachment object.
         """
         if not thread_id:
             if active_thread := active_thread_var.get(None):
@@ -1296,6 +1295,7 @@ class LiteralAPI(BaseLiteralAPI):
             name (str): The name of the prompt to retrieve or create.
             template_messages (List[GenerationMessage]): A list of template messages for the prompt.
             settings (Optional[Dict]): Optional settings for the prompt.
+            tools (Optional[List[Dict]]): Optional tool options for the model
 
         Returns:
             Prompt: The prompt that was retrieved or created.
@@ -1398,7 +1398,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
 
-        variables = self._prepare_variables(variables)
+        variables = _prepare_variables(variables)
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.post(
@@ -1610,6 +1610,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             before (Optional[str]): A cursor for use in pagination, fetching records before this cursor.
             filters (Optional[threads_filters]): Filters to apply to the thread query.
             order_by (Optional[threads_order_by]): Ordering criteria for the threads.
+            step_types_to_keep (Optional[List[StepType]]) : If set, only steps of the corresponding types
+                                                            will be returned
 
         Returns:
             The result of the GraphQL helper function for fetching threads.
@@ -1774,7 +1776,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         Asynchronously creates multiple scores.
 
         Args:
-            scores (List[ScoreDict]): A list of dictionaries representing the scores to be created.
+            scores (List[literalai.observability.step.ScoreDict]): A list of dictionaries representing the scores to be created.
 
         Returns:
             The result of the GraphQL helper function for creating scores.
@@ -1814,7 +1816,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             value (float): The numerical value of the score.
             type (ScoreType): The type of the score.
             step_id (Optional[str]): The ID of the step associated with the score.
-            generation_id (Optional[str]): The ID of the generation associated with the score.
+            generation_id: Deprecated - use step_id
             dataset_experiment_item_id (Optional[str]): The ID of the dataset experiment item associated with the score.
             comment (Optional[str]): A comment associated with the score.
             tags (Optional[List[str]]): A list of tags associated with the score.
@@ -1909,8 +1911,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         headers: Optional[Dict] = request_dict.get("headers")
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
-        upload_type: Literal["raw", "multipart"] = request_dict.get(
-            "uploadType", "multipart"
+        upload_type: Literal["raw", "multipart"] = cast(
+            Literal["raw", "multipart"],
+            request_dict.get("uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
@@ -1922,7 +1925,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             form_data[field_name] = (None, field_value)
 
         # Add file to the form_data
-        # Note: The content_type parameter is not needed here, as the correct MIME type should be set in the 'Content-Type' field from upload_details
+        # Note: The content_type parameter is not needed here, as the correct MIME type should be set
+        # in the 'Content-Type' field from upload_details
         form_data["file"] = (id, content, mime)
 
         async with httpx.AsyncClient(follow_redirects=True) as client:

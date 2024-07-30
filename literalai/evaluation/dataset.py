@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, cast
 
 from literalai.my_types import Utils
 
@@ -12,8 +12,8 @@ else:
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
 
-from literalai.dataset_experiment import DatasetExperiment
-from literalai.dataset_item import DatasetItem, DatasetItemDict
+from literalai.evaluation.dataset_experiment import DatasetExperiment
+from literalai.evaluation.dataset_item import DatasetItem, DatasetItemDict
 
 DatasetType = Literal["key_value", "generation"]
 
@@ -64,7 +64,7 @@ class Dataset(Utils):
             name=dataset.get("name"),
             description=dataset.get("description"),
             items=[DatasetItem.from_dict(item) for item in items],
-            type=dataset.get("type", "key_value"),
+            type=dataset.get("type", cast(DatasetType, "key_value")),
         )
 
     def update(

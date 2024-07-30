@@ -1,8 +1,9 @@
 import math
 from typing import Any, Dict, List, Optional, TypedDict
 
-from literalai.filter import scores_filters, scores_order_by
-from literalai.my_types import PaginatedResponse, Score, ScoreDict, ScoreType
+from literalai.observability.filter import scores_filters, scores_order_by
+from literalai.my_types import PaginatedResponse
+from ..observability.step import ScoreType, ScoreDict, Score
 
 from . import gql
 

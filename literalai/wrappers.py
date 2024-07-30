@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Callable, Optional, TypedDict, Union
 from literalai.context import active_steps_var
 
 if TYPE_CHECKING:
-    from literalai.step import ChatGeneration, CompletionGeneration, Step
+    from literalai.observability.step import Step
+    from literalai.observability.generation import CompletionGeneration, ChatGeneration
 
 
 class BeforeContext(TypedDict):

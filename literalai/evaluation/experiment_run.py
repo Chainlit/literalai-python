@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable, Optional
 
 from literalai.context import active_experiment_run_id_var
 from literalai.environment import EnvContextManager
-from literalai.step import StepContextManager
+from literalai.observability.step import StepContextManager
 
 if TYPE_CHECKING:
     from literalai.client import BaseLiteralClient

@@ -34,8 +34,8 @@ from openai.types.chat import ChatCompletion
 from pydantic import Field
 
 from literalai.context import active_thread_var
-from literalai.my_types import ChatGeneration, GenerationMessageRole
-from literalai.step import StepType, Step
+from literalai.observability.generation import ChatGeneration, GenerationMessageRole
+from literalai.observability.step import StepType, Step
 
 if TYPE_CHECKING:
     from literalai.client import LiteralClient

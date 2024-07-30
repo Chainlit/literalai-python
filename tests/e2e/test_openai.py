@@ -7,7 +7,7 @@ from openai import AsyncOpenAI, AzureOpenAI, OpenAI
 from pytest_httpx import HTTPXMock
 
 from literalai import LiteralClient
-from literalai.my_types import ChatGeneration, CompletionGeneration
+from literalai.observability.generation import CompletionGeneration, ChatGeneration
 
 
 @pytest.fixture
