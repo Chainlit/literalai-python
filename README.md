@@ -18,14 +18,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = LiteralClient()
+literalai_client = LiteralClient()
 
-@client.step(type="run")
+@literalai_client.step(type="run")
 def my_step(input):
     return f"World"
 
 
-@client.thread
+@literalai_client.thread
 def main():
     print(my_step("Hello"))
 
@@ -35,22 +35,8 @@ client.flush_and_stop()
 print("Done")
 ```
 
-## Development
-
-### Setup
+## Development setup
 
 ```bash
 pip install -r requirements-dev.txt
-```
-
-### Testing
-
-Use the `npx prisma migrate reset` command to reset the database and load the seed data (Warning: this will delete all data in the database).
-
-Start the server on your machine.
-
-You can then run the tests with:
-
-```bash
-./run_tests.sh
 ```
