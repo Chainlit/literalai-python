@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional, Union
 
 from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
-from literalai.callback.llama_index_callback import get_llama_index_callback
 from literalai.context import active_steps_var, active_thread_var
 from literalai.environment import EnvContextManager, env_decorator
 from literalai.event_processor import EventProcessor
@@ -60,6 +59,12 @@ class BaseLiteralClient:
         )
 
     def to_sync(self) -> "LiteralClient":
+        """
+        Converts the current client to its synchronous version.
+
+        Returns:
+            LiteralClient: The current client's synchronous version.
+        """
         if isinstance(self.api, AsyncLiteralAPI):
             return LiteralClient(
                 batch_size=self.event_processor.batch_size,
@@ -71,12 +76,21 @@ class BaseLiteralClient:
             return self  # type: ignore
 
     def instrument_openai(self):
+        """
+        Instruments the OpenAI SDK so that all LLM calls are logged to Literal AI.
+        """
         instrument_openai(self.to_sync())
 
     def instrument_mistralai(self):
+        """
+        Instruments the Mistral AI SDK so that all LLM calls are logged to Literal AI.
+        """
         instrument_mistralai(self.to_sync())
 
     def instrument_llamaindex(self):
+        """
+        Instruments the Llama Index framework so that all RAG & LLM calls are logged to Literal AI.
+        """
         instrument_llamaindex(self.to_sync())
 
     def langchain_callback(
@@ -85,21 +99,21 @@ class BaseLiteralClient:
         to_keep: Optional[List[str]] = None,
         **kwargs: Any,
     ):
-        LangchainTracer = get_langchain_callback()
-        return LangchainTracer(
+        """
+        Creates a Callback for Langchain that logs all LLM calls to Literal AI.
+
+        Args:
+            to_ignore (Optional[List[str]]): Runs to ignore to declutter logging.
+            to_keep (Optional[List[str]]): Runs to keep within ignored runs.
+
+        Returns:
+            LangchainTracer: The callback to use in Langchain's invoke methods.
+        """
+        _LangchainTracer = get_langchain_callback()
+        return _LangchainTracer(
             self.to_sync(),
             to_ignore=to_ignore,
             to_keep=to_keep,
-            **kwargs,
-        )
-
-    def llama_index_callback(
-        self,
-        **kwargs: Any,
-    ):
-        LlamaIndexTracer = get_llama_index_callback()
-        return LlamaIndexTracer(
-            self.to_sync(),
             **kwargs,
         )
 
@@ -111,6 +125,18 @@ class BaseLiteralClient:
         name: Optional[str] = None,
         **kwargs,
     ):
+        """
+        Creates a thread where all the subsequents steps will be logged.
+        Works as a decorator or a ContextManager.
+
+        Args:
+            original_function: The function to execute in the thread's context.
+            thread_id (Optional[str]): The id of the thread to create.
+            name (Optional[str]): The name of the thread to create.
+
+        Returns:
+            The wrapper for the thread's context.
+        """
         if original_function:
             return thread_decorator(
                 self, func=original_function, thread_id=thread_id, name=name, **kwargs
@@ -129,6 +155,22 @@ class BaseLiteralClient:
         thread_id: Optional[str] = None,
         **kwargs,
     ):
+        """
+        Creates a step where all the subsequents steps will be logged. Works as a decorator or a ContextManager.
+        This is used to create Agent steps. For conversational messages use `message` instead.
+
+        Args:
+            original_function: The function to execute in the step's context.
+            name (Optional[str]): The name of the step to create.
+            type (TrueStepType): The type of the step. Must be one of the following :
+                                 "run", "tool", "llm", "embedding", "retrieval","rerank", "undefined".
+            id (Optional[str]): The id of the step to create.
+            parent_id (Optional[str]): The id of the parent step.
+            thread_id (Optional[str]): The id of the parent thread.
+
+        Returns:
+            The wrapper for the step's context.
+        """
         if original_function:
             return step_decorator(
                 self,
@@ -160,6 +202,19 @@ class BaseLiteralClient:
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
     ):
+        """
+        Creates a run where all the subsequents steps will be logged. Works as a decorator or a ContextManager.
+
+        Args:
+            original_function: The function to execute in the step's context.
+            name (Optional[str]): The name of the step to create.
+            id (Optional[str]): The id of the step to create.
+            parent_id (Optional[str]): The id of the parent step.
+            thread_id (Optional[str]): The id of the parent thread.
+
+        Returns:
+            The wrapper for the step's context.
+        """
         return self.step(
             original_function=original_function,
             name=name,
@@ -181,6 +236,25 @@ class BaseLiteralClient:
         tags: Optional[List[str]] = None,
         metadata: Dict = {},
     ):
+        """
+        Creates a conversational message step and sends it to Literal AI.
+        For agentic steps or runs use `step` or `run` respectively instead.
+
+        Args:
+            content (str): The text content of the message.
+            id (Optional[str]): The id of the step to create.
+            parent_id (Optional[str]): The id of the parent step.
+            type (TrueStepType): The type of the step. Must be one of the following :
+                                 "user_message", "assistant_message", "system_message".
+            name (Optional[str]): The name of the step to create.
+            thread_id (Optional[str]): The id of the parent thread.
+            attachments (List[Attachment]): A list of attachments to append to the message.
+            tags (Optional[List[str]]): A list of tags to add to the message.
+            metadata (Dict): Metadata to add to the message, in key-value pairs.
+
+        Returns:
+            Message: the created message.
+        """
         step = Message(
             name=name,
             id=id,
@@ -203,6 +277,17 @@ class BaseLiteralClient:
         env: Environment = "prod",
         **kwargs,
     ):
+        """
+        Sets the environment to add to all subsequent threads and steps. Works as a decorator or a ContextManager.
+        Entities logged in the "experiment" environment are filtered out of the Literal AI UI.
+
+        Args:
+            original_function: The function to execute in the step's context.
+            env (Environment): The environment to add to logged entities.
+
+        Returns:
+            The wrapper for the context.
+        """
         if original_function:
             return env_decorator(
                 self,
@@ -222,6 +307,15 @@ class BaseLiteralClient:
         original_function=None,
         **kwargs,
     ):
+        """
+        Creates an experiment run. Works as a decorator or a ContextManager.
+
+        Args:
+            original_function: The function to execute in the step's context.
+
+        Returns:
+            The wrapper for the context.
+        """
         if original_function:
             return experiment_run_decorator(
                 self,
@@ -243,6 +337,21 @@ class BaseLiteralClient:
         thread_id: Optional[str] = None,
         **kwargs,
     ):
+        """
+        Creates a step and starts it in the current context. To log it on Literal AI use `.end()`.
+        This is used to create Agent steps. For conversational messages use `message` instead.
+
+        Args:
+            name (Optional[str]): The name of the step to create.
+            type (TrueStepType): The type of the step. Must be one of the following :
+                                 "run", "tool", "llm", "embedding", "retrieval","rerank", "undefined".
+            id (Optional[str]): The id of the step to create.
+            parent_id (Optional[str]): The id of the parent step.
+            thread_id (Optional[str]): The id of the parent thread.
+
+        Returns:
+            Step: the created step.
+        """
         step = Step(
             name=name,
             type=type,
@@ -256,6 +365,9 @@ class BaseLiteralClient:
         return step
 
     def get_current_step(self):
+        """
+        Gets the current step from the context.
+        """
         active_steps = active_steps_var.get()
         if active_steps and len(active_steps) > 0:
             return active_steps[-1]
@@ -263,13 +375,22 @@ class BaseLiteralClient:
             return None
 
     def get_current_thread(self):
+        """
+        Gets the current thread from the context.
+        """
         return active_thread_var.get()
 
     def reset_context(self):
+        """
+        Resets the context, forgetting active steps & setting current thread to None.
+        """
         active_steps_var.set([])
         active_thread_var.set(None)
 
     def flush_and_stop(self):
+        """
+        Sends all threads and steps to the Literal AI API. Waits synchronously for all API calls to be done.
+        """
         self.event_processor.flush_and_stop()
 
 
