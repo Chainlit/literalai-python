@@ -266,6 +266,13 @@ class StepContextManager:
         self.step.end()
 
 
+def flatten_args_kwargs(func, *args, **kwargs):
+    signature = inspect.signature(func)
+    bound_arguments = signature.bind(*args, **kwargs)
+    bound_arguments.apply_defaults()
+    return {k: deepcopy(v) for k, v in bound_arguments.arguments.items()}
+
+
 def step_decorator(
     client: "BaseLiteralClient",
     func: Callable,
@@ -291,6 +298,7 @@ def step_decorator(
         )
     else:
         ctx_manager.step_name = name
+
     # Handle async decorator
     if inspect.iscoroutinefunction(func):
 
@@ -298,7 +306,7 @@ def step_decorator(
         async def async_wrapper(*args, **kwargs):
             with ctx_manager as step:
                 try:
-                    step.input = {"args": deepcopy(args), "kwargs": deepcopy(kwargs)}
+                    step.input = flatten_args_kwargs(func, *args, **kwargs)
                 except Exception:
                     pass
                 result = await func(*args, **kwargs)
@@ -319,7 +327,7 @@ def step_decorator(
         def sync_wrapper(*args, **kwargs):
             with ctx_manager as step:
                 try:
-                    step.input = {"args": deepcopy(args), "kwargs": deepcopy(kwargs)}
+                    step.input = flatten_args_kwargs(func, *args, **kwargs)
                 except Exception:
                     pass
                 result = func(*args, **kwargs)
