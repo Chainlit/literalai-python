@@ -55,7 +55,8 @@ def env_decorator(
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
             with ctx_manager:
-                await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
+                return result
 
         return async_wrapper
     else:
@@ -63,6 +64,6 @@ def env_decorator(
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
             with ctx_manager:
-                func(*args, **kwargs)
+                return func(*args, **kwargs)
 
         return sync_wrapper

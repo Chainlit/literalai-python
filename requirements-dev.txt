@@ -1,5 +1,6 @@
 pytest
 pytest-asyncio
+pytest-timeout
 pre-commit
 python-dotenv
 ruff

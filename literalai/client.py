@@ -6,9 +6,9 @@ from literalai.callback.langchain_callback import get_langchain_callback
 from literalai.context import active_steps_var, active_thread_var
 from literalai.environment import EnvContextManager, env_decorator
 from literalai.event_processor import EventProcessor
-from literalai.evaluation.experiment_run import (
-    ExperimentRunContextManager,
-    experiment_run_decorator,
+from literalai.evaluation.experiment_item_run import (
+    ExperimentItemRunContextManager,
+    experiment_item_run_decorator,
 )
 from literalai.instrumentation.llamaindex import instrument_llamaindex
 from literalai.instrumentation.mistralai import instrument_mistralai
@@ -302,7 +302,7 @@ class BaseLiteralClient:
                 **kwargs,
             )
 
-    def experiment_run(
+    def experiment_item_run(
         self,
         original_function=None,
         **kwargs,
@@ -317,13 +317,13 @@ class BaseLiteralClient:
             The wrapper for the context.
         """
         if original_function:
-            return experiment_run_decorator(
+            return experiment_item_run_decorator(
                 self,
                 func=original_function,
                 **kwargs,
             )
         else:
-            return ExperimentRunContextManager(
+            return ExperimentItemRunContextManager(
                 self,
                 **kwargs,
             )

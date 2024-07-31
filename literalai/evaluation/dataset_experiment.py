@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict
 
-from literalai.context import active_experiment_run_id_var
+from literalai.context import active_experiment_item_run_id_var
 from literalai.my_types import Utils
 from literalai.observability.step import ScoreDict
 
@@ -75,7 +75,7 @@ class DatasetExperiment(Utils):
     items: List[DatasetExperimentItem] = field(default_factory=lambda: [])
 
     def log(self, item_dict: DatasetExperimentItemDict) -> DatasetExperimentItem:
-        experiment_run_id = active_experiment_run_id_var.get()
+        experiment_run_id = active_experiment_item_run_id_var.get()
         dataset_experiment_item = DatasetExperimentItem.from_dict(
             {
                 "experimentRunId": experiment_run_id,

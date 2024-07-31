@@ -3,7 +3,7 @@ import uuid
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Optional
 
-from literalai.context import active_experiment_run_id_var
+from literalai.context import active_experiment_item_run_id_var
 from literalai.environment import EnvContextManager
 from literalai.observability.step import StepContextManager
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from literalai.client import BaseLiteralClient
 
 
-class ExperimentRunContextManager(EnvContextManager, StepContextManager):
+class ExperimentItemRunContextManager(EnvContextManager, StepContextManager):
     def __init__(
         self,
         client: "BaseLiteralClient",
@@ -23,14 +23,14 @@ class ExperimentRunContextManager(EnvContextManager, StepContextManager):
         )
 
     def __call__(self, func):
-        return experiment_run_decorator(
+        return experiment_item_run_decorator(
             self.client,
             func=func,
             ctx_manager=self,
         )
 
     async def __aenter__(self):
-        active_experiment_run_id_var.set(self.id)
+        active_experiment_item_run_id_var.set(self.id)
         await EnvContextManager.__aenter__(self)
         step = await StepContextManager.__aenter__(self)
         return step
@@ -39,10 +39,10 @@ class ExperimentRunContextManager(EnvContextManager, StepContextManager):
         await StepContextManager.__aexit__(self, exc_type, exc_val, exc_tb)
         await self.client.event_processor.aflush()
         await EnvContextManager.__aexit__(self, exc_type, exc_val, exc_tb)
-        active_experiment_run_id_var.set(None)
+        active_experiment_item_run_id_var.set(None)
 
     def __enter__(self):
-        active_experiment_run_id_var.set(self.id)
+        active_experiment_item_run_id_var.set(self.id)
         EnvContextManager.__enter__(self)
         step = StepContextManager.__enter__(self)
         return step
@@ -51,17 +51,17 @@ class ExperimentRunContextManager(EnvContextManager, StepContextManager):
         StepContextManager.__exit__(self, exc_type, exc_val, exc_tb)
         self.client.event_processor.flush()
         EnvContextManager.__exit__(self, exc_type, exc_val, exc_tb)
-        active_experiment_run_id_var.set(None)
+        active_experiment_item_run_id_var.set(None)
 
 
-def experiment_run_decorator(
+def experiment_item_run_decorator(
     client: "BaseLiteralClient",
     func: Callable,
-    ctx_manager: Optional[ExperimentRunContextManager] = None,
+    ctx_manager: Optional[ExperimentItemRunContextManager] = None,
     **decorator_kwargs,
 ):
     if not ctx_manager:
-        ctx_manager = ExperimentRunContextManager(
+        ctx_manager = ExperimentItemRunContextManager(
             client=client,
             **decorator_kwargs,
         )
@@ -72,7 +72,8 @@ def experiment_run_decorator(
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
             with ctx_manager:
-                await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
+                return result
 
         return async_wrapper
     else:
@@ -80,6 +81,6 @@ def experiment_run_decorator(
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
             with ctx_manager:
-                func(*args, **kwargs)
+                return func(*args, **kwargs)
 
         return sync_wrapper
