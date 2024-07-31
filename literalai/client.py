@@ -7,9 +7,9 @@ from literalai.callback.llama_index_callback import get_llama_index_callback
 from literalai.context import active_steps_var, active_thread_var
 from literalai.environment import EnvContextManager, env_decorator
 from literalai.event_processor import EventProcessor
-from literalai.experiment_run import (
-    ExperimentRunContextManager,
-    experiment_run_decorator,
+from literalai.experiment_item_run import (
+    ExperimentItemRunContextManager,
+    experiment_item_run_decorator,
 )
 from literalai.instrumentation.llamaindex import instrument_llamaindex
 from literalai.instrumentation.mistralai import instrument_mistralai
@@ -217,19 +217,19 @@ class BaseLiteralClient:
                 **kwargs,
             )
 
-    def experiment_run(
+    def experiment_item_run(
         self,
         original_function=None,
         **kwargs,
     ):
         if original_function:
-            return experiment_run_decorator(
+            return experiment_item_run_decorator(
                 self,
                 func=original_function,
                 **kwargs,
             )
         else:
-            return ExperimentRunContextManager(
+            return ExperimentItemRunContextManager(
                 self,
                 **kwargs,
             )
