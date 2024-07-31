@@ -597,7 +597,8 @@ is a templated list."""
     @pytest.mark.timeout(5)
     async def test_champion_prompt(self, client: LiteralClient):
         new_prompt = client.api.get_or_create_prompt(
-            name="Python SDK E2E Tests", template_messages=[{"role": "user", "content": "Hello"}]
+            name="Python SDK E2E Tests",
+            template_messages=[{"role": "user", "content": "Hello"}],
         )
         new_prompt.promote()
 
@@ -651,7 +652,7 @@ is a templated list."""
         def agent(input):
             return {"content": "hello world!"}
 
-        with client.experiment_run():
+        with client.experiment_item_run():
             input = {"question": "question"}
             output = agent(input)
             item = experiment.log(
