@@ -7,8 +7,6 @@ load_dotenv()
 client = LiteralClient()
 client.instrument_llamaindex()
 
-client.api.get_step()
-
 print("Vectorizing documents")
 index = VectorStoreIndex.from_documents([Document.example()])
 query_engine = index.as_query_engine()
