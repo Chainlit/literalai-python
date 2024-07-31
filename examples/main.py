@@ -16,8 +16,6 @@ sdk.instrument_openai()
 thread_id = None
 
 
-
-
 @sdk.step(type="run")
 def get_completion(welcome_message, text):
     completion = client.chat.completions.create(
@@ -25,7 +23,8 @@ def get_completion(welcome_message, text):
         messages=[
             {
                 "role": "system",
-                "content": "Tell an inspiring quote to the user, mentioning their name. Be extremely supportive while keeping it short. Write one sentence per line.",
+                "content": "Tell an inspiring quote to the user, mentioning their name. Be extremely supportive while "
+                           "keeping it short. Write one sentence per line.",
             },
             {
                 "role": "assistant",

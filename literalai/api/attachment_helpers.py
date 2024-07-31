@@ -1,9 +1,9 @@
 import mimetypes
 from typing import Dict, Optional, TypedDict, Union
 
-from ..observability.step import Attachment
+from literalai.observability.step import Attachment
 
-from . import gql
+from literalai.api import gql
 
 
 def create_attachment_helper(

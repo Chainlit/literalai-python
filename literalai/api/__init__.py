@@ -31,14 +31,14 @@ from literalai.observability.filter import (
 )
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
-from .attachment_helpers import (
+from literalai.api.attachment_helpers import (
     AttachmentUpload,
     create_attachment_helper,
     delete_attachment_helper,
     get_attachment_helper,
     update_attachment_helper,
 )
-from .dataset_helpers import (
+from literalai.api.dataset_helpers import (
     add_generation_to_dataset_helper,
     add_step_to_dataset_helper,
     create_dataset_helper,
@@ -51,14 +51,14 @@ from .dataset_helpers import (
     get_dataset_item_helper,
     update_dataset_helper,
 )
-from .generation_helpers import create_generation_helper, get_generations_helper
-from .prompt_helpers import (
+from literalai.api.generation_helpers import create_generation_helper, get_generations_helper
+from literalai.api.prompt_helpers import (
     create_prompt_helper,
     create_prompt_lineage_helper,
     get_prompt_helper,
     promote_prompt_helper,
 )
-from .score_helpers import (
+from literalai.api.score_helpers import (
     ScoreUpdate,
     check_scores_finite,
     create_score_helper,
@@ -67,7 +67,7 @@ from .score_helpers import (
     get_scores_helper,
     update_score_helper,
 )
-from .step_helpers import (
+from literalai.api.step_helpers import (
     create_step_helper,
     delete_step_helper,
     get_step_helper,
@@ -75,7 +75,7 @@ from .step_helpers import (
     send_steps_helper,
     update_step_helper,
 )
-from .thread_helpers import (
+from literalai.api.thread_helpers import (
     create_thread_helper,
     delete_thread_helper,
     get_thread_helper,
@@ -84,7 +84,7 @@ from .thread_helpers import (
     update_thread_helper,
     upsert_thread_helper,
 )
-from .user_helpers import (
+from literalai.api.user_helpers import (
     create_user_helper,
     delete_user_helper,
     get_user_helper,
@@ -101,7 +101,7 @@ from literalai.my_types import (
     Environment,
     PaginatedResponse,
 )
-from ..observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration
+from literalai.observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration
 from literalai.observability.step import Step, StepDict, StepType, ScoreType, ScoreDict, Score, Attachment
 
 logger = logging.getLogger(__name__)

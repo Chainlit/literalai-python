@@ -1,7 +1,6 @@
+import logging
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, List, Optional
-
-from literalai import Step, Thread
 
 if TYPE_CHECKING:
     pass

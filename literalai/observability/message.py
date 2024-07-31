@@ -118,7 +118,7 @@ class Message(Utils):
         metadata = message_dict.get("metadata", None)
         parent_id = message_dict.get("parentId", None)
         timestamp = message_dict.get("startTime", None)
-        content = str(message_dict.get("output", ""))
+        content = message_dict.get("output", {}).get("content", "")
         name = message_dict.get("name", None)
         scores = message_dict.get("scores", [])
         attachments = message_dict.get("attachments", [])

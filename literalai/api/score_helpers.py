@@ -3,9 +3,9 @@ from typing import Any, Dict, List, Optional, TypedDict
 
 from literalai.observability.filter import scores_filters, scores_order_by
 from literalai.my_types import PaginatedResponse
-from ..observability.step import ScoreType, ScoreDict, Score
+from literalai.observability.step import ScoreType, ScoreDict, Score
 
-from . import gql
+from literalai.api import gql
 
 
 def get_scores_helper(

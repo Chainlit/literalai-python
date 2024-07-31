@@ -4,9 +4,9 @@ from literalai.observability.filter import generations_filters, generations_orde
 from literalai.my_types import (
     PaginatedResponse,
 )
-from ..observability.generation import BaseGeneration, CompletionGeneration, ChatGeneration
+from literalai.observability.generation import BaseGeneration, CompletionGeneration, ChatGeneration
 
-from . import gql
+from literalai.api import gql
 
 
 def get_generations_helper(

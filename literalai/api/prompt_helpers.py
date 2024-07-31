@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from ..observability.generation import GenerationMessage
+from literalai.observability.generation import GenerationMessage
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
 
-from . import gql
+from literalai.api import gql
 
 
 def create_prompt_lineage_helper(name: str, description: Optional[str] = None):
