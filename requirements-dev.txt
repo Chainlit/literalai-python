@@ -1,0 +1,11 @@
+pytest
+pytest-asyncio
+pytest-timeout
+pre-commit
+python-dotenv
+ruff
+mypy
+langchain
+llama-index
+pytest_httpx
+mistralai
