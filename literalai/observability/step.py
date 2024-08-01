@@ -24,11 +24,12 @@ if TYPE_CHECKING:
 
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import utc_now
-from literalai.my_types import (
-    Environment,
-    Utils,
+from literalai.my_types import Environment, Utils
+from literalai.observability.generation import (
+    BaseGeneration,
+    ChatGeneration,
+    CompletionGeneration,
 )
-from literalai.observability.generation import BaseGeneration, CompletionGeneration, ChatGeneration
 
 TrueStepType = Literal[
     "run", "tool", "llm", "embedding", "retrieval", "rerank", "undefined"
@@ -383,6 +384,13 @@ class StepContextManager:
         self.step.end()
 
 
+def flatten_args_kwargs(func, *args, **kwargs):
+    signature = inspect.signature(func)
+    bound_arguments = signature.bind(*args, **kwargs)
+    bound_arguments.apply_defaults()
+    return {k: deepcopy(v) for k, v in bound_arguments.arguments.items()}
+
+
 def step_decorator(
     client: "BaseLiteralClient",
     func: Callable,
@@ -415,7 +423,7 @@ def step_decorator(
         async def async_wrapper(*args, **kwargs):
             with ctx_manager as step:
                 try:
-                    step.input = {"args": deepcopy(args), "kwargs": deepcopy(kwargs)}
+                    step.input = flatten_args_kwargs(func, *args, **kwargs)
                 except Exception:
                     pass
                 result = await func(*args, **kwargs)
@@ -436,7 +444,7 @@ def step_decorator(
         def sync_wrapper(*args, **kwargs):
             with ctx_manager as step:
                 try:
-                    step.input = {"args": deepcopy(args), "kwargs": deepcopy(kwargs)}
+                    step.input = flatten_args_kwargs(func, *args, **kwargs)
                 except Exception:
                     pass
                 result = func(*args, **kwargs)
@@ -451,4 +459,3 @@ def step_decorator(
                 return result
 
         return sync_wrapper
-
