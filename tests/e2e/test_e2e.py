@@ -3,12 +3,13 @@ import os
 import secrets
 import time
 import uuid
+from typing import List
 
 import pytest
 
 from literalai import AsyncLiteralClient, LiteralClient
 from literalai.context import active_steps_var
-from literalai.observability.generation import ChatGeneration
+from literalai.observability.generation import ChatGeneration, GenerationMessage
 from literalai.observability.thread import Thread
 
 """
@@ -599,16 +600,43 @@ is a templated list."""
         assert messages[0]["content"] == expected
 
     @pytest.mark.timeout(5)
-    async def test_champion_prompt(self, client: LiteralClient):
-        new_prompt = client.api.get_or_create_prompt(
-            name="Python SDK E2E Tests",
-            template_messages=[{"role": "user", "content": "Hello"}],
-        )
-        new_prompt.promote()
+    async def test_prompt_ab_testing(self, client: LiteralClient):
+        prompt_name = "Python SDK E2E Tests"
 
-        prompt = client.api.get_prompt(name="Python SDK E2E Tests")
-        assert prompt is not None
-        assert prompt.version == new_prompt.version
+        v0: List[GenerationMessage] = [{"role": "user", "content": "Hello"}]
+        v1: List[GenerationMessage] = [{"role": "user", "content": "Hello 2"}]
+
+        prompt_v0 = client.api.get_or_create_prompt(
+            name=prompt_name,
+            template_messages=v0,
+        )
+
+        client.api.update_prompt_ab_testing(
+            prompt_v0.name, rollouts=[{"version": 0, "rollout": 100}]
+        )
+
+        ab_testing = client.api.get_prompt_ab_testing(name=prompt_v0.name)
+        assert len(ab_testing) == 1
+        assert ab_testing[0]["version"] == 0
+        assert ab_testing[0]["rollout"] == 100
+
+        prompt_v1 = client.api.get_or_create_prompt(
+            name=prompt_name,
+            template_messages=v1,
+        )
+
+        client.api.update_prompt_ab_testing(
+            name=prompt_v1.name,
+            rollouts=[{"version": 0, "rollout": 60}, {"version": 1, "rollout": 40}],
+        )
+
+        ab_testing = client.api.get_prompt_ab_testing(name=prompt_v1.name)
+
+        assert len(ab_testing) == 2
+        assert ab_testing[0]["version"] == 0
+        assert ab_testing[0]["rollout"] == 60
+        assert ab_testing[1]["version"] == 1
+        assert ab_testing[1]["rollout"] == 40
 
     @pytest.mark.timeout(5)
     async def test_gracefulness(self, broken_client: LiteralClient):

@@ -1031,16 +1031,35 @@ query GetPrompt($id: String, $name: String, $version: Int) {
 }
 """
 
-PROMOTE_PROMPT_VERSION = """mutation promotePromptVersion(
-    $lineageId: String!
-    $version: Int!
+GET_PROMPT_AB_TESTING = """query getPromptLineageRollout($projectId: String, $lineageName: String!) {
+    promptLineageRollout(projectId: $projectId, lineageName: $lineageName) {
+      pageInfo {
+        startCursor
+        endCursor
+      }
+      edges {
+        node {
+          version
+          rollout
+        }
+      }
+    }
+  }
+"""
+
+UPDATE_PROMPT_AB_TESTING = """mutation updatePromptLineageRollout(
+    $projectId: String
+    $name: String!
+    $rollouts: [PromptVersionRolloutInput!]!
   ) {
-    promotePromptVersion(
-      lineageId: $lineageId
-      version: $version
+    updatePromptLineageRollout(
+      projectId: $projectId
+      name: $name
+      rollouts: $rollouts
     ) {
-      id
-      championId
+      ok
+      message
+      errorCode
     }
   }"""
 
