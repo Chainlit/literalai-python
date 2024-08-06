@@ -1,30 +1,29 @@
 import logging
 import uuid
-from typing import Dict, Optional, Any, TypedDict, List, cast, Union
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union, cast
 
 from llama_index.core.base.llms.types import MessageRole
-from llama_index.core.base.response.schema import StreamingResponse, Response
+from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.events.embedding import (
-    EmbeddingStartEvent,
     EmbeddingEndEvent,
+    EmbeddingStartEvent,
 )
 from llama_index.core.instrumentation.events.llm import (
-    LLMChatStartEvent,
     LLMChatEndEvent,
+    LLMChatStartEvent,
 )
-from llama_index.core.instrumentation.events.query import (
-    QueryStartEvent,
-    QueryEndEvent,
-)
+from llama_index.core.instrumentation.events.query import QueryEndEvent, QueryStartEvent
 from llama_index.core.instrumentation.events.retrieval import (
-    RetrievalStartEvent,
     RetrievalEndEvent,
+    RetrievalStartEvent,
 )
-from llama_index.core.instrumentation.events.synthesis import GetResponseStartEvent, SynthesizeEndEvent
+from llama_index.core.instrumentation.events.synthesis import (
+    GetResponseStartEvent,
+    SynthesizeEndEvent,
+)
 from llama_index.core.instrumentation.span import SimpleSpan
 from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
 from llama_index.core.query_engine import RetrieverQueryEngine
@@ -35,7 +34,7 @@ from pydantic import Field
 
 from literalai.context import active_thread_var
 from literalai.observability.generation import ChatGeneration, GenerationMessageRole
-from literalai.observability.step import StepType, Step
+from literalai.observability.step import Step, StepType
 
 if TYPE_CHECKING:
     from literalai.client import LiteralClient
@@ -70,20 +69,22 @@ def extract_document_info(nodes: List[NodeWithScore]):
 
     return [
         {
-            'id_': node.id_,
-            'metadata': node.metadata,
-            'text': node.get_text(),
-            'mimetype': node.node.mimetype,
-            'start_char_idx': node.node.start_char_idx,
-            'end_char_idx': node.node.end_char_idx,
-            'char_length': (
+            "id_": node.id_,
+            "metadata": node.metadata,
+            "text": node.get_text(),
+            "mimetype": node.node.mimetype,
+            "start_char_idx": node.node.start_char_idx,
+            "end_char_idx": node.node.end_char_idx,
+            "char_length": (
                 node.node.end_char_idx - node.node.start_char_idx
-                if node.node.end_char_idx is not None and node.node.start_char_idx is not None
+                if node.node.end_char_idx is not None
+                and node.node.start_char_idx is not None
                 else None
             ),
-            'score': node.get_score()
+            "score": node.get_score(),
         }
-        for node in nodes if isinstance(node.node, TextNode)
+        for node in nodes
+        if isinstance(node.node, TextNode)
     ]
 
 
@@ -101,17 +102,14 @@ def create_generation(event: LLMChatStartEvent):
             "top_logprobs": model_dict.get("top_logprobs"),
         },
         messages=[
-            {
-                "role": convert_message_role(message.role),
-                "content": message.content
-            }
+            {"role": convert_message_role(message.role), "content": message.content}
             for message in event.messages
-        ]
+        ],
     )
 
 
 class LiteralEventHandler(BaseEventHandler):
-    """ This class handles events coming from LlamaIndex. """
+    """This class handles events coming from LlamaIndex."""
 
     _client: "LiteralClient" = Field(...)
     _span_handler: "LiteralSpanHandler" = Field(...)
@@ -121,10 +119,14 @@ class LiteralEventHandler(BaseEventHandler):
     class Config:
         arbitrary_types_allowed = True
 
-    def __init__(self, literal_client: "LiteralClient", llama_index_span_handler: "LiteralSpanHandler"):
+    def __init__(
+        self,
+        literal_client: "LiteralClient",
+        llama_index_span_handler: "LiteralSpanHandler",
+    ):
         super().__init__()
-        object.__setattr__(self, '_client', literal_client)
-        object.__setattr__(self, '_span_handler', llama_index_span_handler)
+        object.__setattr__(self, "_client", literal_client)
+        object.__setattr__(self, "_span_handler", llama_index_span_handler)
 
     @classmethod
     def class_name(cls) -> str:
@@ -150,7 +152,7 @@ class LiteralEventHandler(BaseEventHandler):
                     id=str(event.id_),
                     type="user_message",
                     thread_id=thread_id,
-                    content=query
+                    content=query,
                 )
 
             if isinstance(event, RetrievalStartEvent):
@@ -173,7 +175,9 @@ class LiteralEventHandler(BaseEventHandler):
                 self.store_step(run_id=run_id, step=retrieval_step)
 
             if isinstance(event, EmbeddingStartEvent):
-                retrieval_step = self.get_first_step_of_type(run_id=run_id, step_type="retrieval")
+                retrieval_step = self.get_first_step_of_type(
+                    run_id=run_id, step_type="retrieval"
+                )
 
                 if run_id and retrieval_step:
                     embedding_step = self._client.start_step(
@@ -186,7 +190,9 @@ class LiteralEventHandler(BaseEventHandler):
                     self.store_step(run_id=run_id, step=embedding_step)
 
             if isinstance(event, EmbeddingEndEvent):
-                embedding_step = self.get_first_step_of_type(run_id=run_id, step_type="embedding")
+                embedding_step = self.get_first_step_of_type(
+                    run_id=run_id, step_type="embedding"
+                )
 
                 if run_id and embedding_step:
                     embedding_step.input = {"query": event.chunks}
@@ -194,7 +200,9 @@ class LiteralEventHandler(BaseEventHandler):
                     embedding_step.end()
 
             if isinstance(event, RetrievalEndEvent):
-                retrieval_step = self.get_first_step_of_type(run_id=run_id, step_type="retrieval")
+                retrieval_step = self.get_first_step_of_type(
+                    run_id=run_id, step_type="retrieval"
+                )
 
                 if run_id and retrieval_step:
                     retrieved_documents = extract_document_info(event.nodes)
@@ -234,7 +242,9 @@ class LiteralEventHandler(BaseEventHandler):
 
                         if isinstance(usage, CompletionUsage):
                             llm_step.generation.input_token_count = usage.prompt_tokens
-                            llm_step.generation.output_token_count = usage.completion_tokens
+                            llm_step.generation.output_token_count = (
+                                usage.completion_tokens
+                            )
 
             if isinstance(event, SynthesizeEndEvent):
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
@@ -251,7 +261,7 @@ class LiteralEventHandler(BaseEventHandler):
 
                     llm_step.generation.message_completion = {
                         "role": "assistant",
-                        "content": text_response
+                        "content": text_response,
                     }
 
                     llm_step.end()
@@ -260,7 +270,7 @@ class LiteralEventHandler(BaseEventHandler):
                     self._client.message(
                         type="assistant_message",
                         thread_id=thread_id,
-                        content=text_response
+                        content=text_response,
                     )
 
             if isinstance(event, QueryEndEvent):
@@ -268,7 +278,11 @@ class LiteralEventHandler(BaseEventHandler):
                     del self.runs[run_id]
 
         except Exception as e:
-            logging.error("[Literal] Error in Llamaindex instrumentation : %s", str(e), exc_info=True)
+            logging.error(
+                "[Literal] Error in Llamaindex instrumentation : %s",
+                str(e),
+                exc_info=True,
+            )
 
     def store_step(self, run_id: str, step: Step):
         if run_id not in self.runs:
@@ -276,7 +290,9 @@ class LiteralEventHandler(BaseEventHandler):
 
         self.runs[run_id].append(step)
 
-    def get_first_step_of_type(self, run_id: Optional[str], step_type: StepType) -> Optional[Step]:
+    def get_first_step_of_type(
+        self, run_id: Optional[str], step_type: StepType
+    ) -> Optional[Step]:
         if not run_id:
             return None
 
@@ -298,7 +314,7 @@ class SpanEntry(TypedDict):
 
 
 class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
-    """ This class handles spans coming from LlamaIndex. """
+    """This class handles spans coming from LlamaIndex."""
 
     spans: Dict[str, SpanEntry] = {}
 
@@ -308,18 +324,19 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
         return "LiteralSpanHandler"
 
     def new_span(
-            self,
-            id_: str,
-            bound_args: Any,
-            instance: Optional[Any] = None,
-            parent_span_id: Optional[str] = None,
-            **kwargs: Any,
+        self,
+        id_: str,
+        bound_args: Any,
+        instance: Optional[Any] = None,
+        parent_span_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ):
         self.spans[id_] = {
             "id": id_,
             "parent_id": parent_span_id,
             "root_id": None,
-            "is_run_root": self.is_run_root(instance, parent_span_id)
+            "is_run_root": self.is_run_root(instance, parent_span_id),
         }
 
         if parent_span_id is not None:
@@ -327,7 +344,9 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
         else:
             self.spans[id_]["root_id"] = id_
 
-    def is_run_root(self, instance: Optional[Any], parent_span_id: Optional[str]) -> bool:
+    def is_run_root(
+        self, instance: Optional[Any], parent_span_id: Optional[str]
+    ) -> bool:
         """Returns True if the span is of type RetrieverQueryEngine, and it has no run root in its parent chain"""
         if not isinstance(instance, RetrieverQueryEngine):
             return False
@@ -417,24 +436,24 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
             return str(uuid.uuid5(literalai_uuid_namespace, root_span["id"]))
 
     def prepare_to_exit_span(
-            self,
-            id_: str,
-            bound_args: Any,
-            instance: Optional[Any] = None,
-            result: Optional[Any] = None,
-            **kwargs: Any,
+        self,
+        id_: str,
+        bound_args: Any,
+        instance: Optional[Any] = None,
+        result: Optional[Any] = None,
+        **kwargs: Any,
     ):
         """Logic for preparing to exit a span."""
         if id in self.spans:
             del self.spans[id_]
 
     def prepare_to_drop_span(
-            self,
-            id_: str,
-            bound_args: Any,
-            instance: Optional[Any] = None,
-            err: Optional[BaseException] = None,
-            **kwargs: Any,
+        self,
+        id_: str,
+        bound_args: Any,
+        instance: Optional[Any] = None,
+        err: Optional[BaseException] = None,
+        **kwargs: Any,
     ):
         """Logic for preparing to drop a span."""
         if id in self.spans:
@@ -444,6 +463,8 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
 def instrument_llamaindex(client: "LiteralClient"):
     root_dispatcher = get_dispatcher()
     span_handler = LiteralSpanHandler()
-    event_handler = LiteralEventHandler(literal_client=client, llama_index_span_handler=span_handler)
+    event_handler = LiteralEventHandler(
+        literal_client=client, llama_index_span_handler=span_handler
+    )
     root_dispatcher.add_event_handler(event_handler)
     root_dispatcher.add_span_handler(span_handler)
