@@ -19,7 +19,7 @@ async def main():
 
     cb = client.langchain_callback()
     with client.step(name="chat_model.invoke"):
-        print(chat_model.invoke(messages, config={"callbacks": [cb]}))
+        print(chat_model.invoke(messages, config={"callbacks": [cb], "tags": ["test"]}))
 
     print(
         (

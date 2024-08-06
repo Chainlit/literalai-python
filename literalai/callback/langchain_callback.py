@@ -1,10 +1,24 @@
 import time
 from importlib.metadata import version
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypedDict, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from literalai.helper import ensure_values_serializable
-from literalai.observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration, \
-    GenerationMessageRole
+from literalai.observability.generation import (
+    ChatGeneration,
+    CompletionGeneration,
+    GenerationMessage,
+    GenerationMessageRole,
+)
 from literalai.observability.step import Step
 
 if TYPE_CHECKING:
@@ -42,6 +56,7 @@ def _convert_message_role(role: str):
         message_role = "tool"
 
     return cast(GenerationMessageRole, message_role)
+
 
 def get_langchain_callback():
     try:
@@ -335,7 +350,6 @@ def get_langchain_callback():
 
         def _start_trace(self, run: Run) -> None:
             super()._start_trace(run)
-
             ignore, parent_id = self._should_ignore_run(run)
 
             if run.run_type in ["chain", "prompt"]:
@@ -362,13 +376,14 @@ def get_langchain_callback():
                 step_type = "embedding"
 
             step = self.client.start_step(
-                id=str(run.id), name=run.name, type=step_type, parent_id=parent_id
+                id=str(run.id),
+                name=run.name,
+                type=step_type,
+                parent_id=parent_id,
             )
-            step.input, language = process_content(run.inputs)
-            if language is not None:
-                if step.metadata is None:
-                    step.metadata = {}
-                step.metadata["language"] = language
+            step.tags = run.tags
+            step.metadata = run.metadata
+            step.input, _ = process_content(run.inputs)
 
             self.steps[str(run.id)] = step
 
