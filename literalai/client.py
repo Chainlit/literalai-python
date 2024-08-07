@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
-from literalai.context import active_steps_var, active_thread_var
+from literalai.context import active_steps_var, active_thread_var, active_root_run_var
 from literalai.environment import EnvContextManager, env_decorator
 from literalai.event_processor import EventProcessor
 from literalai.evaluation.experiment_item_run import (
@@ -20,7 +20,8 @@ from literalai.observability.step import (
     Step,
     StepContextManager,
     TrueStepType,
-    step_decorator, Attachment,
+    step_decorator,
+    Attachment,
 )
 from literalai.observability.thread import ThreadContextManager, thread_decorator
 
@@ -153,6 +154,7 @@ class BaseLiteralClient:
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
+        root_run_id: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -167,6 +169,7 @@ class BaseLiteralClient:
             id (Optional[str]): The id of the step to create.
             parent_id (Optional[str]): The id of the parent step.
             thread_id (Optional[str]): The id of the parent thread.
+            root_run_id (Optional[str]): The id of the root run.
 
         Returns:
             The wrapper for the step's context.
@@ -180,6 +183,7 @@ class BaseLiteralClient:
                 id=id,
                 parent_id=parent_id,
                 thread_id=thread_id,
+                root_run_id=root_run_id,
                 **kwargs,
             )
         else:
@@ -190,6 +194,7 @@ class BaseLiteralClient:
                 id=id,
                 parent_id=parent_id,
                 thread_id=thread_id,
+                root_run_id=root_run_id,
                 **kwargs,
             )
 
@@ -201,6 +206,7 @@ class BaseLiteralClient:
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
+        root_run_id: Optional[str] = None,
     ):
         """
         Creates a run where all the subsequents steps will be logged. Works as a decorator or a ContextManager.
@@ -211,6 +217,7 @@ class BaseLiteralClient:
             id (Optional[str]): The id of the step to create.
             parent_id (Optional[str]): The id of the parent step.
             thread_id (Optional[str]): The id of the parent thread.
+            root_run_id (Optional[str]): The id of the root run.
 
         Returns:
             The wrapper for the step's context.
@@ -222,6 +229,7 @@ class BaseLiteralClient:
             id=id,
             parent_id=parent_id,
             thread_id=thread_id,
+            root_run_id=root_run_id,
         )
 
     def message(
@@ -235,6 +243,7 @@ class BaseLiteralClient:
         attachments: List[Attachment] = [],
         tags: Optional[List[str]] = None,
         metadata: Dict = {},
+        root_run_id: Optional[str] = None,
     ):
         """
         Creates a conversational message step and sends it to Literal AI.
@@ -251,6 +260,7 @@ class BaseLiteralClient:
             attachments (List[Attachment]): A list of attachments to append to the message.
             tags (Optional[List[str]]): A list of tags to add to the message.
             metadata (Dict): Metadata to add to the message, in key-value pairs.
+            root_run_id (Optional[str]): The id of the root run.
 
         Returns:
             Message: the created message.
@@ -266,6 +276,7 @@ class BaseLiteralClient:
             tags=tags,
             metadata=metadata,
             processor=self.event_processor,
+            root_run_id=root_run_id,
         )
         step.end()
 
@@ -335,6 +346,7 @@ class BaseLiteralClient:
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
+        root_run_id: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -348,6 +360,7 @@ class BaseLiteralClient:
             id (Optional[str]): The id of the step to create.
             parent_id (Optional[str]): The id of the parent step.
             thread_id (Optional[str]): The id of the parent thread.
+            root_run_id (Optional[str]): The id of the root run.
 
         Returns:
             Step: the created step.
@@ -359,6 +372,7 @@ class BaseLiteralClient:
             parent_id=parent_id,
             thread_id=thread_id,
             processor=self.event_processor,
+            root_run_id=root_run_id,
             **kwargs,
         )
         step.start()
@@ -380,12 +394,19 @@ class BaseLiteralClient:
         """
         return active_thread_var.get()
 
+    def get_current_root_run(self):
+        """
+        Gets the current root run from the context.
+        """
+        return active_root_run_var.get()
+
     def reset_context(self):
         """
         Resets the context, forgetting active steps & setting current thread to None.
         """
         active_steps_var.set([])
         active_thread_var.set(None)
+        active_root_run_var.set(None)
 
     def flush_and_stop(self):
         """

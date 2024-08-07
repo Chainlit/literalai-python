@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 if TYPE_CHECKING:
     from literalai.event_processor import EventProcessor
 
-from literalai.context import active_steps_var, active_thread_var
+from literalai.context import active_steps_var, active_thread_var, active_root_run_var
 from literalai.helper import utc_now
 from literalai.my_types import Utils
 from literalai.observability.step import MessageStepType, StepDict, Score, Attachment
@@ -19,6 +19,7 @@ class Message(Utils):
     timestamp: Optional[str] = None
     content: str
     thread_id: Optional[str] = None
+    root_run_id: Optional[str] = None
     tags: Optional[List[str]] = None
     created_at: Optional[str] = None
 
@@ -39,6 +40,7 @@ class Message(Utils):
         timestamp: Optional[str] = None,
         tags: Optional[List[str]] = [],
         processor: Optional["EventProcessor"] = None,
+        root_run_id: Optional[str] = None,
     ):
         from time import sleep
 
@@ -62,6 +64,9 @@ class Message(Utils):
         # priority for thread_id: thread_id > parent_step.thread_id > active_thread
         self.thread_id = thread_id
 
+        # priority for root_run_id: root_run_id > parent_step.root_run_id > active_root_run
+        self.root_run_id = root_run_id
+
         # priority for parent_id: parent_id > parent_step.id
         self.parent_id = parent_id
 
@@ -74,10 +79,16 @@ class Message(Utils):
                 self.parent_id = parent_step.id
             if not self.thread_id:
                 self.thread_id = parent_step.thread_id
+            if not self.root_run_id:
+                self.root_run_id = parent_step.root_run_id
 
         if not self.thread_id:
             if active_thread := active_thread_var.get():
                 self.thread_id = active_thread.id
+
+        if not self.root_run_id:
+            if active_root_run := active_root_run_var.get():
+                self.root_run_id = active_root_run.id
 
         if not self.thread_id and not self.parent_id:
             raise Exception(
@@ -107,6 +118,7 @@ class Message(Utils):
             "tags": self.tags,
             "scores": [score.to_dict() for score in self.scores],
             "attachments": [attachment.to_dict() for attachment in self.attachments],
+            "rootRunId": self.root_run_id,
         }
 
     @classmethod
@@ -114,6 +126,7 @@ class Message(Utils):
         id = message_dict.get("id", None)
         type = message_dict.get("type", None)
         thread_id = message_dict.get("threadId", None)
+        root_run_id = message_dict.get("rootRunId", None)
 
         metadata = message_dict.get("metadata", None)
         parent_id = message_dict.get("parentId", None)
@@ -134,6 +147,7 @@ class Message(Utils):
             name=name,
             scores=scores,
             attachments=attachments,
+            root_run_id=root_run_id,
         )
 
         message.created_at = message_dict.get("createdAt", None)
