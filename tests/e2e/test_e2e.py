@@ -1,4 +1,3 @@
-import asyncio
 import os
 import secrets
 import time
@@ -173,7 +172,7 @@ class Teste2e:
         sent_step = await async_client.api.send_steps(steps=[step.to_dict()])
         assert len(sent_step["data"].keys()) == 1
 
-        await asyncio.sleep(1)
+        await async_client.flush()
         is_deleted = await async_client.api.delete_step(id=step.id)
         assert is_deleted is True, "Step should be deleted"
 
