@@ -29,6 +29,7 @@ async def to_thread(func, /, *args, **kwargs):
 class EventProcessor:
     event_queue: queue.Queue
     batch: List["StepDict"]
+    batch_timeout: float = 5.0
 
     def __init__(self, api: "LiteralAPI", batch_size: int = 1, disabled: bool = False):
         self.batch_size = batch_size
@@ -40,6 +41,7 @@ class EventProcessor:
         self.disabled = disabled
         self.processing_counter = 0
         self.counter_lock = threading.Lock()
+        self.last_batch_time = time.time()
         if not self.disabled:
             self.processing_thread.start()
 
@@ -58,9 +60,13 @@ class EventProcessor:
     def _process_events(self):
         while True:
             batch = []
+            start_time = time.time()
             try:
+                elapsed_time = time.time() - start_time
                 # Try to fill the batch up to the batch_size
-                while len(batch) < self.batch_size:
+                while (
+                    len(batch) < self.batch_size and elapsed_time < self.batch_timeout
+                ):
                     # Attempt to get events with a timeout
                     event = self.event_queue.get(timeout=0.5)
                     batch.append(event)
