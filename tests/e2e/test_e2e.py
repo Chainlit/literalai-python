@@ -373,10 +373,39 @@ class Teste2e:
             assert s is not None
             assert s.name == "foo"
             assert s.type == "run"
+            root_run = async_client.get_current_root_run()
+            assert root_run is not None
+            assert root_run.name == "foo"
             return s.id
 
         step_id = step_decorated()
         await assert_delete(step_id)
+
+    @pytest.mark.timeout(5)
+    async def test_nested_run_steps(
+        self, client: LiteralClient, async_client: AsyncLiteralClient
+    ):
+
+        @async_client.run(name="foo")
+        def run_decorated():
+            s = async_client.get_current_step()
+
+            assert s is not None
+
+            @async_client.run(name="foo")
+            def nested_run_decorated():
+                @async_client.step(type="tool")
+                def step_decorated():
+                    s = async_client.get_current_step()
+                    assert s is not None
+                    return s
+
+                return step_decorated()
+
+            return [s.id, nested_run_decorated()]
+
+        id, step = run_decorated()
+        assert id == step.root_run_id
 
     async def test_parallel_requests(self, async_client: AsyncLiteralClient):
         ids = []
