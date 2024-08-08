@@ -859,6 +859,7 @@ class LiteralAPI(BaseLiteralAPI):
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        root_run_id: Optional[str] = None,
     ):
         """
         Creates a new step with the specified parameters.
@@ -874,6 +875,7 @@ class LiteralAPI(BaseLiteralAPI):
             parent_id (Optional[str]): The ID of the parent step, if any.
             name (Optional[str]): The name of the step.
             tags (Optional[List[str]]): Tags associated with the step.
+            root_run_id (Optional[str]): The ID of the root run, if any.
 
         Returns:
             The result of the GraphQL helper function for creating a step.
@@ -890,6 +892,7 @@ class LiteralAPI(BaseLiteralAPI):
                 parent_id=parent_id,
                 name=name,
                 tags=tags,
+                root_run_id=root_run_id,
             )
         )
 
@@ -2096,6 +2099,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        root_run_id: Optional[str] = None,
     ):
         """
         Asynchronously creates a new step with the specified parameters.
@@ -2111,6 +2115,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             parent_id (Optional[str]): The ID of the parent step, if any.
             name (Optional[str]): The name of the step.
             tags (Optional[List[str]]): Tags associated with the step.
+            root_run_id (Optional[str]): The ID of the root run, if any.
 
         Returns:
             The result of the GraphQL helper function for creating a step.
@@ -2127,6 +2132,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 parent_id=parent_id,
                 name=name,
                 tags=tags,
+                root_run_id=root_run_id,
             )
         )
 

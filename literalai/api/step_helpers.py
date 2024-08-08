@@ -18,6 +18,7 @@ def create_step_helper(
     parent_id: Optional[str] = None,
     name: Optional[str] = None,
     tags: Optional[List[str]] = None,
+    root_run_id: Optional[str] = None,
 ):
     variables = {
         "threadId": thread_id,
@@ -30,6 +31,7 @@ def create_step_helper(
         "parentId": parent_id,
         "name": name,
         "tags": tags,
+        "root_run_id": root_run_id,
     }
 
     def process_response(response):

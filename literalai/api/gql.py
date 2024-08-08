@@ -6,6 +6,7 @@ from literalai.observability.step import Step, StepDict
 STEP_FIELDS = """
         id
         threadId
+        rootRunId
         parentId
         startTime
         endTime
@@ -559,6 +560,7 @@ CREATE_STEP = (
     """
 mutation CreateStep(
     $threadId: String,
+    $rootRunId: String,
     $type: StepType,
     $startTime: DateTime,
     $endTime: DateTime,
@@ -572,6 +574,7 @@ mutation CreateStep(
 ) {
     createStep(
         threadId: $threadId,
+        rootRunId: $rootRunId,
         type: $type,
         startTime: $startTime,
         endTime: $endTime,
@@ -878,12 +881,14 @@ mutation CreateDatasetItem(
     $input: Json!
     $expectedOutput: Json
     $metadata: Json
+    $generationId: String
 ) {
     createDatasetItem(
         datasetId: $datasetId
         input: $input
         expectedOutput: $expectedOutput
         metadata: $metadata
+        generationId: $generationId
     ) {
         id
         createdAt
@@ -892,6 +897,7 @@ mutation CreateDatasetItem(
         input
         expectedOutput
         intermediarySteps
+        stepId
     }
 }
 """
@@ -906,6 +912,7 @@ query GetDataItem($id: String!) {
         input
         expectedOutput
         intermediarySteps
+        stepId
     }
 }
 """
@@ -920,6 +927,7 @@ mutation DeleteDatasetItem($id: String!) {
         input
         expectedOutput
         intermediarySteps
+        stepId
     }
 }
 """
@@ -942,6 +950,7 @@ mutation AddStepToDataset(
         input
         expectedOutput
         intermediarySteps
+        stepId
     }
 }
 """
@@ -964,6 +973,7 @@ mutation AddGenerationToDataset(
         input
         expectedOutput
         intermediarySteps
+        stepId
     }
 }
 """
@@ -1099,6 +1109,7 @@ def steps_query_variables_builder(steps):
     for id in range(len(steps)):
         generated += f"""$id_{id}: String!
         $threadId_{id}: String
+        $rootRunId_{id}: String
         $type_{id}: StepType
         $startTime_{id}: DateTime
         $endTime_{id}: DateTime
@@ -1123,6 +1134,7 @@ def steps_ingest_steps_builder(steps):
       step{id}: ingestStep(
         id: $id_{id}
         threadId: $threadId_{id}
+        rootRunId: $rootRunId_{id}
         startTime: $startTime_{id}
         endTime: $endTime_{id}
         type: $type_{id}
