@@ -1,5 +1,5 @@
 import time
-from typing import TYPE_CHECKING, AsyncGenerator, Dict, Union
+from typing import TYPE_CHECKING, AsyncGenerator, Dict, Generator, Union
 
 from literalai.instrumentation import MISTRALAI_PROVIDER
 from literalai.requirements import check_all_requirements
@@ -7,83 +7,86 @@ from literalai.requirements import check_all_requirements
 if TYPE_CHECKING:
     from literalai.client import LiteralClient
 
-from types import GeneratorType
-
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import ensure_values_serializable
-from literalai.observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration, GenerationType
+from literalai.observability.generation import (
+    ChatGeneration,
+    CompletionGeneration,
+    GenerationMessage,
+    GenerationType,
+)
 from literalai.wrappers import AfterContext, BeforeContext, wrap_all
 
-REQUIREMENTS = ["mistralai>=0.2.0"]
+REQUIREMENTS = ["mistralai>=1.0.0"]
 
 APIS_TO_WRAP = [
     {
-        "module": "mistralai.client",
-        "object": "MistralClient",
-        "method": "chat",
+        "module": "mistralai.chat",
+        "object": "Chat",
+        "method": "complete",
         "metadata": {
             "type": GenerationType.CHAT,
         },
         "async": False,
     },
     {
-        "module": "mistralai.client",
-        "object": "MistralClient",
-        "method": "chat_stream",
+        "module": "mistralai.chat",
+        "object": "Chat",
+        "method": "stream",
         "metadata": {
             "type": GenerationType.CHAT,
         },
         "async": False,
     },
     {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
-        "method": "chat",
-        "metadata": {
-            "type": GenerationType.CHAT,
-        },
-        "async": True,
-    },
-    {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
-        "method": "chat_stream",
+        "module": "mistralai.chat",
+        "object": "Chat",
+        "method": "complete_async",
         "metadata": {
             "type": GenerationType.CHAT,
         },
         "async": True,
     },
     {
-        "module": "mistralai.client",
-        "object": "MistralClient",
-        "method": "completion",
+        "module": "mistralai.chat",
+        "object": "Chat",
+        "method": "stream_async",
+        "metadata": {
+            "type": GenerationType.CHAT,
+        },
+        "async": True,
+    },
+    {
+        "module": "mistralai.fim",
+        "object": "Fim",
+        "method": "complete",
         "metadata": {
             "type": GenerationType.COMPLETION,
         },
         "async": False,
     },
     {
-        "module": "mistralai.client",
-        "object": "MistralClient",
-        "method": "completion_stream",
+        "module": "mistralai.fim",
+        "object": "Fim",
+        "method": "stream",
         "metadata": {
             "type": GenerationType.COMPLETION,
         },
         "async": False,
     },
     {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
-        "method": "completion",
+        "module": "mistralai.fim",
+        "object": "Fim",
+        "method": "complete_async",
         "metadata": {
             "type": GenerationType.COMPLETION,
         },
         "async": True,
     },
     {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
-        "method": "completion_stream",
+        "module": "mistralai.fim",
+        "object": "Fim",
+        "method": "stream_async",
         "metadata": {
             "type": GenerationType.COMPLETION,
         },
@@ -239,13 +242,13 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
 
         return before
 
-    from mistralai.models.chat_completion import DeltaMessage
+    from mistralai import DeltaMessage
 
     def process_delta(new_delta: DeltaMessage, message_completion: GenerationMessage):
         if new_delta.tool_calls:
             if "tool_calls" not in message_completion:
                 message_completion["tool_calls"] = []
-            delta_tool_call = new_delta.tool_calls[0]
+            delta_tool_call = new_delta.tool_calls[0]  # type: ignore
             delta_function = delta_tool_call.function
             if not delta_function:
                 return False
@@ -273,9 +276,11 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
         else:
             return False
 
+    from mistralai import models
+
     def streaming_response(
         generation: Union[ChatGeneration, CompletionGeneration],
-        result: GeneratorType,
+        result: Generator[models.CompletionEvent, None, None],
         context: AfterContext,
     ):
         completion = ""
@@ -286,8 +291,8 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
         token_count = 0
         for chunk in result:
             if generation and isinstance(generation, ChatGeneration):
-                if len(chunk.choices) > 0:
-                    ok = process_delta(chunk.choices[0].delta, message_completion)
+                if len(chunk.data.choices) > 0:
+                    ok = process_delta(chunk.data.choices[0].delta, message_completion)
                     if not ok:
                         yield chunk
                         continue
@@ -298,22 +303,22 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
                     token_count += 1
             elif generation and isinstance(generation, CompletionGeneration):
                 if (
-                    len(chunk.choices) > 0
-                    and chunk.choices[0].message.content is not None
+                    len(chunk.data.choices) > 0
+                    and chunk.data.choices[0].delta.content is not None
                 ):
                     if generation.tt_first_token is None:
                         generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                    completion += chunk.choices[0].message.content
+                    completion += chunk.data.choices[0].delta.content
 
             if (
                 generation
                 and getattr(chunk, "model", None)
-                and generation.model != chunk.model
+                and generation.model != chunk.data.model
             ):
-                generation.model = chunk.model
+                generation.model = chunk.data.model
 
             yield chunk
 
@@ -358,7 +363,7 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
                 generation.model = model
                 if generation.settings:
                     generation.settings["model"] = model
-            if isinstance(result, GeneratorType):
+            if isinstance(result, Generator):
                 return streaming_response(generation, result, context)
             else:
                 generation.duration = time.time() - context["start"]
@@ -387,7 +392,7 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
 
     async def async_streaming_response(
         generation: Union[ChatGeneration, CompletionGeneration],
-        result: AsyncGenerator,
+        result: AsyncGenerator[models.CompletionEvent, None],
         context: AfterContext,
     ):
         completion = ""
@@ -398,8 +403,8 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
         token_count = 0
         async for chunk in result:
             if generation and isinstance(generation, ChatGeneration):
-                if len(chunk.choices) > 0:
-                    ok = process_delta(chunk.choices[0].delta, message_completion)
+                if len(chunk.data.choices) > 0:
+                    ok = process_delta(chunk.data.choices[0].delta, message_completion)
                     if not ok:
                         yield chunk
                         continue
@@ -410,22 +415,22 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
                     token_count += 1
             elif generation and isinstance(generation, CompletionGeneration):
                 if (
-                    len(chunk.choices) > 0
-                    and chunk.choices[0].message.content is not None
+                    len(chunk.data.choices) > 0
+                    and chunk.data.choices[0].delta is not None
                 ):
                     if generation.tt_first_token is None:
                         generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                    completion += chunk.choices[0].message.content
+                    completion += chunk.data.choices[0].delta.content or ""
 
             if (
                 generation
                 and getattr(chunk, "model", None)
-                and generation.model != chunk.model
+                and generation.model != chunk.data.model
             ):
-                generation.model = chunk.model
+                generation.model = chunk.data.model
 
             yield chunk
 
