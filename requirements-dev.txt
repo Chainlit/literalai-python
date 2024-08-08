@@ -8,4 +8,4 @@ mypy
 langchain
 llama-index
 pytest_httpx
-mistralai
+mistralai < 1.0.0
