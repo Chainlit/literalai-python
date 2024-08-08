@@ -3,12 +3,11 @@ import urllib.parse
 from asyncio import sleep
 
 import pytest
-from mistralai.async_client import MistralAsyncClient
-from mistralai.client import MistralClient
+from mistralai import Mistral
 from pytest_httpx import HTTPXMock
 
 from literalai.client import LiteralClient
-from literalai.observability.generation import CompletionGeneration, ChatGeneration
+from literalai.observability.generation import ChatGeneration, CompletionGeneration
 
 
 @pytest.fixture
@@ -63,13 +62,13 @@ class TestMistralAI:
                 },
             }
         )
-        mai_client = MistralClient(api_key="j3s4V1z4")
+        mai_client = Mistral(api_key="j3s4V1z4")
         thread_id = None
 
         @client.thread
         def main():
             # https://docs.mistral.ai/api/#operation/createChatCompletion
-            mai_client.chat(
+            mai_client.chat.complete(
                 model="open-mistral-7b",
                 messages=[
                     {
@@ -124,13 +123,13 @@ class TestMistralAI:
             },
         )
 
-        mai_client = MistralClient(api_key="j3s4V1z4")
+        mai_client = Mistral(api_key="j3s4V1z4")
         thread_id = None
 
         @client.thread
         def main():
             # https://docs.mistral.ai/api/#operation/createFIMCompletion
-            mai_client.completion(
+            mai_client.fim.complete(
                 model="codestral-2405",
                 prompt="1+1=",
                 temperature=0,
@@ -183,13 +182,13 @@ class TestMistralAI:
             },
         )
 
-        mai_client = MistralAsyncClient(api_key="j3s4V1z4")
+        mai_client = Mistral(api_key="j3s4V1z4")
         thread_id = None
 
         @client.thread
         async def main():
             # https://docs.mistral.ai/api/#operation/createChatCompletion
-            await mai_client.chat(
+            await mai_client.chat.complete_async(
                 model="open-mistral-7b",
                 messages=[
                     {
@@ -246,13 +245,13 @@ class TestMistralAI:
             },
         )
 
-        mai_client = MistralAsyncClient(api_key="j3s4V1z4")
+        mai_client = Mistral(api_key="j3s4V1z4")
         thread_id = None
 
         @client.thread
         async def main():
             # https://docs.mistral.ai/api/#operation/createFIMCompletion
-            await mai_client.completion(
+            await mai_client.fim.complete_async(
                 model="codestral-2405",
                 prompt="1+1=",
                 temperature=0,

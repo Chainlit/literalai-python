@@ -11,79 +11,84 @@ from types import GeneratorType
 
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import ensure_values_serializable
-from literalai.observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration, GenerationType
+from literalai.observability.generation import (
+    ChatGeneration,
+    CompletionGeneration,
+    GenerationMessage,
+    GenerationType,
+)
 from literalai.wrappers import AfterContext, BeforeContext, wrap_all
 
-REQUIREMENTS = ["mistralai>=0.2.0"]
+REQUIREMENTS = ["mistralai>=1.0.0"]
 
 APIS_TO_WRAP = [
     {
-        "module": "mistralai.client",
-        "object": "MistralClient",
-        "method": "chat",
+        "module": "mistralai",
+        "object": "Mistral",
+        "method": "chat.complete",
         "metadata": {
             "type": GenerationType.CHAT,
         },
         "async": False,
     },
     {
-        "module": "mistralai.client",
-        "object": "MistralClient",
-        "method": "chat_stream",
+        "module": "mistralai",
+        "object": "Mistral",
+        "method": "chat.stream",
         "metadata": {
             "type": GenerationType.CHAT,
         },
         "async": False,
     },
     {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
-        "method": "chat",
-        "metadata": {
-            "type": GenerationType.CHAT,
-        },
-        "async": True,
-    },
-    {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
-        "method": "chat_stream",
+        "module": "mistralai",
+        "object": "Mistral",
+        "method": "chat.complete_async",
         "metadata": {
             "type": GenerationType.CHAT,
         },
         "async": True,
     },
     {
-        "module": "mistralai.client",
-        "object": "MistralClient",
-        "method": "completion",
+        "module": "mistralai",
+        "object": "Mistral",
+        "method": "chat.stream_async",
+        "metadata": {
+            "type": GenerationType.CHAT,
+        },
+        "async": True,
+    },
+    {
+        "module": "mistralai",
+        "object": "Mistral",
+        "method": "fim.complete",
         "metadata": {
             "type": GenerationType.COMPLETION,
         },
         "async": False,
     },
     {
-        "module": "mistralai.client",
-        "object": "MistralClient",
-        "method": "completion_stream",
+        "module": "mistralai",
+        "object": "Mistral",
+        "method": "fim.stream",
         "metadata": {
             "type": GenerationType.COMPLETION,
         },
         "async": False,
     },
     {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
-        "method": "completion",
+        "module": "mistralai",
+        "object": "Mistral",
+        "method": "fim.complete_async",
         "metadata": {
             "type": GenerationType.COMPLETION,
         },
         "async": True,
     },
     {
-        "module": "mistralai.async_client",
-        "object": "MistralAsyncClient",
-        "method": "completion_stream",
+        "module": "mistralai",
+        "object": "Mistral",
+        "method": "fim.stream_async",
         "metadata": {
             "type": GenerationType.COMPLETION,
         },
@@ -239,7 +244,7 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
 
         return before
 
-    from mistralai.models.chat_completion import DeltaMessage
+    from mistralai import DeltaMessage
 
     def process_delta(new_delta: DeltaMessage, message_completion: GenerationMessage):
         if new_delta.tool_calls:
