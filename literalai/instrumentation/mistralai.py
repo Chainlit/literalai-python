@@ -248,7 +248,7 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
         if new_delta.tool_calls:
             if "tool_calls" not in message_completion:
                 message_completion["tool_calls"] = []
-            delta_tool_call = new_delta.tool_calls[0]
+            delta_tool_call = new_delta.tool_calls[0]  # type: ignore
             delta_function = delta_tool_call.function
             if not delta_function:
                 return False
@@ -303,22 +303,22 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
                     token_count += 1
             elif generation and isinstance(generation, CompletionGeneration):
                 if (
-                    len(chunk.choices) > 0
-                    and chunk.choices[0].message.content is not None
+                    len(chunk.data.choices) > 0
+                    and chunk.data.choices[0].delta.content is not None
                 ):
                     if generation.tt_first_token is None:
                         generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                    completion += chunk.choices[0].message.content
+                    completion += chunk.data.choices[0].delta.content
 
             if (
                 generation
                 and getattr(chunk, "model", None)
-                and generation.model != chunk.model
+                and generation.model != chunk.data.model
             ):
-                generation.model = chunk.model
+                generation.model = chunk.data.model
 
             yield chunk
 
@@ -415,22 +415,22 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
                     token_count += 1
             elif generation and isinstance(generation, CompletionGeneration):
                 if (
-                    len(chunk.choices) > 0
-                    and chunk.choices[0].message.content is not None
+                    len(chunk.data.choices) > 0
+                    and chunk.data.choices[0].delta is not None
                 ):
                     if generation.tt_first_token is None:
                         generation.tt_first_token = (
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                    completion += chunk.choices[0].message.content
+                    completion += chunk.data.choices[0].delta.content or ""
 
             if (
                 generation
                 and getattr(chunk, "model", None)
-                and generation.model != chunk.model
+                and generation.model != chunk.data.model
             ):
-                generation.model = chunk.model
+                generation.model = chunk.data.model
 
             yield chunk
 

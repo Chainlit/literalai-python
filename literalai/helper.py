@@ -18,9 +18,9 @@ def ensure_values_serializable(data):
         pass
 
     try:
-        from mistralai.models.chat_completion import ChatMessage
+        from mistralai import UserMessage
 
-        if isinstance(data, ChatMessage):
+        if isinstance(data, UserMessage):
             return filter_none_values(data.model_dump())
     except ImportError:
         pass
