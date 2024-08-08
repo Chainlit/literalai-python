@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict
 
 from literalai.observability.generation import GenerationMessage
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
@@ -61,16 +61,31 @@ def get_prompt_helper(
     return gql.GET_PROMPT_VERSION, description, variables, process_response
 
 
-def promote_prompt_helper(
-        lineage_id: str,
-        version: int,
+class PromptRollout(TypedDict):
+    version: int
+    rollout: int
+
+
+def get_prompt_ab_testing_helper(
+    name: Optional[str] = None,
 ):
-    variables = {"lineageId": lineage_id, "version": version}
+    variables = {"lineageName": name}
 
-    def process_response(response) -> str:
-        prompt = response["data"]["promotePromptVersion"]
-        return prompt["championId"] if prompt else None
+    def process_response(response) -> List[PromptRollout]:
+        response_data = response["data"]["promptLineageRollout"]
+        return list(map(lambda x: x["node"], response_data["edges"]))
 
-    description = "promote prompt version"
+    description = "get prompt A/B testing"
 
-    return gql.PROMOTE_PROMPT_VERSION, description, variables, process_response
+    return gql.GET_PROMPT_AB_TESTING, description, variables, process_response
+
+
+def update_prompt_ab_testing_helper(name: str, rollouts: List[PromptRollout]):
+    variables = {"name": name, "rollouts": rollouts}
+
+    def process_response(response) -> Dict:
+        return response["data"]["updatePromptLineageRollout"]
+
+    description = "update prompt A/B testing"
+
+    return gql.UPDATE_PROMPT_AB_TESTING, description, variables, process_response

@@ -16,25 +16,6 @@ from typing import (
 
 from typing_extensions import deprecated
 
-from literalai.context import active_steps_var, active_thread_var
-from literalai.evaluation.dataset import Dataset, DatasetType
-from literalai.evaluation.dataset_experiment import (
-    DatasetExperiment,
-    DatasetExperimentItem,
-)
-from literalai.observability.filter import (
-    generations_filters,
-    generations_order_by,
-    scores_filters,
-    scores_order_by,
-    steps_filters,
-    steps_order_by,
-    threads_filters,
-    threads_order_by,
-    users_filters,
-)
-from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
-
 from literalai.api.attachment_helpers import (
     AttachmentUpload,
     create_attachment_helper,
@@ -60,10 +41,12 @@ from literalai.api.generation_helpers import (
     get_generations_helper,
 )
 from literalai.api.prompt_helpers import (
+    PromptRollout,
     create_prompt_helper,
     create_prompt_lineage_helper,
+    get_prompt_ab_testing_helper,
     get_prompt_helper,
-    promote_prompt_helper,
+    update_prompt_ab_testing_helper,
 )
 from literalai.api.score_helpers import (
     ScoreUpdate,
@@ -98,29 +81,44 @@ from literalai.api.user_helpers import (
     get_users_helper,
     update_user_helper,
 )
+from literalai.context import active_steps_var, active_thread_var
+from literalai.evaluation.dataset import Dataset, DatasetType
+from literalai.evaluation.dataset_experiment import (
+    DatasetExperiment,
+    DatasetExperimentItem,
+)
+from literalai.observability.filter import (
+    generations_filters,
+    generations_order_by,
+    scores_filters,
+    scores_order_by,
+    steps_filters,
+    steps_order_by,
+    threads_filters,
+    threads_order_by,
+    users_filters,
+)
+from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 if TYPE_CHECKING:
     from typing import Tuple  # noqa: F401
 
 import httpx
 
-from literalai.my_types import (
-    Environment,
-    PaginatedResponse,
-)
+from literalai.my_types import Environment, PaginatedResponse
 from literalai.observability.generation import (
-    GenerationMessage,
-    CompletionGeneration,
     ChatGeneration,
+    CompletionGeneration,
+    GenerationMessage,
 )
 from literalai.observability.step import (
+    Attachment,
+    Score,
+    ScoreDict,
+    ScoreType,
     Step,
     StepDict,
     StepType,
-    ScoreType,
-    ScoreDict,
-    Score,
-    Attachment,
 )
 
 logger = logging.getLogger(__name__)
@@ -1365,21 +1363,33 @@ class LiteralAPI(BaseLiteralAPI):
         else:
             raise ValueError("Either the `id` or the `name` must be provided.")
 
-    def promote_prompt(self, name: str, version: int) -> str:
+    def get_prompt_ab_testing(self, name: str) -> List[PromptRollout]:
         """
-        Promotes the prompt with name to target version.
+        Get the A/B testing configuration for a prompt lineage.
 
         Args:
             name (str): The name of the prompt lineage.
-            version (int): The version number to promote.
+        Returns:
+            List[PromptRollout]
+        """
+        return self.gql_helper(*get_prompt_ab_testing_helper(name=name))
+
+    def update_prompt_ab_testing(
+        self, name: str, rollouts: List[PromptRollout]
+    ) -> Dict:
+        """
+        Update the A/B testing configuration for a prompt lineage.
+
+        Args:
+            name (str): The name of the prompt lineage.
+            rollouts (List[PromptRollout]): The percentage rollout for each prompt version.
 
         Returns:
-            str: The champion prompt ID.
+            Dict
         """
-        lineage = self.get_or_create_prompt_lineage(name)
-        lineage_id = lineage["id"]
-
-        return self.gql_helper(*promote_prompt_helper(lineage_id, version))
+        return self.gql_helper(
+            *update_prompt_ab_testing_helper(name=name, rollouts=rollouts)
+        )
 
     # Misc API
 
@@ -2552,13 +2562,19 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
     get_prompt.__doc__ = LiteralAPI.get_prompt.__doc__
 
-    async def promote_prompt(self, name: str, version: int) -> str:
-        lineage = await self.get_or_create_prompt_lineage(name)
-        lineage_id = lineage["id"]
+    async def update_prompt_ab_testing(
+        self, name: str, rollouts: List[PromptRollout]
+    ) -> Dict:
+        return await self.gql_helper(
+            *update_prompt_ab_testing_helper(name=name, rollouts=rollouts)
+        )
 
-        return await self.gql_helper(*promote_prompt_helper(lineage_id, version))
+    update_prompt_ab_testing.__doc__ = LiteralAPI.update_prompt_ab_testing.__doc__
 
-    promote_prompt.__doc__ = LiteralAPI.promote_prompt.__doc__
+    async def get_prompt_ab_testing(self, name: str) -> List[PromptRollout]:
+        return await self.gql_helper(*get_prompt_ab_testing_helper(name=name))
+
+    get_prompt_ab_testing.__doc__ = LiteralAPI.get_prompt_ab_testing.__doc__
 
     # Misc API
 

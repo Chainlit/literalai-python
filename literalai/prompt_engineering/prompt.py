@@ -3,9 +3,8 @@ from dataclasses import dataclass
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
-from typing_extensions import deprecated, TypedDict
-
 import chevron
+from typing_extensions import TypedDict, deprecated
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
@@ -116,13 +115,6 @@ class Prompt(Utils):
             variables=prompt_dict.get("variables", []),
             variables_default_values=prompt_dict.get("variablesDefaultValues"),
         )
-
-    def promote(self) -> "Prompt":
-        """
-        Promotes this prompt to champion.
-        """
-        self.api.promote_prompt(self.name, self.version)
-        return self
 
     def format_messages(self, **kwargs: Any) -> List[Any]:
         """
