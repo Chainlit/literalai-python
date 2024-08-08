@@ -10,14 +10,18 @@ from typing import (
     Literal,
     Optional,
     TypeVar,
-    Union, cast,
+    Union,
+    cast,
 )
 
 from typing_extensions import deprecated
 
 from literalai.context import active_steps_var, active_thread_var
 from literalai.evaluation.dataset import Dataset, DatasetType
-from literalai.evaluation.dataset_experiment import DatasetExperiment, DatasetExperimentItem
+from literalai.evaluation.dataset_experiment import (
+    DatasetExperiment,
+    DatasetExperimentItem,
+)
 from literalai.observability.filter import (
     generations_filters,
     generations_order_by,
@@ -51,7 +55,10 @@ from literalai.api.dataset_helpers import (
     get_dataset_item_helper,
     update_dataset_helper,
 )
-from literalai.api.generation_helpers import create_generation_helper, get_generations_helper
+from literalai.api.generation_helpers import (
+    create_generation_helper,
+    get_generations_helper,
+)
 from literalai.api.prompt_helpers import (
     create_prompt_helper,
     create_prompt_lineage_helper,
@@ -101,8 +108,20 @@ from literalai.my_types import (
     Environment,
     PaginatedResponse,
 )
-from literalai.observability.generation import GenerationMessage, CompletionGeneration, ChatGeneration
-from literalai.observability.step import Step, StepDict, StepType, ScoreType, ScoreDict, Score, Attachment
+from literalai.observability.generation import (
+    GenerationMessage,
+    CompletionGeneration,
+    ChatGeneration,
+)
+from literalai.observability.step import (
+    Step,
+    StepDict,
+    StepType,
+    ScoreType,
+    ScoreDict,
+    Score,
+    Attachment,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -678,8 +697,7 @@ class LiteralAPI(BaseLiteralAPI):
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
         upload_type: Literal["raw", "multipart"] = cast(
-            Literal["raw", "multipart"],
-            request_dict.get("uploadType", "multipart")
+            Literal["raw", "multipart"], request_dict.get("uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
@@ -843,6 +861,7 @@ class LiteralAPI(BaseLiteralAPI):
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        root_run_id: Optional[str] = None,
     ):
         """
         Creates a new step with the specified parameters.
@@ -858,6 +877,7 @@ class LiteralAPI(BaseLiteralAPI):
             parent_id (Optional[str]): The ID of the parent step, if any.
             name (Optional[str]): The name of the step.
             tags (Optional[List[str]]): Tags associated with the step.
+            root_run_id (Optional[str]): The ID of the root run, if any.
 
         Returns:
             The result of the GraphQL helper function for creating a step.
@@ -874,6 +894,7 @@ class LiteralAPI(BaseLiteralAPI):
                 parent_id=parent_id,
                 name=name,
                 tags=tags,
+                root_run_id=root_run_id,
             )
         )
 
@@ -1912,8 +1933,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
         upload_type: Literal["raw", "multipart"] = cast(
-            Literal["raw", "multipart"],
-            request_dict.get("uploadType", "multipart")
+            Literal["raw", "multipart"], request_dict.get("uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
@@ -2069,6 +2089,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         parent_id: Optional[str] = None,
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        root_run_id: Optional[str] = None,
     ):
         """
         Asynchronously creates a new step with the specified parameters.
@@ -2084,6 +2105,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             parent_id (Optional[str]): The ID of the parent step, if any.
             name (Optional[str]): The name of the step.
             tags (Optional[List[str]]): Tags associated with the step.
+            root_run_id (Optional[str]): The ID of the root run, if any.
 
         Returns:
             The result of the GraphQL helper function for creating a step.
@@ -2100,6 +2122,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 parent_id=parent_id,
                 name=name,
                 tags=tags,
+                root_run_id=root_run_id,
             )
         )
 
