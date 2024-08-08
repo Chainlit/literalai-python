@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from literalai.client import BaseLiteralClient
     from literalai.event_processor import EventProcessor
 
-from literalai.context import active_steps_var, active_thread_var
+from literalai.context import active_steps_var, active_thread_var, active_root_run_var
 from literalai.helper import utc_now
 from literalai.my_types import Environment, Utils
 from literalai.observability.generation import (
@@ -177,6 +177,7 @@ class StepDict(TypedDict, total=False):
     generation: Optional[Dict]
     scores: Optional[List[ScoreDict]]
     attachments: Optional[List[AttachmentDict]]
+    rootRunId: Optional[str]
 
 
 class Step(Utils):
@@ -194,6 +195,7 @@ class Step(Utils):
     tags: Optional[List[str]] = None
     thread_id: Optional[str] = None
     environment: Optional[Environment] = None
+    root_run_id: Optional[str] = None
 
     generation: Optional[Union[ChatGeneration, CompletionGeneration]] = None
     scores: Optional[List[Score]] = []
@@ -208,6 +210,7 @@ class Step(Utils):
         parent_id: Optional[str] = None,
         processor: Optional["EventProcessor"] = None,
         tags: Optional[List[str]] = None,
+        root_run_id: Optional[str] = None,
     ):
         from time import sleep
 
@@ -222,6 +225,9 @@ class Step(Utils):
         # priority for thread_id: thread_id > parent_step.thread_id > active_thread
         self.thread_id = thread_id
 
+        # priority for root_run_id: root_run_id > parent_step.root_run_id > active_root_run
+        self.root_run_id = root_run_id
+
         # priority for parent_id: parent_id > parent_step.id
         self.parent_id = parent_id
 
@@ -235,10 +241,16 @@ class Step(Utils):
                 self.parent_id = parent_step.id
             if not self.thread_id:
                 self.thread_id = parent_step.thread_id
+            if not self.root_run_id:
+                self.root_run_id = parent_step.root_run_id
 
         if not self.thread_id:
             if active_thread := active_thread_var.get():
                 self.thread_id = active_thread.id
+
+        if not self.root_run_id:
+            if active_root_run := active_root_run_var.get():
+                self.root_run_id = active_root_run.id
 
         active_steps.append(self)
         active_steps_var.set(active_steps)
@@ -280,6 +292,7 @@ class Step(Utils):
             "tags": self.tags,
             "scores": [score.to_dict() for score in self.scores],
             "attachments": [attachment.to_dict() for attachment in self.attachments],
+            "rootRunId": self.root_run_id,
         }
 
     @classmethod
@@ -331,6 +344,7 @@ class StepContextManager:
         id: Optional[str] = None,
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
+        root_run_id: Optional[str] = None,
         **kwargs,
     ):
         self.client = client
@@ -339,6 +353,7 @@ class StepContextManager:
         self.id = id
         self.parent_id = parent_id
         self.thread_id = thread_id
+        self.root_run_id = root_run_id
         self.kwargs = kwargs
 
     def __call__(self, func):
@@ -356,14 +371,23 @@ class StepContextManager:
             id=self.id,
             parent_id=self.parent_id,
             thread_id=self.thread_id,
+            root_run_id=self.root_run_id,
             **self.kwargs,
         )
+
+        if active_root_run_var.get() is None and self.step_type == "run":
+            active_root_run_var.set(self.step)
+
         return self.step
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             self.step.error = str(exc_val)
             await self.client.event_processor.aflush()
+
+        if active_root_run_var.get():
+            active_root_run_var.set(None)
+
         self.step.end()
 
     def __enter__(self) -> Step:
@@ -373,14 +397,23 @@ class StepContextManager:
             id=self.id,
             parent_id=self.parent_id,
             thread_id=self.thread_id,
+            root_run_id=self.root_run_id,
             **self.kwargs,
         )
+
+        if active_root_run_var.get() is None and self.step_type == "run":
+            active_root_run_var.set(self.step)
+
         return self.step
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             self.step.error = str(exc_val)
             self.client.event_processor.flush()
+
+        if active_root_run_var.get():
+            active_root_run_var.set(None)
+
         self.step.end()
 
 
@@ -399,6 +432,7 @@ def step_decorator(
     id: Optional[str] = None,
     parent_id: Optional[str] = None,
     thread_id: Optional[str] = None,
+    root_run_id: Optional[str] = None,
     ctx_manager: Optional[StepContextManager] = None,
     **decorator_kwargs,
 ):
@@ -412,6 +446,7 @@ def step_decorator(
             id=id,
             parent_id=parent_id,
             thread_id=thread_id,
+            root_run_id=root_run_id,
             **decorator_kwargs,
         )
     else:
