@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 class ThreadDict(TypedDict, total=False):
     """
-    A dictionary representation of a Thread.
+    A dictionary representation of a Thread. All attributes are optional.
 
-    Attributes (all optional):
+    Attributes:
         id (str): The unique identifier for the thread.
         name (str): The name of the thread.
         metadata (Dict[str, Any]): Additional metadata for the thread.

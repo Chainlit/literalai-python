@@ -6,9 +6,9 @@ from literalai.my_types import Utils
 
 class DatasetItemDict(TypedDict, total=False):
     """
-    A dictionary representation of a DatasetItem.
+    A dictionary representation of a DatasetItem. All attributes are optional.
 
-    Attributes (all optional):
+    Attributes:
         id (str): The unique identifier for the dataset item.
         createdAt (str): The timestamp when the dataset item was created.
         datasetId (str): The identifier of the dataset the item belongs to.

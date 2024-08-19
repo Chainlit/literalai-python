@@ -20,9 +20,9 @@ DatasetType = Literal["key_value", "generation"]
 
 class DatasetDict(TypedDict, total=False):
     """
-    A dictionary representation of a Dataset.
+    A dictionary representation of a Dataset. All attributes are optional.
 
-    Attributes (all optional):
+    Attributes:
         id (str): The unique identifier for the dataset.
         createdAt (str): The timestamp when the dataset was created.
         metadata (Dict[str, Any]): Additional metadata for the dataset.

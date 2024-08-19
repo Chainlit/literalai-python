@@ -42,9 +42,9 @@ StepType = Union[TrueStepType, MessageStepType]
 
 class StepDict(TypedDict, total=False):
     """
-    A dictionary representation of a Step.
+    A dictionary representation of a Step. All attributes are optional.
 
-    Attributes (all optional):
+    Attributes:
         id (str): The unique identifier for the step.
         name (str): The name of the step.
         type (StepType): The type of the step.

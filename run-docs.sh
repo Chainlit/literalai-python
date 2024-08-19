@@ -6,7 +6,8 @@
 # https://github.com/NiklasRosenstein/pydoc-markdown/blob/develop/src/pydoc_markdown/contrib/processors/filter.py#L31
 
 
-DOCS_DIR="../literal-docs/python-client"
+SOURCE_DIR="."
+OUTPUT_DIR="../literal-docs/python-client"
 CONFIG_FILE="pydoc-markdown.yaml"
 BEAUTIFY=false
 
@@ -15,6 +16,10 @@ BEAUTIFY=false
 for i in "$@"
 do
     case $i in
+        -s=*|--source-dir=*)
+        SOURCE_DIR="${i#*=}"
+        shift # past argument=value
+        ;;
         -b|--beautify)
         BEAUTIFY=true
         shift # past argument=value
@@ -49,12 +54,15 @@ clientFiles=(
 
 mkdir -p $DOCS_DIR
 
-# read all the files in the api directory and generate the docs
+mkdir -p $DOCS_DIR/api-reference
+mkdir -p $DOCS_DIR/abstractions
+
+# read all the files in the api directory and generate the docs (read from the source directory)
 for i in "${apiFiles[@]}"; do
     echo "Writing docs for $i in $DOCS_DIR/api-reference/$i.mdx"
     
     rm -f $DOCS_DIR/api-reference/$i.*
-    pydoc-markdown -I . -m literalai.$i --no-render-toc "$CONFIG_FILE" > $DOCS_DIR/api-reference/$i.mdx
+    pydoc-markdown -I $SOURCE_DIR -m literalai.$i --no-render-toc "$CONFIG_FILE" > $DOCS_DIR/api-reference/$i.mdx
 
     if [ "$BEAUTIFY" = false ]; then
         continue
@@ -79,7 +87,7 @@ for i in "${clientFiles[@]}"; do
     echo "Writing docs for $i in $DOCS_DIR/abstractions/$i.mdx"
     
     rm -f $DOCS_DIR/abstractions/$i.*
-    pydoc-markdown -I . -m literalai.$i --no-render-toc "$CONFIG_FILE" > $DOCS_DIR/abstractions/$i.mdx
+    pydoc-markdown -I $SOURCE_DIR -m literalai.$i --no-render-toc "$CONFIG_FILE" > $DOCS_DIR/abstractions/$i.mdx
 
     if [ "$BEAUTIFY" = false ]; then
         continue
