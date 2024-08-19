@@ -10,7 +10,6 @@ from literalai.evaluation.experiment_item_run import (
     ExperimentItemRunContextManager,
     experiment_item_run_decorator,
 )
-from literalai.instrumentation.llamaindex import instrument_llamaindex
 from literalai.instrumentation.mistralai import instrument_mistralai
 from literalai.instrumentation.openai import instrument_openai
 from literalai.observability.message import Message
@@ -24,6 +23,8 @@ from literalai.observability.step import (
     Attachment,
 )
 from literalai.observability.thread import ThreadContextManager, thread_decorator
+
+from literalai.requirements import check_all_requirements
 
 
 class BaseLiteralClient:
@@ -92,6 +93,15 @@ class BaseLiteralClient:
         """
         Instruments the Llama Index framework so that all RAG & LLM calls are logged to Literal AI.
         """
+
+        LLAMA_INDEX_REQUIREMENT = ["llama-index>=0.10.58"]
+
+        if not check_all_requirements(LLAMA_INDEX_REQUIREMENT):
+            raise Exception(
+                f"LlamaIndex instrumentation requirements not satisfied: {LLAMA_INDEX_REQUIREMENT}"
+            )
+        from literalai.instrumentation.llamaindex import instrument_llamaindex
+
         instrument_llamaindex(self.to_sync())
 
     def langchain_callback(
