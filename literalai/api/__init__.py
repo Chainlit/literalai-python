@@ -706,8 +706,7 @@ class LiteralAPI(BaseLiteralAPI):
         # Prepare form data
         form_data = (
             {}
-            # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
-        )
+        ) # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -1960,9 +1959,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
         # Prepare form data
         form_data = (
-            {}
-            # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
-        )
+            {}  
+        ) # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
