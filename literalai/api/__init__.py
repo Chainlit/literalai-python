@@ -227,7 +227,8 @@ class LiteralAPI(BaseLiteralAPI):
                 json = response.json()
             except ValueError as e:
                 raise_error(
-                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
+                    f"""Failed to parse JSON response: {
+                        e}, content: {response.content!r}"""
                 )
 
             if json.get("errors"):
@@ -238,7 +239,8 @@ class LiteralAPI(BaseLiteralAPI):
                     for key, value in json["data"].items():
                         if value and value.get("ok") is False:
                             raise_error(
-                                f"Failed to {description}: {value.get('message')}"
+                                f"""Failed to {description}: {
+                                    value.get('message')}"""
                             )
 
             return json
@@ -277,7 +279,8 @@ class LiteralAPI(BaseLiteralAPI):
                 return response.json()
             except ValueError as e:
                 raise ValueError(
-                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
+                    f"""Failed to parse JSON response: {
+                        e}, content: {response.content!r}"""
                 )
 
     def gql_helper(
@@ -695,14 +698,16 @@ class LiteralAPI(BaseLiteralAPI):
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
         upload_type: Literal["raw", "multipart"] = cast(
-            Literal["raw", "multipart"], request_dict.get("uploadType", "multipart")
+            Literal["raw", "multipart"], request_dict.get(
+                "uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
         form_data = (
             {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+            # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        )
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -772,7 +777,8 @@ class LiteralAPI(BaseLiteralAPI):
             if active_steps := active_steps_var.get([]):
                 step_id = active_steps[-1].id
             else:
-                raise Exception("No step_id provided and no active step found.")
+                raise Exception(
+                    "No step_id provided and no active step found.")
 
         (
             query,
@@ -794,7 +800,8 @@ class LiteralAPI(BaseLiteralAPI):
         )
 
         if content:
-            uploaded = self.upload_file(content=content, thread_id=thread_id, mime=mime)
+            uploaded = self.upload_file(
+                content=content, thread_id=thread_id, mime=mime)
 
             if uploaded["object_key"] is None or uploaded["url"] is None:
                 raise Exception("Failed to upload file")
@@ -1002,7 +1009,7 @@ class LiteralAPI(BaseLiteralAPI):
         Sends a list of steps to be processed.
 
         Args:
-            steps (List[Union[StepDict, "Step"]]): A list of steps or step dictionaries to send.
+            steps (List[Union[StepDict, Step]]): A list of steps or step dictionaries to send.
 
         Returns:
             The result of the GraphQL helper function for sending steps.
@@ -1448,7 +1455,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 json = response.json()
             except ValueError as e:
                 raise_error(
-                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
+                    f"""Failed to parse JSON response: {
+                        e}, content: {response.content!r}"""
                 )
 
             if json.get("errors"):
@@ -1459,7 +1467,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                     for key, value in json["data"].items():
                         if value and value.get("ok") is False:
                             raise_error(
-                                f"Failed to {description}: {value.get('message')}"
+                                f"""Failed to {description}: {
+                                    value.get('message')}"""
                             )
 
             return json
@@ -1498,7 +1507,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 return response.json()
             except ValueError as e:
                 raise ValueError(
-                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
+                    f"""Failed to parse JSON response: {
+                        e}, content: {response.content!r}"""
                 )
 
     async def gql_helper(
@@ -1943,14 +1953,16 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
         upload_type: Literal["raw", "multipart"] = cast(
-            Literal["raw", "multipart"], request_dict.get("uploadType", "multipart")
+            Literal["raw", "multipart"], request_dict.get(
+                "uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
         form_data = (
             {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+            # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        )
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -2231,7 +2243,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         Asynchronously sends a list of steps to be processed.
 
         Args:
-            steps (List[Union[StepDict, "Step"]]): A list of steps or step dictionaries to send.
+            steps (List[Union[StepDict, Step]]): A list of steps or step dictionaries to send.
 
         Returns:
             The result of the GraphQL helper function for sending steps.
