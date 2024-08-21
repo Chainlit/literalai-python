@@ -190,21 +190,7 @@ class LiteralAPI(BaseLiteralAPI):
     def make_gql_call(
         self, description: str, query: str, variables: Dict[str, Any]
     ) -> Dict:
-        """
-        Executes a GraphQL call with the provided query and variables.
-
-        Args:
-            description (str): Description of the GraphQL operation for logging purposes.
-            query (str): The GraphQL query to be executed.
-            variables (Dict[str, Any]): Variables required for the GraphQL query.
-
-        Returns:
-            Dict: The JSON response from the GraphQL endpoint.
-
-        Raises:
-            Exception: If the GraphQL call fails or returns errors.
-        """
-
+        
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
@@ -250,16 +236,6 @@ class LiteralAPI(BaseLiteralAPI):
         raise Exception("Unknown error")
 
     def make_rest_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
-        """
-        Executes a REST API call to the specified subpath with the given body.
-
-        Args:
-            subpath (str): The subpath of the REST API endpoint.
-            body (Dict[str, Any]): The JSON body to send with the POST request.
-
-        Returns:
-            Dict: The JSON response from the REST API endpoint.
-        """
         with httpx.Client(follow_redirects=True) as client:
             response = client.post(
                 self.rest_endpoint + subpath,
@@ -290,18 +266,6 @@ class LiteralAPI(BaseLiteralAPI):
         variables: Dict,
         process_response: Callable[..., R],
     ) -> R:
-        """
-        Helper function to make a GraphQL call and process the response.
-
-        Args:
-            query (str): The GraphQL query to execute.
-            description (str): Description of the GraphQL operation for logging purposes.
-            variables (Dict): Variables required for the GraphQL query.
-            process_response (Callable[..., R]): A function to process the response.
-
-        Returns:
-            R: The result of processing the response.
-        """
         response = self.make_gql_call(description, query, variables)
         return process_response(response)
 
@@ -1416,21 +1380,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     async def make_gql_call(
         self, description: str, query: str, variables: Dict[str, Any]
     ) -> Dict:
-        """
-        Asynchronously makes a GraphQL call using the provided query and variables.
-
-        Args:
-            description (str): Description of the GraphQL operation for logging purposes.
-            query (str): The GraphQL query to be executed.
-            variables (Dict[str, Any]): Variables required for the GraphQL query.
-
-        Returns:
-            Dict: The JSON response from the GraphQL endpoint.
-
-        Raises:
-            Exception: If the GraphQL call fails or returns errors.
-        """
-
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
@@ -1477,16 +1426,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         raise Exception("Unkown error")
 
     async def make_rest_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
-        """
-        Asynchronously makes a REST API call to a specified subpath with the provided body.
-
-        Args:
-            subpath (str): The endpoint subpath to which the POST request is made.
-            body (Dict[str, Any]): The JSON body of the POST request.
-
-        Returns:
-            Dict: The JSON response from the REST API endpoint.
-        """
         async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.post(
                 self.rest_endpoint + subpath,
@@ -1517,18 +1456,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         variables: Dict,
         process_response: Callable[..., R],
     ) -> R:
-        """
-        Helper function to process a GraphQL query by making an asynchronous call and processing the response.
-
-        Args:
-            query (str): The GraphQL query to be executed.
-            description (str): Description of the GraphQL operation for logging purposes.
-            variables (Dict): Variables required for the GraphQL query.
-            process_response (Callable[..., R]): The function to process the response.
-
-        Returns:
-            R: The result of processing the response.
-        """
         response = await self.make_gql_call(description, query, variables)
         return process_response(response)
 
