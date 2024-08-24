@@ -30,6 +30,19 @@ from literalai.requirements import check_all_requirements
 class BaseLiteralClient:
     """
     Base class for LiteralClient and AsyncLiteralClient. 
+    Example:
+    ```python
+    from literalai import LiteralClient, AsyncLiteralClient
+
+    # Initialize the client
+    client = LiteralClient(api_key="your_api_key_here")
+    async_client = AsyncLiteralClient(api_key="your_api_key_here")
+    ```
+    Attributes:
+        api (Union[LiteralAPI, AsyncLiteralAPI]): The API client used for communication with Literal AI.
+        disabled (bool): Flag indicating whether the client is disabled.
+        event_processor (EventProcessor): Processor for handling events.
+
     """
     api: Union[LiteralAPI, AsyncLiteralAPI]
 
@@ -342,6 +355,12 @@ class BaseLiteralClient:
 class LiteralClient(BaseLiteralClient):
     """
     Synchronous client for interacting with the Literal AI API.
+    Example:
+    ```python
+    from literalai import LiteralClient
+    # Initialize the client
+    client = LiteralClient(api_key="your_api_key_here")
+    ```
     """
     api: LiteralAPI
 
@@ -369,6 +388,12 @@ class LiteralClient(BaseLiteralClient):
 class AsyncLiteralClient(BaseLiteralClient):
     """
     Asynchronous client for interacting with the Literal AI API.
+    Example:
+    ```python
+    from literalai import AsyncLiteralClient
+    # Initialize the client
+    async_client = AsyncLiteralClient(api_key="your_api_key_here")
+    ```
     """
     api: AsyncLiteralAPI
 

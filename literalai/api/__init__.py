@@ -144,6 +144,7 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class BaseLiteralAPI:
+    
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -185,6 +186,15 @@ class BaseLiteralAPI:
 
 
 class LiteralAPI(BaseLiteralAPI):
+    """
+    ```python
+    from literalai import LiteralClient
+    # Initialize the client
+    client = LiteralClient(api_key="your_api_key_here")
+    # Access the API's methods
+    print(client.api)
+    ```
+    """
     R = TypeVar("R")
 
     def make_gql_call(
@@ -1375,6 +1385,15 @@ class LiteralAPI(BaseLiteralAPI):
 
 
 class AsyncLiteralAPI(BaseLiteralAPI):
+    """
+    ```python
+    from literalai import AsyncLiteralClient
+    # Initialize the client
+    async_client = AsyncLiteralClient(api_key="your_api_key_here")
+    # Access the API's methods
+    print(async_client.api)
+    ```
+    """
     R = TypeVar("R")
 
     async def make_gql_call(
