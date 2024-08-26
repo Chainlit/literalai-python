@@ -29,7 +29,7 @@ from literalai.requirements import check_all_requirements
 
 class BaseLiteralClient:
     """
-    Base class for LiteralClient and AsyncLiteralClient. 
+    Base class for LiteralClient and AsyncLiteralClient.
     Example:
     ```python
     from literalai import LiteralClient, AsyncLiteralClient
@@ -44,6 +44,7 @@ class BaseLiteralClient:
         event_processor (EventProcessor): Processor for handling events.
 
     """
+
     api: Union[LiteralAPI, AsyncLiteralAPI]
 
     def __init__(
@@ -362,6 +363,7 @@ class LiteralClient(BaseLiteralClient):
     client = LiteralClient(api_key="your_api_key_here")
     ```
     """
+
     api: LiteralAPI
 
     def __init__(
@@ -395,6 +397,7 @@ class AsyncLiteralClient(BaseLiteralClient):
     async_client = AsyncLiteralClient(api_key="your_api_key_here")
     ```
     """
+
     api: AsyncLiteralAPI
 
     def __init__(

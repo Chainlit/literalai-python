@@ -144,7 +144,7 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class BaseLiteralAPI:
-    
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -195,12 +195,13 @@ class LiteralAPI(BaseLiteralAPI):
     print(client.api)
     ```
     """
+
     R = TypeVar("R")
 
     def make_gql_call(
         self, description: str, query: str, variables: Dict[str, Any]
     ) -> Dict:
-        
+
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
@@ -672,15 +673,14 @@ class LiteralAPI(BaseLiteralAPI):
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
         upload_type: Literal["raw", "multipart"] = cast(
-            Literal["raw", "multipart"], request_dict.get(
-                "uploadType", "multipart")
+            Literal["raw", "multipart"], request_dict.get("uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
         form_data = (
             {}
-        ) # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -750,8 +750,7 @@ class LiteralAPI(BaseLiteralAPI):
             if active_steps := active_steps_var.get([]):
                 step_id = active_steps[-1].id
             else:
-                raise Exception(
-                    "No step_id provided and no active step found.")
+                raise Exception("No step_id provided and no active step found.")
 
         (
             query,
@@ -773,8 +772,7 @@ class LiteralAPI(BaseLiteralAPI):
         )
 
         if content:
-            uploaded = self.upload_file(
-                content=content, thread_id=thread_id, mime=mime)
+            uploaded = self.upload_file(content=content, thread_id=thread_id, mime=mime)
 
             if uploaded["object_key"] is None or uploaded["url"] is None:
                 raise Exception("Failed to upload file")
@@ -1372,7 +1370,6 @@ class LiteralAPI(BaseLiteralAPI):
         )
 
     # Misc API
-
     def get_my_project_id(self):
         """
         Retrieves the projectId associated to the API key.
@@ -1394,6 +1391,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     print(async_client.api)
     ```
     """
+
     R = TypeVar("R")
 
     async def make_gql_call(
@@ -1898,15 +1896,14 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
         upload_type: Literal["raw", "multipart"] = cast(
-            Literal["raw", "multipart"], request_dict.get(
-                "uploadType", "multipart")
+            Literal["raw", "multipart"], request_dict.get("uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
         form_data = (
-            {}  
-        ) # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
