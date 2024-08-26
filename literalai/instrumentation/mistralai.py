@@ -311,7 +311,7 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                    completion += chunk.data.choices[0].delta.content
+                    completion += str(chunk.data.choices[0].delta.content)
 
             if (
                 generation

@@ -190,9 +190,9 @@ class LiteralAPI(BaseLiteralAPI):
     ```python
     from literalai import LiteralClient
     # Initialize the client
-    client = LiteralClient(api_key="your_api_key_here")
+    literalai_client = LiteralClient(api_key="your_api_key_here")
     # Access the API's methods
-    print(client.api)
+    print(literalai_client.api)
     ```
     """
 
@@ -1386,9 +1386,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     ```python
     from literalai import AsyncLiteralClient
     # Initialize the client
-    async_client = AsyncLiteralClient(api_key="your_api_key_here")
+    async_literalai_client = AsyncLiteralClient(api_key="your_api_key_here")
     # Access the API's methods
-    print(async_client.api)
+    print(async_literalai_client.api)
     ```
     """
 
