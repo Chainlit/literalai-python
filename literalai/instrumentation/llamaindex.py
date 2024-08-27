@@ -1,7 +1,7 @@
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union, cast
-
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing_extensions import TypedDict
 from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.instrumentation import get_dispatcher
