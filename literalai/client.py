@@ -28,6 +28,23 @@ from literalai.requirements import check_all_requirements
 
 
 class BaseLiteralClient:
+    """
+    Base class for LiteralClient and AsyncLiteralClient.
+    Example:
+    ```python
+    from literalai import LiteralClient, AsyncLiteralClient
+
+    # Initialize the client
+    client = LiteralClient(api_key="your_api_key_here")
+    async_client = AsyncLiteralClient(api_key="your_api_key_here")
+    ```
+    Attributes:
+        api (Union[LiteralAPI, AsyncLiteralAPI]): The API client used for communication with Literal AI.
+        disabled (bool): Flag indicating whether the client is disabled.
+        event_processor (EventProcessor): Processor for handling events.
+
+    """
+
     api: Union[LiteralAPI, AsyncLiteralAPI]
 
     def __init__(
@@ -61,12 +78,6 @@ class BaseLiteralClient:
         )
 
     def to_sync(self) -> "LiteralClient":
-        """
-        Converts the current client to its synchronous version.
-
-        Returns:
-            LiteralClient: The current client's synchronous version.
-        """
         if isinstance(self.api, AsyncLiteralAPI):
             return LiteralClient(
                 batch_size=self.event_processor.batch_size,
@@ -136,18 +147,6 @@ class BaseLiteralClient:
         name: Optional[str] = None,
         **kwargs,
     ):
-        """
-        Creates a thread where all the subsequents steps will be logged.
-        Works as a decorator or a ContextManager.
-
-        Args:
-            original_function: The function to execute in the thread's context.
-            thread_id (Optional[str]): The id of the thread to create.
-            name (Optional[str]): The name of the thread to create.
-
-        Returns:
-            The wrapper for the thread's context.
-        """
         if original_function:
             return thread_decorator(
                 self, func=original_function, thread_id=thread_id, name=name, **kwargs
@@ -167,23 +166,6 @@ class BaseLiteralClient:
         root_run_id: Optional[str] = None,
         **kwargs,
     ):
-        """
-        Creates a step where all the subsequents steps will be logged. Works as a decorator or a ContextManager.
-        This is used to create Agent steps. For conversational messages use `message` instead.
-
-        Args:
-            original_function: The function to execute in the step's context.
-            name (Optional[str]): The name of the step to create.
-            type (TrueStepType): The type of the step. Must be one of the following :
-                                 "run", "tool", "llm", "embedding", "retrieval","rerank", "undefined".
-            id (Optional[str]): The id of the step to create.
-            parent_id (Optional[str]): The id of the parent step.
-            thread_id (Optional[str]): The id of the parent thread.
-            root_run_id (Optional[str]): The id of the root run.
-
-        Returns:
-            The wrapper for the step's context.
-        """
         if original_function:
             return step_decorator(
                 self,
@@ -218,20 +200,6 @@ class BaseLiteralClient:
         thread_id: Optional[str] = None,
         root_run_id: Optional[str] = None,
     ):
-        """
-        Creates a run where all the subsequents steps will be logged. Works as a decorator or a ContextManager.
-
-        Args:
-            original_function: The function to execute in the step's context.
-            name (Optional[str]): The name of the step to create.
-            id (Optional[str]): The id of the step to create.
-            parent_id (Optional[str]): The id of the parent step.
-            thread_id (Optional[str]): The id of the parent thread.
-            root_run_id (Optional[str]): The id of the root run.
-
-        Returns:
-            The wrapper for the step's context.
-        """
         return self.step(
             original_function=original_function,
             name=name,
@@ -255,26 +223,6 @@ class BaseLiteralClient:
         metadata: Dict = {},
         root_run_id: Optional[str] = None,
     ):
-        """
-        Creates a conversational message step and sends it to Literal AI.
-        For agentic steps or runs use `step` or `run` respectively instead.
-
-        Args:
-            content (str): The text content of the message.
-            id (Optional[str]): The id of the step to create.
-            parent_id (Optional[str]): The id of the parent step.
-            type (TrueStepType): The type of the step. Must be one of the following :
-                                 "user_message", "assistant_message", "system_message".
-            name (Optional[str]): The name of the step to create.
-            thread_id (Optional[str]): The id of the parent thread.
-            attachments (List[Attachment]): A list of attachments to append to the message.
-            tags (Optional[List[str]]): A list of tags to add to the message.
-            metadata (Dict): Metadata to add to the message, in key-value pairs.
-            root_run_id (Optional[str]): The id of the root run.
-
-        Returns:
-            Message: the created message.
-        """
         step = Message(
             name=name,
             id=id,
@@ -298,17 +246,6 @@ class BaseLiteralClient:
         env: Environment = "prod",
         **kwargs,
     ):
-        """
-        Sets the environment to add to all subsequent threads and steps. Works as a decorator or a ContextManager.
-        Entities logged in the "experiment" environment are filtered out of the Literal AI UI.
-
-        Args:
-            original_function: The function to execute in the step's context.
-            env (Environment): The environment to add to logged entities.
-
-        Returns:
-            The wrapper for the context.
-        """
         if original_function:
             return env_decorator(
                 self,
@@ -328,15 +265,6 @@ class BaseLiteralClient:
         original_function=None,
         **kwargs,
     ):
-        """
-        Creates an experiment run. Works as a decorator or a ContextManager.
-
-        Args:
-            original_function: The function to execute in the step's context.
-
-        Returns:
-            The wrapper for the context.
-        """
         if original_function:
             return experiment_item_run_decorator(
                 self,
@@ -426,6 +354,16 @@ class BaseLiteralClient:
 
 
 class LiteralClient(BaseLiteralClient):
+    """
+    Synchronous client for interacting with the Literal AI API.
+    Example:
+    ```python
+    from literalai import LiteralClient
+    # Initialize the client
+    client = LiteralClient(api_key="your_api_key_here")
+    ```
+    """
+
     api: LiteralAPI
 
     def __init__(
@@ -450,6 +388,16 @@ class LiteralClient(BaseLiteralClient):
 
 
 class AsyncLiteralClient(BaseLiteralClient):
+    """
+    Asynchronous client for interacting with the Literal AI API.
+    Example:
+    ```python
+    from literalai import AsyncLiteralClient
+    # Initialize the client
+    async_client = AsyncLiteralClient(api_key="your_api_key_here")
+    ```
+    """
+
     api: AsyncLiteralAPI
 
     def __init__(

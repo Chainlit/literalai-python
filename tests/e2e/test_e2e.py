@@ -658,6 +658,7 @@ is a templated list."""
         )
 
         ab_testing = client.api.get_prompt_ab_testing(name=prompt_v1.name)
+        ab_testing = sorted(ab_testing, key=lambda x: x["version"])
 
         assert len(ab_testing) == 2
         assert ab_testing[0]["version"] == 0

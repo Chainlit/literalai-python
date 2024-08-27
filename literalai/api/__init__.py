@@ -144,6 +144,7 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class BaseLiteralAPI:
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -185,25 +186,21 @@ class BaseLiteralAPI:
 
 
 class LiteralAPI(BaseLiteralAPI):
+    """
+    ```python
+    from literalai import LiteralClient
+    # Initialize the client
+    literalai_client = LiteralClient(api_key="your_api_key_here")
+    # Access the API's methods
+    print(literalai_client.api)
+    ```
+    """
+
     R = TypeVar("R")
 
     def make_gql_call(
         self, description: str, query: str, variables: Dict[str, Any]
     ) -> Dict:
-        """
-        Executes a GraphQL call with the provided query and variables.
-
-        Args:
-            description (str): Description of the GraphQL operation for logging purposes.
-            query (str): The GraphQL query to be executed.
-            variables (Dict[str, Any]): Variables required for the GraphQL query.
-
-        Returns:
-            Dict: The JSON response from the GraphQL endpoint.
-
-        Raises:
-            Exception: If the GraphQL call fails or returns errors.
-        """
 
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
@@ -250,16 +247,6 @@ class LiteralAPI(BaseLiteralAPI):
         raise Exception("Unknown error")
 
     def make_rest_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
-        """
-        Executes a REST API call to the specified subpath with the given body.
-
-        Args:
-            subpath (str): The subpath of the REST API endpoint.
-            body (Dict[str, Any]): The JSON body to send with the POST request.
-
-        Returns:
-            Dict: The JSON response from the REST API endpoint.
-        """
         with httpx.Client(follow_redirects=True) as client:
             response = client.post(
                 self.rest_endpoint + subpath,
@@ -290,18 +277,6 @@ class LiteralAPI(BaseLiteralAPI):
         variables: Dict,
         process_response: Callable[..., R],
     ) -> R:
-        """
-        Helper function to make a GraphQL call and process the response.
-
-        Args:
-            query (str): The GraphQL query to execute.
-            description (str): Description of the GraphQL operation for logging purposes.
-            variables (Dict): Variables required for the GraphQL query.
-            process_response (Callable[..., R]): A function to process the response.
-
-        Returns:
-            R: The result of processing the response.
-        """
         response = self.make_gql_call(description, query, variables)
         return process_response(response)
 
@@ -698,15 +673,14 @@ class LiteralAPI(BaseLiteralAPI):
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
         upload_type: Literal["raw", "multipart"] = cast(
-            Literal["raw", "multipart"], request_dict.get(
-                "uploadType", "multipart")
+            Literal["raw", "multipart"], request_dict.get("uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
         form_data = (
             {}
-        ) # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -776,8 +750,7 @@ class LiteralAPI(BaseLiteralAPI):
             if active_steps := active_steps_var.get([]):
                 step_id = active_steps[-1].id
             else:
-                raise Exception(
-                    "No step_id provided and no active step found.")
+                raise Exception("No step_id provided and no active step found.")
 
         (
             query,
@@ -799,8 +772,7 @@ class LiteralAPI(BaseLiteralAPI):
         )
 
         if content:
-            uploaded = self.upload_file(
-                content=content, thread_id=thread_id, mime=mime)
+            uploaded = self.upload_file(content=content, thread_id=thread_id, mime=mime)
 
             if uploaded["object_key"] is None or uploaded["url"] is None:
                 raise Exception("Failed to upload file")
@@ -1398,7 +1370,6 @@ class LiteralAPI(BaseLiteralAPI):
         )
 
     # Misc API
-
     def get_my_project_id(self):
         """
         Retrieves the projectId associated to the API key.
@@ -1411,26 +1382,21 @@ class LiteralAPI(BaseLiteralAPI):
 
 
 class AsyncLiteralAPI(BaseLiteralAPI):
+    """
+    ```python
+    from literalai import AsyncLiteralClient
+    # Initialize the client
+    async_literalai_client = AsyncLiteralClient(api_key="your_api_key_here")
+    # Access the API's methods
+    print(async_literalai_client.api)
+    ```
+    """
+
     R = TypeVar("R")
 
     async def make_gql_call(
         self, description: str, query: str, variables: Dict[str, Any]
     ) -> Dict:
-        """
-        Asynchronously makes a GraphQL call using the provided query and variables.
-
-        Args:
-            description (str): Description of the GraphQL operation for logging purposes.
-            query (str): The GraphQL query to be executed.
-            variables (Dict[str, Any]): Variables required for the GraphQL query.
-
-        Returns:
-            Dict: The JSON response from the GraphQL endpoint.
-
-        Raises:
-            Exception: If the GraphQL call fails or returns errors.
-        """
-
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
@@ -1477,16 +1443,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         raise Exception("Unkown error")
 
     async def make_rest_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
-        """
-        Asynchronously makes a REST API call to a specified subpath with the provided body.
-
-        Args:
-            subpath (str): The endpoint subpath to which the POST request is made.
-            body (Dict[str, Any]): The JSON body of the POST request.
-
-        Returns:
-            Dict: The JSON response from the REST API endpoint.
-        """
         async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.post(
                 self.rest_endpoint + subpath,
@@ -1517,18 +1473,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         variables: Dict,
         process_response: Callable[..., R],
     ) -> R:
-        """
-        Helper function to process a GraphQL query by making an asynchronous call and processing the response.
-
-        Args:
-            query (str): The GraphQL query to be executed.
-            description (str): Description of the GraphQL operation for logging purposes.
-            variables (Dict): Variables required for the GraphQL query.
-            process_response (Callable[..., R]): The function to process the response.
-
-        Returns:
-            R: The result of processing the response.
-        """
         response = await self.make_gql_call(description, query, variables)
         return process_response(response)
 
@@ -1952,15 +1896,14 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         fields: Dict = request_dict.get("fields", {})
         object_key: Optional[str] = fields.get("key")
         upload_type: Literal["raw", "multipart"] = cast(
-            Literal["raw", "multipart"], request_dict.get(
-                "uploadType", "multipart")
+            Literal["raw", "multipart"], request_dict.get("uploadType", "multipart")
         )
         signed_url: Optional[str] = json_res.get("signedUrl")
 
         # Prepare form data
         form_data = (
-            {}  
-        ) # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+            {}
+        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
