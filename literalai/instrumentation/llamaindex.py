@@ -30,7 +30,7 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion
-from pydantic import Field
+from pydantic import PrivateAttr
 
 from literalai.context import active_thread_var
 from literalai.observability.generation import ChatGeneration, GenerationMessageRole
@@ -111,8 +111,8 @@ def create_generation(event: LLMChatStartEvent):
 class LiteralEventHandler(BaseEventHandler):
     """This class handles events coming from LlamaIndex."""
 
-    _client: "LiteralClient" = Field(...)
-    _span_handler: "LiteralSpanHandler" = Field(...)
+    _client: "LiteralClient" = PrivateAttr(...)
+    _span_handler: "LiteralSpanHandler" = PrivateAttr(...)
     runs: Dict[str, List[Step]] = {}
     streaming_run_ids: List[str] = []
 
