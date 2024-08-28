@@ -368,7 +368,6 @@ def get_langchain_callback():
             if ignore:
                 return
 
-            print(f"Starting trace for {run.id} and type {run.run_type}")
             step_type: "TrueStepType" = "undefined"
             if run.run_type == "agent":
                 step_type = "run"
@@ -426,9 +425,7 @@ def get_langchain_callback():
                         throughput = chat_start["token_count"] / duration
                     else:
                         throughput = None
-                    print("message_completion before conversion", message)
                     message_completion = self._convert_message(message)
-                    print("message_completion", message_completion)
                     current_step.generation = ChatGeneration(
                         provider=provider,
                         model=model,
