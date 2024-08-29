@@ -11,6 +11,7 @@ from langchain.agents.agent import BaseSingleActionAgent
 
 from dotenv import load_dotenv
 
+# Add OPENAI_API_KEY and TAVILY_API_KEY for this example.
 load_dotenv()
 
 model = ChatOpenAI(model="gpt-4o")
@@ -43,6 +44,7 @@ agent_executor = AgentExecutor(agent=agent, tools=tools)
 
 cb = lai_client.langchain_callback()
 
+# Replace with ainvoke for asynchronous execution.
 agent_executor.invoke(
     {
         "chat_history": [

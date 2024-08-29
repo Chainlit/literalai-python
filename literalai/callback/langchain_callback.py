@@ -101,6 +101,7 @@ def get_langchain_callback():
             class_name = message["id"][-1]
             kwargs = message.get("kwargs", {})
             function_call = kwargs.get("additional_kwargs", {}).get("function_call")
+            tool_calls = kwargs.get("additional_kwargs", {}).get("tool_calls")
 
             msg = GenerationMessage(
                 name=kwargs.get("name"),
@@ -113,6 +114,9 @@ def get_langchain_callback():
             else:
                 msg["content"] = kwargs.get("content", "")
 
+            if tool_calls:
+                msg["tool_calls"] = tool_calls
+
             return msg
 
         def _convert_message(
@@ -124,6 +128,7 @@ def get_langchain_callback():
                     message,
                 )
             function_call = message.additional_kwargs.get("function_call")
+            tool_calls = message.additional_kwargs.get("tool_calls")
             msg = GenerationMessage(
                 name=getattr(message, "name", None),
                 role=_convert_message_role(message.type),
@@ -138,6 +143,9 @@ def get_langchain_callback():
                 msg["function_call"] = function_call
             else:
                 msg["content"] = message.content  # type: ignore
+
+            if tool_calls:
+                msg["tool_calls"] = tool_calls
 
             return msg
 

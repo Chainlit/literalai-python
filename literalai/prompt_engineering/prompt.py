@@ -231,6 +231,9 @@ class Prompt(Utils):
 
                 return rendered_messages
 
+            async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+                return self.format_messages(**kwargs)
+
         lc_messages = [(m["role"], m["content"]) for m in self.template_messages]
 
         chat_template = CustomChatPromptTemplate.from_messages(lc_messages)
