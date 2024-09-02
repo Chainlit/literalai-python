@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from literalai.client import BaseLiteralClient
     from literalai.event_processor import EventProcessor
 
-from literalai.context import active_steps_var, active_thread_var, active_root_run_var
+from literalai.context import active_root_run_var, active_steps_var, active_thread_var
 from literalai.helper import utc_now
 from literalai.my_types import Environment, Utils
 from literalai.observability.generation import (
@@ -181,6 +181,173 @@ class StepDict(TypedDict, total=False):
 
 
 class Step(Utils):
+    """
+    ## Using the decorator on a function
+
+    If you want to create a step from a function, you should use the `@literal_client.step` decorator.
+
+    The step is automatically ended and sent to the platform when the function returns.
+
+    Another advantage of using the decorator is that you get several variables automatically set for you:
+
+    - **name**: The name of the step. This is automatically set to the function name.
+    - **input**: The input of the step. This is automatically set to the arguments of the function.
+    - **output**: The output of the step. This is automatically set to the return value of the function.
+
+    Here is how to use the decorator:
+
+    <CodeGroup>
+    ```python
+    @literal_client.step
+    def my_step():
+        # do something
+    ```
+    </CodeGroup>
+
+    If you want to override the default step parameters, you can pass them to the decorator:
+
+    <CodeGroup>
+    ```python
+    @literal_client.step(id="my-step-id", name="My step", type="run")
+    def my_step():
+        # do something
+    ```
+    </CodeGroup>
+
+    You can access the step object with the `get_current_step` method:
+
+    <CodeGroup>
+    ```python
+    @literal_client.step
+    def my_step():
+        step = literal_client.get_current_step()
+        # do something
+    ```
+    </CodeGroup>
+
+    ## Using the `with` statement
+
+    If you want to create a step from a block of code, you should use the `with` statement.
+
+    The step is automatically ended and sent to the platform when the code exits the `with` block.
+
+    <CodeGroup>
+    ```python
+    with literal_client.step() as step:
+        # do something
+    ```
+    </CodeGroup>
+
+    If you want to override the default step parameters, you can pass them to the `step` method:
+
+    <CodeGroup>
+    ```python
+    with literal_client.step(id="my-step-id", name="My step", type="run") as step:
+        # do something
+    ```
+    </CodeGroup>
+
+    ## Using the `start_step` method
+
+    This method should be used as a last resort because it doesn't automatically end the step.
+
+    You must call the `end` method on the step object to end the step and send it to the platform.
+
+    <CodeGroup>
+    ```python
+    step = literal_client.start_step()
+    # do something
+    step.end()
+    ```
+    </CodeGroup>
+
+    You can either pass the step parameters to the `start_step` method, or set them directly on the step object:
+
+    <CodeGroup>
+    ```python
+    step = literal_client.start_step(id="my-step-id", name="My step", type="run")
+    step.input = "test input"
+    # do something
+    step.output = "Hello world"
+    step.end()
+    ```
+    </CodeGroup>
+
+    ## Step parameters
+
+    <ParamField path="thread_id" type="uuid">
+    The id of the thread
+    </ParamField>
+
+    <ParamField path="id" type="uuid">
+    The id of the step. If not provided, a random uuid will be generated. Use
+    custom ones to match your own system. Step ids must be unique across your
+    project.
+    </ParamField>
+
+    <ParamField path="name" type="string" default="">
+    The name of the step (automatically set to the function name if using the
+    decorator)
+    </ParamField>
+
+    <ParamField path="type" type="StepType" default="undefined">
+    The type of the step. A Step can be one of the following types:
+
+    - `run`: A generic step
+    - `tool`: A step that runs a tool
+    - `llm`: A step that runs a language model
+    - `embedding`: A step that runs an embedding model
+    - `retrieval`: A step that retrieves documents
+    - `rerank`: A step that reranks documents
+    - `undefined`: An undefined step
+
+    </ParamField>
+
+    <ParamField path="metadata" type="dict" default="{}">
+    Metadata associated with the step. This enables you to add custom fields to
+    your steps.
+    </ParamField>
+
+    <ParamField path="parent_id" type="uuid">
+    The id of the parent step. This enables you to create nested steps.
+    </ParamField>
+
+    <ParamField path="start_time" type="string">
+    The start time of the step.
+    </ParamField>
+
+    <ParamField path="end_time" type="string">
+    The end time of the step.
+    </ParamField>
+
+    <ParamField path="created_at" type="string">
+    The server-side creation time of the step.
+    </ParamField>
+
+    <ParamField path="input" type="dict">
+    A dictionary symbolizing an input.
+    Prefer using `content` key to store a message.
+    </ParamField>
+
+    <ParamField path="output" type="dict">
+    A dictionary symbolizing an output.
+    Prefer using `content` key to store a message.
+    </ParamField>
+
+    <ParamField path="tags" type="List[str]" default="[]">
+    The tags of the step. This is a complimentary field to the metadata field. It
+    enables you to add custom tags to your steps.
+    </ParamField>
+
+    <ParamField path="generation" type="BaseGeneration">
+    The generation object associated with the step.
+    </ParamField>
+
+    <ParamField path="attachments" type="List[Attachment]" default="[]">
+    The attachments associated with the step.
+    </ParamField>
+    """
+
     id: str
     name: Optional[str] = ""
     type: Optional[StepType] = None

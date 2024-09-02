@@ -26,6 +26,50 @@ class ThreadDict(TypedDict, total=False):
 
 
 class Thread(Utils):
+    """
+    ## Using the `with` statement
+
+    If you prefer to have more flexibility in logging Threads, you can use the `with` statement. You can create a thread and execute code within it using the `with` statement:
+
+    <CodeGroup>
+    ```python
+    with literal_client.thread() as thread:
+        # do something
+    ```
+    </CodeGroup>
+
+    You can also continue a thread by passing the thread id to the `thread` method:
+
+    <CodeGroup>
+    ```python
+
+    previous_thread_id = "UUID"
+
+    with literal_client.thread(thread_id=previous_thread_id) as thread:
+        # do something
+    ```
+    </CodeGroup>
+
+    ## Using the Literal AI API client
+
+    You can also create Threads using the `literal_client.api.create_thread()` method.
+
+    <CodeGroup>
+    ```python
+    thread = literal_client.api.create_thread(
+        participant_id="<PARTICIPANT_UUID>",
+        environment="production",
+        tags=["tag1", "tag2"],
+        metadata={"key": "value"},
+    )
+    ```
+    </CodeGroup>
+
+    ## Using Chainlit
+
+    If you built your LLM application with Chainlit, you don't need to specify Threads in your code. Chainlit logs Threads for you by default.
+    """
+
     id: str
     name: Optional[str]
     metadata: Optional[Dict]
@@ -33,7 +77,7 @@ class Thread(Utils):
     steps: Optional[List[Step]]
     participant_id: Optional[str]
     participant_identifier: Optional[str] = None
-    created_at: Optional[str]  # read-only, set by server
+    created_at: Optional[str]
 
     def __init__(
         self,
