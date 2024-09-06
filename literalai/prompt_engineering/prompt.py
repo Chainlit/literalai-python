@@ -49,6 +49,7 @@ class PromptDict(TypedDict, total=False):
     type: "GenerationType"
     name: str
     version: int
+    url: str
     versionDesc: Optional[str]
     templateMessages: List["GenerationMessage"]
     tools: Optional[List[Dict]]
@@ -67,6 +68,7 @@ class Prompt(Utils):
     type: "GenerationType"
     name: str
     version: int
+    url: str
     version_desc: Optional[str]
     template_messages: List["GenerationMessage"]
     tools: Optional[List[Dict]]
@@ -84,6 +86,7 @@ class Prompt(Utils):
             "type": self.type,
             "name": self.name,
             "version": self.version,
+            "url": self.url,
             "versionDesc": self.version_desc,
             "templateMessages": self.template_messages,  # Assuming this is a list of dicts or similar serializable objects
             "tools": self.tools,
@@ -104,6 +107,7 @@ class Prompt(Utils):
             id=prompt_dict.get("id", ""),
             name=prompt_dict.get("lineage", {}).get("name", ""),
             version=prompt_dict.get("version", 0),
+            url=prompt_dict.get("url", ""),
             created_at=prompt_dict.get("createdAt", ""),
             updated_at=prompt_dict.get("updatedAt", ""),
             type=prompt_dict.get("type", GenerationType.CHAT),
