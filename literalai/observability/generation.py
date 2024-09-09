@@ -31,6 +31,33 @@ class GenerationMessage(TypedDict, total=False):
 
 @dataclass(repr=False)
 class BaseGeneration(Utils):
+    """
+    Base class for generation objects, containing common attributes and methods.
+
+    Attributes:
+        id (Optional[str]): The unique identifier of the generation.
+        prompt_id (Optional[str]): The unique identifier of the prompt associated with the generation.
+        provider (Optional[str]): The provider of the generation.
+        model (Optional[str]): The model used for the generation.
+        error (Optional[str]): Any error message associated with the generation.
+        settings (Optional[Dict]): Settings used for the generation.
+        variables (Optional[Dict]): Variables used in the generation.
+        tags (Optional[List[str]]): Tags associated with the generation.
+        metadata (Optional[Dict]): Metadata associated with the generation.
+        tools (Optional[List[Dict]]): Tools used in the generation.
+        token_count (Optional[int]): The total number of tokens in the generation.
+        input_token_count (Optional[int]): The number of input tokens in the generation.
+        output_token_count (Optional[int]): The number of output tokens in the generation.
+        tt_first_token (Optional[float]): Time to first token in the generation.
+        token_throughput_in_s (Optional[float]): Token throughput in seconds.
+        duration (Optional[float]): Duration of the generation.
+
+    Methods:
+        from_dict(cls, generation_dict: Dict) -> Union["ChatGeneration", "CompletionGeneration"]:
+            Creates a generation object from a dictionary.
+        to_dict(self) -> Dict:
+            Converts the generation object to a dictionary.
+    """
     id: Optional[str] = None
     prompt_id: Optional[str] = None
     provider: Optional[str] = None
@@ -85,6 +112,14 @@ class BaseGeneration(Utils):
 
 @dataclass(repr=False)
 class CompletionGeneration(BaseGeneration, Utils):
+    """
+    Represents a completion generation with a prompt and its corresponding completion.
+
+    Attributes:
+        prompt (Optional[str]): The prompt text for the generation.
+        completion (Optional[str]): The generated completion text.
+        type (GenerationType): The type of generation, which is set to GenerationType.COMPLETION.
+    """
     prompt: Optional[str] = None
     completion: Optional[str] = None
     type = GenerationType.COMPLETION
@@ -125,6 +160,14 @@ class CompletionGeneration(BaseGeneration, Utils):
 
 @dataclass(repr=False)
 class ChatGeneration(BaseGeneration, Utils):
+    """
+    Represents a chat generation with a list of messages and a message completion.
+
+    Attributes:
+        messages (Optional[List[GenerationMessage]]): The list of messages in the chat generation.
+        message_completion (Optional[GenerationMessage]): The completion message of the chat generation.
+        type (GenerationType): The type of generation, which is set to GenerationType.CHAT.
+    """
     type = GenerationType.CHAT
     messages: Optional[List[GenerationMessage]] = Field(default_factory=list)
     message_completion: Optional[GenerationMessage] = None
