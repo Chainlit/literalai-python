@@ -1020,6 +1020,30 @@ class LiteralAPI(BaseLiteralAPI):
         """
         Creates a new generation, either a chat or completion type.
 
+        ```py
+        from literalai.observability.generation import ChatGeneration
+        from literalai import LiteralClient
+
+        literalai_client = LiteralClient(api_key=)
+
+        example_generation = ChatGeneration(
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Hello, how can I help you today?"
+                },
+            ],
+            message_completion={
+                "role": "assistant",
+                "content": "Sure, I can help with that. What do you need to know?"
+            },
+            model="gpt-4o-mini",
+            provider="OpenAI"
+        )
+
+        literalai_client.api.create_generation(example_generation)
+        ```
+
         Args:
             generation (Union[ChatGeneration, CompletionGeneration]): The generation data to create.
 
