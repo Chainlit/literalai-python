@@ -600,7 +600,7 @@ class Teste2e:
         assert prompt.name == "Default"
         assert prompt.version == 0
         assert prompt.provider == "openai"
-        assert f"projects/{project.id}/playground?name=Default&version=0"
+        assert prompt.url.endswith(f"projects/{project}/playground?name=Default&version=0")
 
         prompt = await async_client.api.get_prompt(id=prompt.id, version=0)
         assert prompt is not None
