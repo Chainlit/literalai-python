@@ -594,10 +594,13 @@ class Teste2e:
     @pytest.mark.timeout(5)
     async def test_prompt(self, async_client: AsyncLiteralClient):
         prompt = await async_client.api.get_prompt(name="Default", version=0)
+        project = await async_client.api.get_my_project_id()
+
         assert prompt is not None
         assert prompt.name == "Default"
         assert prompt.version == 0
         assert prompt.provider == "openai"
+        assert prompt.url.endswith(f"projects/{project}/playground?name=Default&version=0")
 
         prompt = await async_client.api.get_prompt(id=prompt.id, version=0)
         assert prompt is not None

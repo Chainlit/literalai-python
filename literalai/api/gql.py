@@ -1034,6 +1034,7 @@ query GetPrompt($id: String, $name: String, $version: Int) {
         variables
         variablesDefaultValues
         version
+        url
         lineage {
             name
         }
