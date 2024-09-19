@@ -107,6 +107,7 @@ def get_langchain_callback():
                 name=kwargs.get("name"),
                 role=_convert_message_role(class_name),
                 content="",
+                tool_call_id=getattr(message, "tool_call_id", None),
             )
 
             if function_call:
@@ -133,6 +134,7 @@ def get_langchain_callback():
                 name=getattr(message, "name", None),
                 role=_convert_message_role(message.type),
                 content="",
+                tool_call_id=getattr(message, "tool_call_id", None),
             )
 
             if literal_uuid := message.additional_kwargs.get("uuid"):
