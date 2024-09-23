@@ -1,16 +1,6 @@
 import time
 from importlib.metadata import version
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union, cast
 
 from literalai.helper import ensure_values_serializable
 from literalai.observability.generation import (
@@ -26,17 +16,6 @@ if TYPE_CHECKING:
 
     from literalai.client import LiteralClient
     from literalai.observability.step import TrueStepType
-
-
-def process_content(content: Any) -> Tuple[Dict, Optional[str]]:
-    if content is None:
-        return {}, None
-    if isinstance(content, dict):
-        return content, "json"
-    elif isinstance(content, str):
-        return {"content": content}, "text"
-    else:
-        return {"content": str(content)}, "text"
 
 
 def process_variable_value(value: Any) -> str:
@@ -150,6 +129,35 @@ def get_langchain_callback():
                 msg["tool_calls"] = tool_calls
 
             return msg
+
+        def _is_message(self, to_check: Any) -> bool:
+            return isinstance(to_check, BaseMessage)
+
+        def _is_message_array(self, to_check: Any) -> bool:
+            return isinstance(to_check, list) and all(
+                self._is_message(item) for item in to_check
+            )
+
+        def process_content(self, content: Any, root=True):
+            if content is None:
+                return {}
+            if self._is_message_array(content):
+                if root:
+                    return {"messages": [self._convert_message(m) for m in content]}
+                else:
+                    return [self._convert_message(m) for m in content]
+            elif self._is_message(content):
+                return self._convert_message(content)
+            elif isinstance(content, dict):
+                processed_dict = {}
+                for key, value in content.items():
+                    processed_value = self.process_content(value, root=False)
+                    processed_dict[key] = processed_value
+                return processed_dict
+            elif isinstance(content, str):
+                return {"content": content}
+            else:
+                return {"content": str(content)}
 
         def _build_llm_settings(
             self,
@@ -366,7 +374,6 @@ def get_langchain_callback():
                 self.generation_inputs[str(run.id)] = ensure_values_serializable(
                     run.inputs
                 )
-
             if ignore:
                 return
 
@@ -393,7 +400,7 @@ def get_langchain_callback():
             )
             step.tags = run.tags
             step.metadata = run.metadata
-            step.input, _ = process_content(run.inputs)
+            step.input = self.process_content(run.inputs)
 
             self.steps[str(run.id)] = step
 
@@ -406,7 +413,6 @@ def get_langchain_callback():
                 return
 
             current_step = self.steps.get(str(run.id), None)
-
             if run.run_type == "llm" and current_step:
                 provider, model, tools, llm_settings = self._build_llm_settings(
                     (run.serialized or {}), (run.extra or {}).get("invocation_params")
@@ -508,7 +514,7 @@ def get_langchain_callback():
                 output = outputs.get(output_keys[0], outputs)
 
             if current_step:
-                current_step.output, _ = process_content(output)
+                current_step.output = self.process_content(output)
                 current_step.end()
 
         def _on_error(self, error: BaseException, *, run_id: "UUID", **kwargs: Any):

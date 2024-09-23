@@ -35,16 +35,15 @@ class EventProcessor:
         self.batch_size = batch_size
         self.api = api
         self.event_queue = queue.Queue()
-        self.processing_thread = threading.Thread(
-            target=self._process_events, daemon=True
-        )
         self.disabled = disabled
         self.processing_counter = 0
         self.counter_lock = threading.Lock()
         self.last_batch_time = time.time()
+        self.processing_thread = threading.Thread(
+            target=self._process_events, daemon=True
+        )
         if not self.disabled:
             self.processing_thread.start()
-
         self.stop_event = threading.Event()
 
     def add_event(self, event: "StepDict"):

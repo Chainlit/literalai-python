@@ -1,11 +1,11 @@
 pytest
 pytest-asyncio
 pytest-timeout
+pytest_httpx==0.30.0
 pre-commit
 python-dotenv
 ruff
 mypy
 langchain
 llama-index
-pytest_httpx
 mistralai
