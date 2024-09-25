@@ -1,6 +1,5 @@
 import logging
 import uuid
-import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 from typing_extensions import TypedDict
 from llama_index.core.base.llms.types import MessageRole
@@ -8,6 +7,7 @@ from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.events import BaseEvent
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.instrumentation.events.embedding import (
     EmbeddingEndEvent,
     EmbeddingStartEvent,
@@ -16,13 +16,13 @@ from llama_index.core.instrumentation.events.llm import (
     LLMChatEndEvent,
     LLMChatStartEvent,
 )
+
 from llama_index.core.instrumentation.events.query import QueryEndEvent, QueryStartEvent
 from llama_index.core.instrumentation.events.retrieval import (
     RetrievalEndEvent,
     RetrievalStartEvent,
 )
 from llama_index.core.instrumentation.events.synthesis import (
-    GetResponseStartEvent,
     SynthesizeEndEvent,
 )
 from llama_index.core.instrumentation.span import SimpleSpan
@@ -34,7 +34,11 @@ from openai.types.chat import ChatCompletion
 from pydantic import PrivateAttr
 
 from literalai.context import active_thread_var
-from literalai.observability.generation import ChatGeneration, GenerationMessageRole
+from literalai.observability.generation import (
+    ChatGeneration,
+    GenerationMessage,
+    GenerationMessageRole,
+)
 from literalai.observability.step import Step, StepType
 
 if TYPE_CHECKING:
@@ -89,6 +93,26 @@ def extract_document_info(nodes: List[NodeWithScore]):
     ]
 
 
+def build_message_dict(message: ChatMessage):
+    message_dict = {
+        "role": convert_message_role(message.role),
+        "content": message.content,
+    }
+    kwargs = message.additional_kwargs
+
+    if kwargs:
+        if kwargs.get("tool_call_id", None):
+            message_dict["tool_call_id"] = kwargs.get("tool_call_id")
+        if kwargs.get("name", None):
+            message_dict["name"] = kwargs.get("name")
+        tool_calls = kwargs.get("tool_calls", [])
+        if len(tool_calls) > 0:
+            message_dict["tool_calls"] = [
+                tool_call.to_dict() for tool_call in tool_calls
+            ]
+    return message_dict
+
+
 def create_generation(event: LLMChatStartEvent):
     model_dict = event.model_dict
 
@@ -102,10 +126,7 @@ def create_generation(event: LLMChatStartEvent):
             "logprobs": model_dict.get("logprobs"),
             "top_logprobs": model_dict.get("top_logprobs"),
         },
-        messages=[
-            {"role": convert_message_role(message.role), "content": message.content}
-            for message in event.messages
-        ],
+        messages=[build_message_dict(message) for message in event.messages],
     )
 
 
@@ -135,6 +156,23 @@ class LiteralEventHandler(BaseEventHandler):
         """Class name."""
         return "LiteralEventHandler"
 
+    def _convert_message(
+        self,
+        message: ChatMessage,
+    ):
+        tool_calls = message.additional_kwargs.get("tool_calls")
+        msg = GenerationMessage(
+            name=getattr(message, "name", None),
+            role=convert_message_role(message.role),
+            content="",
+        )
+
+        msg["content"] = message.content
+
+        if tool_calls:
+            msg["tool_calls"] = [tool_call.to_dict() for tool_call in tool_calls]
+
+        return msg
 
     def handle(self, event: BaseEvent, **kwargs) -> None:
         """Logic for handling event."""
@@ -144,7 +182,6 @@ class LiteralEventHandler(BaseEventHandler):
 
             """The events are presented here roughly in chronological order"""
             if isinstance(event, QueryStartEvent):
-                print("received \033[93mQueryStart\033[0m signal, run_id:", run_id)
                 active_thread = active_thread_var.get()
                 query = extract_query_from_bundle(event.query)
 
@@ -160,7 +197,6 @@ class LiteralEventHandler(BaseEventHandler):
                 )
 
             if isinstance(event, RetrievalStartEvent):
-                print("received \033[93mRetrievalStart\033[0m signal, run_id:", run_id)
                 run = self._client.start_step(
                     name="RAG",
                     type="run",
@@ -180,7 +216,6 @@ class LiteralEventHandler(BaseEventHandler):
                 self.store_step(run_id=run_id, step=retrieval_step)
 
             if isinstance(event, EmbeddingStartEvent):
-                print("received \033[93mEmbeddingStart\033[0m signal, run_id:", run_id)
                 retrieval_step = self.get_first_step_of_type(
                     run_id=run_id, step_type="retrieval"
                 )
@@ -196,7 +231,6 @@ class LiteralEventHandler(BaseEventHandler):
                     self.store_step(run_id=run_id, step=embedding_step)
 
             if isinstance(event, EmbeddingEndEvent):
-                print("received \033[93mEmbeddingEnd\033[0m signal, run_id:", run_id)
                 embedding_step = self.get_first_step_of_type(
                     run_id=run_id, step_type="embedding"
                 )
@@ -207,7 +241,6 @@ class LiteralEventHandler(BaseEventHandler):
                     embedding_step.end()
 
             if isinstance(event, RetrievalEndEvent):
-                print("received \033[93mRetrievalEnd\033[0m signal, run_id:", run_id)
                 retrieval_step = self.get_first_step_of_type(
                     run_id=run_id, step_type="retrieval"
                 )
@@ -220,8 +253,7 @@ class LiteralEventHandler(BaseEventHandler):
                     retrieval_step.output = {"retrieved_documents": retrieved_documents}
                     retrieval_step.end()
 
-            if isinstance(event, GetResponseStartEvent):
-                print("received \033[93mGetResponseStart\033[0m signal, run_id:", run_id)
+            if isinstance(event, LLMChatStartEvent):
                 if run_id:
                     self._client.step()
                     llm_step = self._client.start_step(
@@ -230,10 +262,6 @@ class LiteralEventHandler(BaseEventHandler):
                         thread_id=thread_id,
                     )
                     self.store_step(run_id=run_id, step=llm_step)
-
-            if isinstance(event, LLMChatStartEvent):
-                print("received \033[93mLLMChatStart\033[0m signal, run_id:", run_id)
-                print("\033[94m" + str(event) + "\033[0m")
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
 
                 if not run_id and not llm_step:
@@ -252,20 +280,17 @@ class LiteralEventHandler(BaseEventHandler):
                     llm_step.name = event.model_dict.get("model")
 
             if isinstance(event, LLMChatEndEvent):
-                print("received \033[93mLLMChatEnd\033[0m signal, run_id:", run_id)
-                print("\033[94m" + str(event) + "\033[0m")
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
-                
                 if not llm_step and self._standalone_step_id:
-                    llm_step = self.get_first_step_of_type(run_id=self._standalone_step_id, step_type="llm")
+                    llm_step = self.get_first_step_of_type(
+                        run_id=self._standalone_step_id, step_type="llm"
+                    )
 
                 response = event.response
 
                 if llm_step and response:
                     chat_completion = response.raw
-
                     if isinstance(chat_completion, ChatCompletion):
-                        print("\033[92m" + str(chat_completion.__dict__) + "\033[0m")
                         usage = chat_completion.usage
 
                         if isinstance(usage, CompletionUsage):
@@ -274,19 +299,15 @@ class LiteralEventHandler(BaseEventHandler):
                                 usage.completion_tokens
                             )
 
-                    if self._standalone_step_id:
-                        llm_step.end()
-                        self._standalone_step_id = None
+                        if self._standalone_step_id:
+                            llm_step.generation.message_completion = (
+                                self._convert_message(response.message)
+                            )
 
-                    # Create a message for both standalone and regular runs
-                    self._client.message(
-                        type="assistant_message",
-                        thread_id=thread_id if run_id else None,  # Use thread_id only for regular runs
-                        content=response.message.content,
-                    )
+                            llm_step.end()
+                            self._standalone_step_id = None
 
             if isinstance(event, SynthesizeEndEvent):
-                print("received \033[93mSynthesizeEnd\033[0m signal, run_id:", run_id)
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
                 run = self.get_first_step_of_type(run_id=run_id, step_type="run")
 
@@ -314,7 +335,6 @@ class LiteralEventHandler(BaseEventHandler):
                     )
 
             if isinstance(event, QueryEndEvent):
-                print("received \033[93mQueryEnd\033[0m signal, run_id:", run_id)
                 if run_id in self.runs:
                     del self.runs[run_id]
 
