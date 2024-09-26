@@ -8,6 +8,7 @@ from literalai.context import active_thread_var
 
 literalai_uuid_namespace = uuid.UUID("05f6b2b5-a912-47bd-958f-98a9c4496322")
 
+
 class SpanEntry(TypedDict):
     id: str
     parent_id: Optional[str]

@@ -8,11 +8,7 @@ from pydantic import PrivateAttr
 
 from literalai.instrumentation.llamaindex.span_handler import LiteralSpanHandler
 from literalai.context import active_thread_var
-from llama_index.core.instrumentation.events.llm import (
-    LLMChatEndEvent,
-)
 
-from llama_index.core.schema import QueryBundle
 from llama_index.core.instrumentation.events.agent import (
     AgentChatWithStepStartEvent,
     AgentChatWithStepEndEvent,
@@ -167,7 +163,6 @@ class LiteralEventHandler(BaseEventHandler):
         object.__setattr__(self, "_client", literal_client)
         object.__setattr__(self, "_span_handler", llama_index_span_handler)
 
- 
     def _convert_message(
         self,
         message: ChatMessage,
@@ -196,6 +191,11 @@ class LiteralEventHandler(BaseEventHandler):
             if isinstance(event, AgentChatWithStepStartEvent) or isinstance(
                 event, AgentRunStepStartEvent
             ):
+                run_name = (
+                    "Agent Chat"
+                    if isinstance(event, AgentChatWithStepStartEvent)
+                    else "Agent Step"
+                )
                 parent_run_id = None
                 if len(self.open_runs) > 0:
                     parent_run_id = self.open_runs[-1].id
@@ -203,10 +203,9 @@ class LiteralEventHandler(BaseEventHandler):
                 agent_run_id = str(uuid.uuid4())
 
                 run = self._client.start_step(
-                    name="Agent",
+                    name=run_name,
                     type="run",
                     id=agent_run_id,
-                    thread_id=thread_id,
                     parent_id=parent_run_id,
                 )
 
@@ -328,7 +327,9 @@ class LiteralEventHandler(BaseEventHandler):
 
                 if llm_step and response:
                     chat_completion = response.raw
-                    if isinstance(chat_completion, ChatCompletion) or isinstance(chat_completion, ChatCompletionChunk):
+                    if isinstance(chat_completion, ChatCompletion) or isinstance(
+                        chat_completion, ChatCompletionChunk
+                    ):
                         usage = chat_completion.usage
 
                         if isinstance(usage, CompletionUsage):
@@ -341,7 +342,6 @@ class LiteralEventHandler(BaseEventHandler):
                             llm_step.generation.message_completion = (
                                 self._convert_message(response.message)
                             )
-
 
                             llm_step.end()
                             self._standalone_step_id = None
@@ -409,4 +409,3 @@ class LiteralEventHandler(BaseEventHandler):
     def class_name(cls) -> str:
         """Class name."""
         return "LiteralEventHandler"
-
