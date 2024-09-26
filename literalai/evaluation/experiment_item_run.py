@@ -16,11 +16,8 @@ class ExperimentItemRunContextManager(EnvContextManager, StepContextManager):
         self,
         client: "BaseLiteralClient",
     ):
-        self.id = str(uuid.uuid4())
+        self.client = client
         EnvContextManager.__init__(self, client=client, env="experiment")
-        StepContextManager.__init__(
-            self, client=client, name="Experiment Run", type="run", id=self.id
-        )
 
     def __call__(self, func):
         return experiment_item_run_decorator(
@@ -30,7 +27,11 @@ class ExperimentItemRunContextManager(EnvContextManager, StepContextManager):
         )
 
     async def __aenter__(self):
-        active_experiment_item_run_id_var.set(self.id)
+        id = str(uuid.uuid4())
+        StepContextManager.__init__(
+            self, client=self.client, name="Experiment Run", type="run", id=id
+        )
+        active_experiment_item_run_id_var.set(id)
         await EnvContextManager.__aenter__(self)
         step = await StepContextManager.__aenter__(self)
         return step
@@ -42,7 +43,11 @@ class ExperimentItemRunContextManager(EnvContextManager, StepContextManager):
         active_experiment_item_run_id_var.set(None)
 
     def __enter__(self):
-        active_experiment_item_run_id_var.set(self.id)
+        id = str(uuid.uuid4())
+        StepContextManager.__init__(
+            self, client=self.client, name="Experiment Run", type="run", id=id
+        )
+        active_experiment_item_run_id_var.set(id)
         EnvContextManager.__enter__(self)
         step = StepContextManager.__enter__(self)
         return step
