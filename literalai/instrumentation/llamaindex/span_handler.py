@@ -1,18 +1,12 @@
 from typing_extensions import TypedDict
 from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
 from llama_index.core.instrumentation.span import SimpleSpan
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
-from llama_index.core.tools import BaseTool, FunctionTool
+from typing import Any, Dict, Optional
 from llama_index.core.query_engine import RetrieverQueryEngine
 import uuid
 from literalai.context import active_thread_var
 
 literalai_uuid_namespace = uuid.UUID("05f6b2b5-a912-47bd-958f-98a9c4496322")
-
-
-def print_red(text: str):
-    print(f"\033[31m{text}\033[0m")
-
 
 class SpanEntry(TypedDict):
     id: str
@@ -25,13 +19,9 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
     """This class handles spans coming from LlamaIndex."""
 
     spans: Dict[str, SpanEntry] = {}
-    tab_indent: int = 0
-    symbol: str = "  "
 
     def __init__(self):
         super().__init__()
-        self.tab_indent = 0
-        self.symbol = "  "
 
     def new_span(
         self,
@@ -42,9 +32,6 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
         tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
-        tabs = self.symbol * self.tab_indent
-        print_red(f"{tabs}{type(instance).__name__} #{id_[-6:]}")
-
         self.spans[id_] = {
             "id": id_,
             "parent_id": parent_span_id,
@@ -66,8 +53,6 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
         **kwargs: Any,
     ):
         """Logic for preparing to exit a span."""
-        tabs = self.symbol * self.tab_indent
-        print_red(f"{tabs}{type(instance).__name__} #{id_[-6:]}")
         if id_ in self.spans:
             del self.spans[id_]
 
@@ -80,8 +65,6 @@ class LiteralSpanHandler(BaseSpanHandler[SimpleSpan]):
         **kwargs: Any,
     ):
         """Logic for preparing to drop a span."""
-        tabs = self.symbol * self.tab_indent
-        print_red(f"{tabs}{type(instance).__name__} #{id_[-6:]}")
         if id_ in self.spans:
             del self.spans[id_]
 

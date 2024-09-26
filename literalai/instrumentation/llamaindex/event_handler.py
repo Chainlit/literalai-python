@@ -20,6 +20,7 @@ from llama_index.core.instrumentation.events.agent import (
     AgentRunStepEndEvent,
 )
 from llama_index.core.instrumentation.events.embedding import (
+    EmbeddingStartEvent,
     EmbeddingEndEvent,
 )
 
@@ -43,7 +44,7 @@ from llama_index.core.instrumentation.events.synthesis import (
 
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from openai.types import CompletionUsage
-from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from literalai.observability.generation import (
     ChatGeneration,
@@ -107,6 +108,7 @@ def build_message_dict(message: ChatMessage):
         "role": convert_message_role(message.role),
         "content": message.content,
     }
+
     kwargs = message.additional_kwargs
 
     if kwargs:
@@ -139,12 +141,8 @@ def create_generation(event: LLMChatStartEvent):
     )
 
 
-def print_blue(text: str):
-    print(f"\033[34m{text}\033[0m")
-
-
-def get_query(a: Union[str, QueryBundle]):
-    return a.query_str if isinstance(a, QueryBundle) else a
+def extract_query(x: Union[str, QueryBundle]):
+    return x.query_str if isinstance(x, QueryBundle) else x
 
 
 class LiteralEventHandler(BaseEventHandler):
@@ -169,11 +167,7 @@ class LiteralEventHandler(BaseEventHandler):
         object.__setattr__(self, "_client", literal_client)
         object.__setattr__(self, "_span_handler", llama_index_span_handler)
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Class name."""
-        return "LiteralEventHandler"
-
+ 
     def _convert_message(
         self,
         message: ChatMessage,
@@ -194,8 +188,6 @@ class LiteralEventHandler(BaseEventHandler):
 
     def handle(self, event: BaseEvent, **kwargs) -> None:
         """Logic for handling event."""
-        tabs = self._span_handler.symbol * self._span_handler.tab_indent
-        print_blue(f"{tabs}{event.class_name()}")
         try:
             thread_id = self._span_handler.get_thread_id(event.span_id)
             run_id = self._span_handler.get_run_id(event.span_id)
@@ -229,7 +221,7 @@ class LiteralEventHandler(BaseEventHandler):
 
             if isinstance(event, QueryStartEvent):
                 active_thread = active_thread_var.get()
-                query = extract_query_from_bundle(event.query)
+                query = extract_query(event.query)
 
                 if not active_thread or not active_thread.name:
                     self._client.api.upsert_thread(id=thread_id, name=query)
@@ -293,7 +285,7 @@ class LiteralEventHandler(BaseEventHandler):
 
                 if run_id and retrieval_step:
                     retrieved_documents = extract_document_info(event.nodes)
-                    query = extract_query_from_bundle(event.str_or_query_bundle)
+                    query = extract_query(event.str_or_query_bundle)
 
                     retrieval_step.input = {"query": query}
                     retrieval_step.output = {"retrieved_documents": retrieved_documents}
@@ -336,7 +328,7 @@ class LiteralEventHandler(BaseEventHandler):
 
                 if llm_step and response:
                     chat_completion = response.raw
-                    if isinstance(chat_completion, ChatCompletion):
+                    if isinstance(chat_completion, ChatCompletion) or isinstance(chat_completion, ChatCompletionChunk):
                         usage = chat_completion.usage
 
                         if isinstance(usage, CompletionUsage):
@@ -349,6 +341,7 @@ class LiteralEventHandler(BaseEventHandler):
                             llm_step.generation.message_completion = (
                                 self._convert_message(response.message)
                             )
+
 
                             llm_step.end()
                             self._standalone_step_id = None
@@ -411,3 +404,9 @@ class LiteralEventHandler(BaseEventHandler):
                 return step
 
         return None
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "LiteralEventHandler"
+
