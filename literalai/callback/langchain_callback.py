@@ -236,6 +236,9 @@ def get_langchain_callback():
             else:
                 self.to_keep = to_keep
 
+        def model_dump(self):
+            return {}
+
         def on_chat_model_start(
             self,
             serialized: Dict[str, Any],
@@ -377,12 +380,9 @@ def get_langchain_callback():
             if ignore:
                 return
 
-            step_type: "TrueStepType" = "undefined"
+            step_type: "TrueStepType" = "run" if not self.steps else "undefined"
             if run.run_type == "agent":
                 step_type = "run"
-            elif run.run_type == "chain":
-                if not self.steps:
-                    step_type = "run"
             elif run.run_type == "llm":
                 step_type = "llm"
             elif run.run_type == "retriever":
