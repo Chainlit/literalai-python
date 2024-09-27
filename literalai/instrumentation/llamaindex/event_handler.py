@@ -187,7 +187,8 @@ class LiteralEventHandler(BaseEventHandler):
             thread_id = self._span_handler.get_thread_id(event.span_id)
             run_id = self._span_handler.get_run_id(event.span_id)
 
-            """The events are presented here roughly in chronological order"""
+            # AgentChatWithStep wraps several AgentRunStep events
+            # as the agent may want to perform multiple tool calls in a row.
             if isinstance(event, AgentChatWithStepStartEvent) or isinstance(
                 event, AgentRunStepStartEvent
             ):
@@ -214,7 +215,12 @@ class LiteralEventHandler(BaseEventHandler):
             if isinstance(event, AgentChatWithStepEndEvent) or isinstance(
                 event, AgentRunStepEndEvent
             ):
-                step = self.open_runs.pop()
+                try:
+                    step = self.open_runs.pop()
+                except IndexError:
+                    logging.error(
+                        "[Literal] Error in Llamaindex instrumentation: AgentRunStepEndEvent called without an open run."
+                    )
                 if step:
                     step.end()
 
@@ -232,7 +238,8 @@ class LiteralEventHandler(BaseEventHandler):
                     thread_id=thread_id,
                     content=query,
                 )
-
+            
+            # Retrieval wraps the Embedding step in LlamaIndex
             if isinstance(event, RetrievalStartEvent):
                 run = self._client.start_step(
                     name="RAG",
@@ -290,6 +297,7 @@ class LiteralEventHandler(BaseEventHandler):
                     retrieval_step.output = {"retrieved_documents": retrieved_documents}
                     retrieval_step.end()
 
+            # Only event where we create LLM steps
             if isinstance(event, LLMChatStartEvent):
                 if run_id:
                     self._client.step()
@@ -316,6 +324,7 @@ class LiteralEventHandler(BaseEventHandler):
                     llm_step.generation = generation
                     llm_step.name = event.model_dict.get("model")
 
+            # Actual creation of the event happens upon ending the event
             if isinstance(event, LLMChatEndEvent):
                 llm_step = self.get_first_step_of_type(run_id=run_id, step_type="llm")
                 if not llm_step and self._standalone_step_id:
@@ -327,6 +336,8 @@ class LiteralEventHandler(BaseEventHandler):
 
                 if llm_step and response:
                     chat_completion = response.raw
+
+                    # ChatCompletionChunk needed for chat stream methods
                     if isinstance(chat_completion, ChatCompletion) or isinstance(
                         chat_completion, ChatCompletionChunk
                     ):
