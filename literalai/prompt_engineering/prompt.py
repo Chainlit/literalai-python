@@ -84,7 +84,7 @@ class Prompt(Utils):
             "id": self.id,
             "createdAt": self.created_at,
             "updatedAt": self.updated_at,
-            "type": self.type,
+            "type": self.type.value if isinstance(self.type, GenerationType) else self.type,
             "name": self.name,
             "version": self.version,
             "url": self.url,
