@@ -79,7 +79,6 @@ class Prompt(Utils):
     variables_default_values: Optional[Dict[str, Any]]
 
     def to_dict(self) -> PromptDict:
-        # Convert the Prompt instance to a dictionary matching the PromptDict structure
         return {
             "id": self.id,
             "createdAt": self.created_at,

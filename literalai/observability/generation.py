@@ -13,9 +13,18 @@ GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system
 
 
 @unique
-class GenerationType(Enum):
+class GenerationType(str, Enum):
     CHAT = "CHAT"
     COMPLETION = "COMPLETION"
+
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return f"GenerationType.{self.name}"
+
+    def to_json(self):
+        return self.value
 
 
 class GenerationMessage(TypedDict, total=False):
