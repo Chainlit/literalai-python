@@ -71,6 +71,7 @@ def create_scores_fields_builder(scores: List[ScoreDict]):
         generated += f"""$name_{id}: String!
         $type_{id}: ScoreType!
         $value_{id}: Float!
+        $label_{id}: String
         $stepId_{id}: String
         $datasetExperimentItemId_{id}: String
         $scorer_{id}: String
@@ -88,6 +89,7 @@ def create_scores_args_builder(scores: List[ScoreDict]):
                 name: $name_{id}
                 type: $type_{id}
                 value: $value_{id}
+                label: $label_{id}
                 stepId: $stepId_{id}
                 datasetExperimentItemId: $datasetExperimentItemId_{id}
                 scorer: $scorer_{id}
@@ -98,6 +100,7 @@ def create_scores_args_builder(scores: List[ScoreDict]):
                 name
                 type
                 value
+                label
                 comment
                 scorer
             }}
