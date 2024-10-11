@@ -48,6 +48,7 @@ class ScoreDict(TypedDict, total=False):
     name: str
     type: ScoreType
     value: float
+    label: Optional[str]
     stepId: Optional[str]
     datasetExperimentItemId: Optional[str]
     comment: Optional[str]
