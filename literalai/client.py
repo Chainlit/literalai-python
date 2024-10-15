@@ -46,6 +46,7 @@ class BaseLiteralClient:
     """
 
     api: Union[LiteralAPI, AsyncLiteralAPI]
+    global_metadata: Optional[Dict[str, str]] = None
 
     def __init__(
         self,
@@ -55,6 +56,7 @@ class BaseLiteralClient:
         url: Optional[str] = None,
         environment: Optional[Environment] = None,
         disabled: bool = False,
+        release: Optional[str] = None,
     ):
         if not api_key:
             api_key = os.getenv("LITERAL_API_KEY", None)
@@ -76,6 +78,9 @@ class BaseLiteralClient:
             batch_size=batch_size,
             disabled=self.disabled,
         )
+
+        if release and release.strip():
+            self.global_metadata = {"release": release.strip()}
 
     def to_sync(self) -> "LiteralClient":
         if isinstance(self.api, AsyncLiteralAPI):
@@ -223,6 +228,9 @@ class BaseLiteralClient:
         metadata: Dict = {},
         root_run_id: Optional[str] = None,
     ):
+        if hasattr(self, "global_metadata") and self.global_metadata:
+            metadata.update(self.global_metadata)
+
         step = Message(
             name=name,
             id=id,
@@ -313,6 +321,11 @@ class BaseLiteralClient:
             root_run_id=root_run_id,
             **kwargs,
         )
+
+        if hasattr(self, "global_metadata") and self.global_metadata:
+            step.metadata = step.metadata or {}
+            step.metadata.update(self.global_metadata)
+
         step.start()
         return step
 
@@ -373,6 +386,7 @@ class LiteralClient(BaseLiteralClient):
         url: Optional[str] = None,
         environment: Optional[Environment] = None,
         disabled: bool = False,
+        release: Optional[str] = None,
     ):
         super().__init__(
             batch_size=batch_size,
@@ -381,6 +395,7 @@ class LiteralClient(BaseLiteralClient):
             url=url,
             disabled=disabled,
             environment=environment,
+            release=release,
         )
 
     def flush(self):
@@ -407,6 +422,7 @@ class AsyncLiteralClient(BaseLiteralClient):
         url: Optional[str] = None,
         environment: Optional[Environment] = None,
         disabled: bool = False,
+        release: Optional[str] = None,
     ):
         super().__init__(
             batch_size=batch_size,
@@ -415,6 +431,7 @@ class AsyncLiteralClient(BaseLiteralClient):
             url=url,
             disabled=disabled,
             environment=environment,
+            release=release,
         )
 
     async def flush(self):

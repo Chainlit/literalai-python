@@ -102,11 +102,11 @@ class Thread(Utils):
             "tags": self.tags,
             "name": self.name,
             "steps": [step.to_dict() for step in self.steps] if self.steps else [],
-            "participant": UserDict(
-                id=self.participant_id, identifier=self.participant_identifier
-            )
-            if self.participant_id
-            else UserDict(),
+            "participant": (
+                UserDict(id=self.participant_id, identifier=self.participant_identifier)
+                if self.participant_id
+                else UserDict()
+            ),
             "createdAt": getattr(self, "created_at", None),
         }
 
@@ -163,7 +163,12 @@ class ThreadContextManager:
             "id": thread_data["id"],
             "name": thread_data["name"],
         }
-        if metadata := thread_data.get("metadata"):
+
+        metadata = {
+            **(self.client.global_metadata or {}),
+            **(thread_data.get("metadata") or {}),
+        }
+        if metadata:
             thread_data_to_upsert["metadata"] = metadata
         if tags := thread_data.get("tags"):
             thread_data_to_upsert["tags"] = tags

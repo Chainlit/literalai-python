@@ -316,6 +316,36 @@ class Teste2e:
         await assert_delete(id)
 
     @pytest.mark.timeout(5)
+    async def test_release(self):
+        url = os.getenv("LITERAL_API_URL", None)
+        api_key = os.getenv("LITERAL_API_KEY", None)
+        async_client = AsyncLiteralClient(
+            batch_size=5, url=url, api_key=api_key, release="test"
+        )
+
+        async def assert_delete(thread_id: str, step_id: str):
+            await async_client.flush()
+            assert await async_client.api.delete_step(step_id) is True
+            assert await async_client.api.delete_thread(thread_id) is True
+
+        @async_client.thread
+        def thread_decorated():
+            @async_client.step(name="foo", type="llm")
+            def step_decorated():
+                t = async_client.get_current_thread()
+                s = async_client.get_current_step()
+                assert s is not None
+                assert s.name == "foo"
+                assert s.type == "llm"
+                assert s.metadata.get("release") == "test"
+                return t.id, s.id
+
+            return step_decorated()
+
+        thread_id, step_id = thread_decorated()
+        await assert_delete(thread_id, step_id)
+
+    @pytest.mark.timeout(5)
     async def test_step_decorator(
         self, client: LiteralClient, async_client: AsyncLiteralClient
     ):
@@ -600,7 +630,9 @@ class Teste2e:
         assert prompt.name == "Default"
         assert prompt.version == 0
         assert prompt.provider == "openai"
-        assert prompt.url.endswith(f"projects/{project}/playground?name=Default&version=0")
+        assert prompt.url.endswith(
+            f"projects/{project}/playground?name=Default&version=0"
+        )
 
         prompt = await async_client.api.get_prompt(id=prompt.id, version=0)
         assert prompt is not None

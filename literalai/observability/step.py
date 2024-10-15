@@ -379,6 +379,7 @@ class Step(Utils):
         processor: Optional["EventProcessor"] = None,
         tags: Optional[List[str]] = None,
         root_run_id: Optional[str] = None,
+        metadata: Optional[Dict] = None,
     ):
         from time import sleep
 
@@ -400,6 +401,8 @@ class Step(Utils):
         self.parent_id = parent_id
 
         self.tags = tags
+        if metadata:
+            self.metadata = metadata
 
     def start(self):
         active_steps = active_steps_var.get()
@@ -540,6 +543,7 @@ class StepContextManager:
             parent_id=self.parent_id,
             thread_id=self.thread_id,
             root_run_id=self.root_run_id,
+            metadata=self.kwargs.get("metadata", None),
             **self.kwargs,
         )
 
@@ -566,6 +570,7 @@ class StepContextManager:
             parent_id=self.parent_id,
             thread_id=self.thread_id,
             root_run_id=self.root_run_id,
+            metadata=self.kwargs.get("metadata", None),
             **self.kwargs,
         )
 
