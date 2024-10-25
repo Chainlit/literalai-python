@@ -155,9 +155,13 @@ def get_langchain_callback():
                     processed_dict[key] = processed_value
                 return processed_dict
             elif isinstance(content, str):
-                return {"content": content}
+                if root:
+                    return {"content": content}
+                return content
             else:
-                return {"content": str(content)}
+                if root:
+                    return {"content": str(content)}
+                return str(content)
 
         def _build_llm_settings(
             self,
