@@ -176,6 +176,7 @@ class Teste2e:
         await async_client.flush()
         is_deleted = await async_client.api.delete_step(id=step.id)
         assert is_deleted is True, "Step should be deleted"
+        time.sleep(1)
 
         deleted_step = await async_client.api.get_step(id=step.id)
 
