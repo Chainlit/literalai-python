@@ -1024,17 +1024,20 @@ CREATE_PROMPT_VERSION = """mutation createPromptVersion(
 GET_PROMPT_VERSION = """
 query GetPrompt($id: String, $name: String, $version: Int) {
     promptVersion(id: $id, name: $name, version: $version) {
-        id
         createdAt
-        updatedAt
-        type
+        id
+        label
+        settings
+        status
+        tags
         templateMessages
         tools
-        settings
+        type
+        updatedAt
+        url
         variables
         variablesDefaultValues
         version
-        url
         lineage {
             name
         }
