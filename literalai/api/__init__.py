@@ -583,6 +583,10 @@ class LiteralAPI(BaseLiteralAPI):
         Returns:
             The created Score object.
         """
+        if generation_id:
+            logger.warning(
+                "generation_id is deprecated and will be removed in a future version, please use step_id instead"
+            )
         check_scores_finite([{"name": name, "value": value}])
 
         return self.gql_helper(
@@ -1832,6 +1836,10 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         Returns:
             The result of the GraphQL helper function for creating a score.
         """
+        if generation_id:
+            logger.warning(
+                "generation_id is deprecated and will be removed in a future version, please use step_id instead"
+            )
         check_scores_finite([{"name": name, "value": value}])
 
         return await self.gql_helper(
