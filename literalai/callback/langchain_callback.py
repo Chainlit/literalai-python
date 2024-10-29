@@ -512,13 +512,9 @@ def get_langchain_callback():
                 return
 
             outputs = run.outputs or {}
-            output_keys = list(outputs.keys())
-            output = outputs
-            if output_keys:
-                output = outputs.get(output_keys[0], outputs)
 
             if current_step:
-                current_step.output = self.process_content(output)
+                current_step.output = self.process_content(outputs)
                 current_step.end()
 
         def _on_error(self, error: BaseException, *, run_id: "UUID", **kwargs: Any):
