@@ -2,6 +2,8 @@ import time
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union, cast
 
+from pydantic import BaseModel
+
 from literalai.helper import ensure_values_serializable
 from literalai.observability.generation import (
     ChatGeneration,
@@ -148,6 +150,8 @@ def get_langchain_callback():
                     return [self._convert_message(m) for m in content]
             elif self._is_message(content):
                 return self._convert_message(content)
+            elif isinstance(content, BaseModel):
+                return content.model_dump()
             elif isinstance(content, dict):
                 processed_dict = {}
                 for key, value in content.items():
@@ -186,7 +190,9 @@ def get_langchain_callback():
             }
 
             # make sure there is no api key specification
-            settings = {k: v for k, v in merged.items() if not k.endswith("_api_key")}
+            settings = self.process_content(
+                {k: v for k, v in merged.items() if not k.endswith("_api_key")}
+            )
             model_keys = ["azure_deployment", "deployment_name", "model", "model_name"]
             model = next((settings[k] for k in model_keys if k in settings), None)
             tools = None
@@ -203,6 +209,7 @@ def get_langchain_callback():
         "RunnableParallel",
         "RunnableAssign",
         "RunnableLambda",
+        "structured_outputs_parser",
         "<lambda>",
     ]
     DEFAULT_TO_KEEP = ["retriever", "llm", "agent", "chain", "tool"]
