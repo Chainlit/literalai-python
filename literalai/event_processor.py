@@ -32,6 +32,7 @@ class EventProcessor:
     batch_timeout: float = 5.0
 
     def __init__(self, api: "LiteralAPI", batch_size: int = 1, disabled: bool = False):
+        self.stop_event = threading.Event()
         self.batch_size = batch_size
         self.api = api
         self.event_queue = queue.Queue()
@@ -44,7 +45,6 @@ class EventProcessor:
         )
         if not self.disabled:
             self.processing_thread.start()
-        self.stop_event = threading.Event()
 
     def add_event(self, event: "StepDict"):
         with self.counter_lock:
