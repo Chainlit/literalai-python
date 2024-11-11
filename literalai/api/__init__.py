@@ -44,8 +44,10 @@ from literalai.api.prompt_helpers import (
     PromptRollout,
     create_prompt_helper,
     create_prompt_lineage_helper,
+    create_prompt_variant_helper,
     get_prompt_ab_testing_helper,
     get_prompt_helper,
+    get_prompt_lineage_helper,
     update_prompt_ab_testing_helper,
 )
 from literalai.api.score_helpers import (
@@ -144,7 +146,6 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class BaseLiteralAPI:
-
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -201,7 +202,6 @@ class LiteralAPI(BaseLiteralAPI):
     def make_gql_call(
         self, description: str, query: str, variables: Dict[str, Any]
     ) -> Dict:
-
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
@@ -1141,7 +1141,7 @@ class LiteralAPI(BaseLiteralAPI):
         self,
         name: str,
         dataset_id: Optional[str] = None,
-        prompt_id: Optional[str] = None,
+        prompt_variant_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
         """
@@ -1150,7 +1150,7 @@ class LiteralAPI(BaseLiteralAPI):
         Args:
             name (str): The name of the experiment.
             dataset_id (Optional[str]): The unique identifier of the dataset.
-            prompt_id (Optional[str]): The identifier of the prompt associated with the experiment.
+            prompt_variant_id (Optional[str]): The identifier of the prompt variant to associate to the experiment.
             params (Optional[Dict]): Additional parameters for the experiment.
 
         Returns:
@@ -1161,7 +1161,7 @@ class LiteralAPI(BaseLiteralAPI):
                 api=self,
                 name=name,
                 dataset_id=dataset_id,
-                prompt_id=prompt_id,
+                prompt_experiment_id=prompt_variant_id,
                 params=params,
             )
         )
@@ -1368,6 +1368,34 @@ class LiteralAPI(BaseLiteralAPI):
             return self.gql_helper(*get_prompt_helper(self, name=name, version=version))
         else:
             raise ValueError("Either the `id` or the `name` must be provided.")
+
+    def create_prompt_variant(
+        self,
+        name: str,
+        template_messages: List[GenerationMessage],
+        settings: Optional[ProviderSettings] = None,
+        tools: Optional[List[Dict]] = None,
+    ) -> Optional[str]:
+        """
+        Creates a prompt variation for an experiment.
+        This variation is not an official version until manually saved.
+
+        Args:
+            name (str): The name of the prompt to retrieve or create.
+            template_messages (List[GenerationMessage]): A list of template messages for the prompt.
+            settings (Optional[Dict]): Optional settings for the prompt.
+            tools (Optional[List[Dict]]): Optional tool options for the model
+
+        Returns:
+            prompt_variant_id: The prompt variant id to link with the experiment.
+        """
+        lineage = self.gql_helper(*get_prompt_lineage_helper(name))
+        lineage_id = lineage["id"] if lineage else None
+        return self.gql_helper(
+            *create_prompt_variant_helper(
+                lineage_id, template_messages, settings, tools
+            )
+        )
 
     def get_prompt_ab_testing(self, name: str) -> List[PromptRollout]:
         """
@@ -2351,7 +2379,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         self,
         name: str,
         dataset_id: Optional[str] = None,
-        prompt_id: Optional[str] = None,
+        prompt_variant_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
         sync_api = LiteralAPI(self.api_key, self.url)
@@ -2361,7 +2389,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 api=sync_api,
                 name=name,
                 dataset_id=dataset_id,
-                prompt_id=prompt_id,
+                prompt_experiment_id=prompt_variant_id,
                 params=params,
             )
         )
@@ -2528,6 +2556,36 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         settings: Optional[ProviderSettings] = None,
     ):
         return await self.get_or_create_prompt(name, template_messages, settings)
+
+    async def create_prompt_variant(
+        self,
+        name: str,
+        template_messages: List[GenerationMessage],
+        settings: Optional[ProviderSettings] = None,
+        tools: Optional[List[Dict]] = None,
+    ) -> Optional[str]:
+        """
+        Creates a prompt variation for an experiment.
+        This variation is not an official version until manually saved.
+
+        Args:
+            name (str): The name of the prompt to retrieve or create.
+            template_messages (List[GenerationMessage]): A list of template messages for the prompt.
+            settings (Optional[Dict]): Optional settings for the prompt.
+            tools (Optional[List[Dict]]): Optional tool options for the model
+
+        Returns:
+            prompt_variant_id: The prompt variant id to link with the experiment.
+        """
+        lineage = await self.gql_helper(*get_prompt_lineage_helper(name))
+        lineage_id = lineage["id"] if lineage else None
+        return await self.gql_helper(
+            *create_prompt_variant_helper(
+                lineage_id, template_messages, settings, tools
+            )
+        )
+
+    create_prompt_variant.__doc__ = LiteralAPI.create_prompt_variant.__doc__
 
     async def get_prompt(
         self,
