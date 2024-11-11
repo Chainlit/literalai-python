@@ -99,13 +99,13 @@ def create_experiment_helper(
     api: "LiteralAPI",
     name: str,
     dataset_id: Optional[str] = None,
-    prompt_experiment_id: Optional[str] = None,
+    prompt_variant_id: Optional[str] = None,
     params: Optional[Dict] = None,
 ):
     variables = {
         "datasetId": dataset_id,
         "name": name,
-        "promptExperimentId": prompt_experiment_id,
+        "promptExperimentId": prompt_variant_id,
         "params": params,
     }
 

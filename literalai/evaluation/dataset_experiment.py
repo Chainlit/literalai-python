@@ -71,7 +71,7 @@ class DatasetExperiment(Utils):
     name: str
     dataset_id: Optional[str]
     params: Optional[Dict]
-    prompt_experiment_id: Optional[str] = None
+    prompt_variant_id: Optional[str] = None
     items: List[DatasetExperimentItem] = field(default_factory=lambda: [])
 
     def log(self, item_dict: DatasetExperimentItemDict) -> DatasetExperimentItem:
@@ -97,7 +97,7 @@ class DatasetExperiment(Utils):
             "createdAt": self.created_at,
             "name": self.name,
             "datasetId": self.dataset_id,
-            "promptExperimentId": self.prompt_experiment_id,
+            "promptExperimentId": self.prompt_variant_id,
             "params": self.params,
             "items": [item.to_dict() for item in self.items],
         }
@@ -116,6 +116,6 @@ class DatasetExperiment(Utils):
             name=dataset_experiment.get("name", ""),
             dataset_id=dataset_experiment.get("datasetId", ""),
             params=dataset_experiment.get("params"),
-            prompt_experiment_id=dataset_experiment.get("promptExperimentId"),
+            prompt_variant_id=dataset_experiment.get("promptExperimentId"),
             items=[DatasetExperimentItem.from_dict(item) for item in items],
         )

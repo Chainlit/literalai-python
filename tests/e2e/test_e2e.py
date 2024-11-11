@@ -749,7 +749,7 @@ is a templated list."""
             name="test-experiment", prompt_variant_id=prompt_variant_id
         )
         assert experiment.params is None
-        assert experiment.prompt_experiment_id == prompt_variant_id
+        assert experiment.prompt_variant_id == prompt_variant_id
 
     @pytest.mark.timeout(5)
     async def test_experiment_run(self, client: LiteralClient):

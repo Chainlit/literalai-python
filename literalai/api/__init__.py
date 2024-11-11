@@ -1161,7 +1161,7 @@ class LiteralAPI(BaseLiteralAPI):
                 api=self,
                 name=name,
                 dataset_id=dataset_id,
-                prompt_experiment_id=prompt_variant_id,
+                prompt_variant_id=prompt_variant_id,
                 params=params,
             )
         )
@@ -2389,7 +2389,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 api=sync_api,
                 name=name,
                 dataset_id=dataset_id,
-                prompt_experiment_id=prompt_variant_id,
+                prompt_variant_id=prompt_variant_id,
                 params=params,
             )
         )
