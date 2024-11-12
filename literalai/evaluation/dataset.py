@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict, List, Literal, Optional, cast
 
-from literalai.my_types import Utils
-
 from typing_extensions import TypedDict
+
+from literalai.my_types import Utils
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
@@ -101,17 +101,23 @@ class Dataset(Utils):
         return dataset_item
 
     def create_experiment(
-        self, name: str, prompt_id: Optional[str] = None, params: Optional[Dict] = None
+        self,
+        name: str,
+        prompt_variant_id: Optional[str] = None,
+        params: Optional[Dict] = None,
     ) -> DatasetExperiment:
         """
         Creates a new dataset experiment based on this dataset.
         :param name: The name of the experiment .
-        :param prompt_id: The Prompt ID used on LLM calls (optional).
+        :param prompt_variant_id: The Prompt variant ID to experiment on.
         :param params: The params used on the experiment.
         :return: The created DatasetExperiment instance.
         """
         experiment = self.api.create_experiment(
-            name=name, dataset_id=self.id, prompt_id=prompt_id, params=params
+            name=name,
+            dataset_id=self.id,
+            prompt_variant_id=prompt_variant_id,
+            params=params,
         )
         return experiment
 

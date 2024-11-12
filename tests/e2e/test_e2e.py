@@ -741,6 +741,17 @@ is a templated list."""
         dataset.delete()
 
     @pytest.mark.timeout(5)
+    async def test_experiment_prompt(self, client: LiteralClient):
+        prompt_variant_id = client.api.create_prompt_variant(
+            name="Default", template_messages=[{"role": "user", "content": "hello"}]
+        )
+        experiment = client.api.create_experiment(
+            name="test-experiment", prompt_variant_id=prompt_variant_id
+        )
+        assert experiment.params is None
+        assert experiment.prompt_variant_id == prompt_variant_id
+
+    @pytest.mark.timeout(5)
     async def test_experiment_run(self, client: LiteralClient):
         experiment = client.api.create_experiment(name="test-experiment-run")
 

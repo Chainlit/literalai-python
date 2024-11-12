@@ -21,6 +21,18 @@ def create_prompt_lineage_helper(name: str, description: Optional[str] = None):
     return gql.CREATE_PROMPT_LINEAGE, description, variables, process_response
 
 
+def get_prompt_lineage_helper(name: str):
+    variables = {"name": name}
+
+    def process_response(response):
+        prompt = response["data"]["promptLineage"]
+        return prompt
+
+    description = "get prompt lineage"
+
+    return gql.GET_PROMPT_LINEAGE, description, variables, process_response
+
+
 def create_prompt_helper(
     api: "LiteralAPI",
     lineage_id: str,
@@ -59,6 +71,28 @@ def get_prompt_helper(
     description = "get prompt"
 
     return gql.GET_PROMPT_VERSION, description, variables, process_response
+
+
+def create_prompt_variant_helper(
+    from_lineage_id: Optional[str] = None,
+    template_messages: List[GenerationMessage] = [],
+    settings: Optional[ProviderSettings] = None,
+    tools: Optional[List[Dict]] = None,
+):
+    variables = {
+        "fromLineageId": from_lineage_id,
+        "templateMessages": template_messages,
+        "settings": settings,
+        "tools": tools,
+    }
+
+    def process_response(response):
+        variant = response["data"]["createPromptExperiment"]
+        return variant["id"] if variant else None
+
+    description = "create prompt variant"
+
+    return gql.CREATE_PROMPT_VARIANT, description, variables, process_response
 
 
 class PromptRollout(TypedDict):
