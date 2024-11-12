@@ -40,7 +40,7 @@ MessageStepType = Literal["user_message", "assistant_message", "system_message"]
 StepType = Union[TrueStepType, MessageStepType]
 
 
-ScoreType = Literal["HUMAN", "AI"]
+ScoreType = Literal["HUMAN", "CODE", "AI"]
 
 
 class ScoreDict(TypedDict, total=False):
