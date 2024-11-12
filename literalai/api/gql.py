@@ -833,18 +833,19 @@ CREATE_EXPERIMENT = """
     mutation CreateDatasetExperiment(
         $name: String! 
         $datasetId: String
-        $promptId: String
+        $promptExperimentId: String
         $params: Json
     ) {
         createDatasetExperiment(
             name: $name
             datasetId: $datasetId
-            promptId: $promptId
+            promptExperimentId: $promptExperimentId
             params: $params
         ) {
           id
           name
           datasetId
+          promptExperimentId
           params
         }
     }
@@ -991,6 +992,16 @@ CREATE_PROMPT_LINEAGE = """mutation createPromptLineage(
     }
   }"""
 
+GET_PROMPT_LINEAGE = """query promptLineage(
+    $name: String!
+    ) {
+    promptLineage(
+        name: $name
+    ) {
+        id
+    }
+}"""
+
 CREATE_PROMPT_VERSION = """mutation createPromptVersion(
     $lineageId: String!
     $versionDesc: String
@@ -1020,6 +1031,38 @@ CREATE_PROMPT_VERSION = """mutation createPromptVersion(
       templateMessages
     }
   }"""
+
+CREATE_PROMPT_VARIANT = """mutation createPromptExperiment(
+        $fromLineageId: String
+        $fromVersion: Int
+        $scoreTemplateId: String
+        $templateMessages: Json
+        $settings: Json
+        $tools: Json
+        $variables: Json
+      ) {
+        createPromptExperiment(
+          fromLineageId: $fromLineageId
+          fromVersion: $fromVersion
+          scoreTemplateId: $scoreTemplateId
+          templateMessages: $templateMessages
+          settings: $settings
+          tools: $tools
+          variables: $variables
+        ) {
+          id
+          fromLineageId
+          fromVersion
+          scoreTemplateId
+          projectId
+          projectUserId
+          tools
+          settings
+          variables
+          templateMessages
+        }
+      }
+    """
 
 GET_PROMPT_VERSION = """
 query GetPrompt($id: String, $name: String, $version: Int) {

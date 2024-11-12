@@ -1,14 +1,15 @@
 from typing import TYPE_CHECKING, Dict, Optional
 
 from literalai.api import gql
-
 from literalai.evaluation.dataset import Dataset, DatasetType
-from literalai.evaluation.dataset_experiment import DatasetExperiment, DatasetExperimentItem
+from literalai.evaluation.dataset_experiment import (
+    DatasetExperiment,
+    DatasetExperimentItem,
+)
 from literalai.evaluation.dataset_item import DatasetItem
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
-
 
 
 def create_dataset_helper(
@@ -98,13 +99,13 @@ def create_experiment_helper(
     api: "LiteralAPI",
     name: str,
     dataset_id: Optional[str] = None,
-    prompt_id: Optional[str] = None,
+    prompt_variant_id: Optional[str] = None,
     params: Optional[Dict] = None,
 ):
     variables = {
         "datasetId": dataset_id,
         "name": name,
-        "promptId": prompt_id,
+        "promptExperimentId": prompt_variant_id,
         "params": params,
     }
 

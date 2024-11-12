@@ -271,8 +271,9 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
             return True
         elif new_delta.content:
             if isinstance(message_completion["content"], str):
-                message_completion["content"] += new_delta.content
-                return True
+                if isinstance(new_delta.content, str):
+                    message_completion["content"] += new_delta.content
+                    return True
         else:
             return False
 
@@ -423,7 +424,8 @@ def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
                             time.time() - context["start"]
                         ) * 1000
                     token_count += 1
-                    completion += chunk.data.choices[0].delta.content or ""
+                    if isinstance(chunk.data.choices[0].delta.content, str):
+                        completion += chunk.data.choices[0].delta.content or ""
 
             if (
                 generation
