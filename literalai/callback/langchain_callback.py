@@ -1,3 +1,4 @@
+import ast
 import time
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union, cast
@@ -428,6 +429,7 @@ def get_langchain_callback():
                 provider, model, tools, llm_settings = self._build_llm_settings(
                     (run.serialized or {}), (run.extra or {}).get("invocation_params")
                 )
+                tools = ast.literal_eval(tools)
 
                 generations = (run.outputs or {}).get("generations", [])
                 generation = generations[0][0]
