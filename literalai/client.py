@@ -3,27 +3,26 @@ from typing import Any, Dict, List, Optional, Union
 
 from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
-from literalai.context import active_steps_var, active_thread_var, active_root_run_var
+from literalai.context import active_root_run_var, active_steps_var, active_thread_var
 from literalai.environment import EnvContextManager, env_decorator
-from literalai.event_processor import EventProcessor
 from literalai.evaluation.experiment_item_run import (
     ExperimentItemRunContextManager,
     experiment_item_run_decorator,
 )
+from literalai.event_processor import EventProcessor
 from literalai.instrumentation.mistralai import instrument_mistralai
 from literalai.instrumentation.openai import instrument_openai
-from literalai.observability.message import Message
 from literalai.my_types import Environment
+from literalai.observability.message import Message
 from literalai.observability.step import (
+    Attachment,
     MessageStepType,
     Step,
     StepContextManager,
     TrueStepType,
     step_decorator,
-    Attachment,
 )
 from literalai.observability.thread import ThreadContextManager, thread_decorator
-
 from literalai.requirements import check_all_requirements
 
 
@@ -204,6 +203,7 @@ class BaseLiteralClient:
         parent_id: Optional[str] = None,
         thread_id: Optional[str] = None,
         root_run_id: Optional[str] = None,
+        **kwargs,
     ):
         return self.step(
             original_function=original_function,
@@ -213,6 +213,7 @@ class BaseLiteralClient:
             parent_id=parent_id,
             thread_id=thread_id,
             root_run_id=root_run_id,
+            **kwargs,
         )
 
     def message(

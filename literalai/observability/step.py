@@ -380,6 +380,7 @@ class Step(Utils):
         tags: Optional[List[str]] = None,
         root_run_id: Optional[str] = None,
         metadata: Optional[Dict] = None,
+        **kwargs,
     ):
         from time import sleep
 
@@ -403,6 +404,10 @@ class Step(Utils):
         self.tags = tags
         if metadata:
             self.metadata = metadata
+
+        # Set additional attributes from kwargs
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def start(self):
         active_steps = active_steps_var.get()
