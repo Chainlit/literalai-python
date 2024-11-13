@@ -2,8 +2,6 @@ import time
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union, cast
 
-from pydantic import BaseModel
-
 from literalai.helper import ensure_values_serializable
 from literalai.observability.generation import (
     ChatGeneration,
@@ -150,8 +148,6 @@ def get_langchain_callback():
                     return [self._convert_message(m) for m in content]
             elif self._is_message(content):
                 return self._convert_message(content)
-            elif isinstance(content, BaseModel):
-                return content.model_dump()
             elif isinstance(content, dict):
                 processed_dict = {}
                 for key, value in content.items():

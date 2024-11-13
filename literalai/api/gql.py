@@ -1147,6 +1147,8 @@ def steps_variables_builder(steps: List[Union["StepDict", "Step"]]):
                 step["input"] = ensure_values_serializable(step["input"])
             if step.get("output"):
                 step["output"] = ensure_values_serializable(step["output"])
+            if step.get("metadata"):
+                step["metadata"] = ensure_values_serializable(step["metadata"])
             variables.update(serialize_step(step, i))
     return variables
 
