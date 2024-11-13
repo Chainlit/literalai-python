@@ -154,6 +154,8 @@ def get_langchain_callback():
                     processed_value = self.process_content(value, root=False)
                     processed_dict[key] = processed_value
                 return processed_dict
+            elif isinstance(content, list):
+                return [self.process_content(item, root=False) for item in content]
             elif isinstance(content, str):
                 if root:
                     return {"content": content}
