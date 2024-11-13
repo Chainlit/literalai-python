@@ -15,14 +15,6 @@ def ensure_values_serializable(data):
     if isinstance(data, BaseModel):
         return filter_none_values(data.model_dump())
 
-    try:
-        from mistralai import UserMessage
-
-        if isinstance(data, UserMessage):
-            return filter_none_values(data.model_dump())
-    except ImportError:
-        pass
-
     if isinstance(data, dict):
         return {key: ensure_values_serializable(value) for key, value in data.items()}
     elif isinstance(data, list):
