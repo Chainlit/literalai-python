@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="literalai",
-    version="0.1.1",  # update version in literalai/version.py
+    version="0.1.101",  # update version in literalai/version.py
     description="An SDK for observability in Python applications",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
