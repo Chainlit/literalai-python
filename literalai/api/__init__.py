@@ -169,6 +169,8 @@ class BaseLiteralAPI:
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
 
+        self._prompt_cache = {}
+
     @property
     def headers(self):
         from literalai.version import __version__
@@ -184,6 +186,40 @@ class BaseLiteralAPI:
             h["x-env"] = env
 
         return h
+
+    def _get_prompt_cache_key(
+        self,
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        version: Optional[int] = None,
+    ) -> str:
+        key = ""
+        if id:
+            key = f"id:{id}"
+        elif name:
+            key = f"name:{name}"
+        else:
+            raise ValueError("Either the `id` or the `name` must be provided.")
+
+        if version:
+            key += f":version:{version}"
+
+        return key
+
+    def _get_prompt_cache(self, id: Optional[str] = None, name: Optional[str] = None, version: Optional[int] = None):
+        key = self._get_prompt_cache_key(id, name, version)
+        # handle the case where I have a version but it's not found in this case look without the version
+        if key in self._prompt_cache:
+            return self._prompt_cache.get(key)
+        else:
+            key_without_version = self._get_prompt_cache_key(id, name)
+            return self._prompt_cache.get(key_without_version)
+
+    def _create_prompt_cache(self, prompt: Prompt):
+        key = self._get_prompt_cache_key(id=prompt.id, name=prompt.name, version=prompt.version)
+        key_without_version = self._get_prompt_cache_key(id=prompt.id, name=prompt.name)
+        self._prompt_cache[key] = prompt
+        self._prompt_cache[key_without_version] = prompt
 
 
 class LiteralAPI(BaseLiteralAPI):
