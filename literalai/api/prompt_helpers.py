@@ -61,6 +61,7 @@ def get_prompt_helper(
     id: Optional[str] = None,
     name: Optional[str] = None,
     version: Optional[int] = 0,
+    timeout: Optional[int] = None,
 ):
     variables = {"id": id, "name": name, "version": version}
 
@@ -70,7 +71,7 @@ def get_prompt_helper(
 
     description = "get prompt"
 
-    return gql.GET_PROMPT_VERSION, description, variables, process_response
+    return gql.GET_PROMPT_VERSION, description, variables, process_response, timeout
 
 
 def create_prompt_variant_helper(

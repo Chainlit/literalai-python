@@ -253,8 +253,8 @@ class LiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
 
     def make_gql_call(
-        self, description: str, query: str, variables: Dict[str, Any], timeout: Optional[int] = 10
-    ) -> Dict:
+        self, description: str, query: str, variables: dict[str, Any], timeout: Optional[int] = 10
+    ) -> dict:
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
@@ -738,7 +738,7 @@ class LiteralAPI(BaseLiteralAPI):
         # Prepare form data
         form_data = (
             {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        )  # type: Dict[str, Union[tuple[Union[str, None], Any], tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -1424,16 +1424,9 @@ class LiteralAPI(BaseLiteralAPI):
 
         try:
             if id:
-                prompt = self.gql_helper(
-                    *get_prompt_helper(self, id=id), timeout=timeout
-                )
+                prompt = self.gql_helper(*get_prompt_helper(self, id=id, timeout=timeout))
             elif name:
-                prompt = self.gql_helper(
-                    *get_prompt_helper(
-                        self, name=name, version=version
-                    ),
-                    timeout=timeout
-                )
+                prompt = self.gql_helper(*get_prompt_helper(self, name=name, version=version, timeout=timeout))
 
             self._create_prompt_cache(prompt)
             return prompt
@@ -1527,7 +1520,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
 
     async def make_gql_call(
-        self, description: str, query: str, variables: Dict[str, Any]
+        self, description: str, query: str, variables: Dict[str, Any], timeout: Optional[int] = 10
     ) -> Dict:
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
@@ -1540,7 +1533,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 self.graphql_endpoint,
                 json={"query": query, "variables": variables},
                 headers=self.headers,
-                timeout=10,
+                timeout=timeout,
             )
 
             try:
@@ -1604,8 +1597,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         description: str,
         variables: Dict,
         process_response: Callable[..., R],
+        timeout: Optional[int] = 10,
     ) -> R:
-        response = await self.make_gql_call(description, query, variables)
+        response = await self.make_gql_call(description, query, variables, timeout)
         return process_response(response)
 
     async def get_users(
@@ -2039,7 +2033,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         # Prepare form data
         form_data = (
             {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        )  # type: dict[str, Union[tuple[Union[str, None], Any], tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -2678,11 +2672,14 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
         try:
             if id:
-                prompt = await self.gql_helper(*get_prompt_helper(sync_api, id=id), timeout=timeout)
+                prompt = await self.gql_helper(
+                    *get_prompt_helper(sync_api, id=id, timeout=timeout)
+                )
             elif name:
                 prompt = await self.gql_helper(
-                    *get_prompt_helper(sync_api, name=name, version=version),
-                    timeout=timeout,
+                    *get_prompt_helper(
+                        sync_api, name=name, version=version, timeout=timeout
+                    )
                 )
 
             self._create_prompt_cache(prompt)
