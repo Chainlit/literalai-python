@@ -165,8 +165,8 @@ class BaseLiteralAPI:
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
 
-        self._prompt_cache: Dict[str, Prompt] = dict()
-        self._prompt_storage: Dict[str, Prompt] = dict()
+        self._prompt_cache: dict[str, str] = dict()
+        self._prompt_storage: dict[str, Prompt] = dict()
 
     @property
     def headers(self):
@@ -1441,7 +1441,6 @@ class LiteralAPI(BaseLiteralAPI):
         except Exception as e:
             if cached_prompt:
                 logger.warning("Failed to get prompt from API, returning cached prompt")
-                logger.error(f"Error: {e}")
                 return cached_prompt
             
             raise e
@@ -2692,7 +2691,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         except Exception as e:
             if cached_prompt:
                 logger.warning("Failed to get prompt from API, returning cached prompt")
-                logger.error(f"Error: {e}")
                 return cached_prompt
             raise e
 
