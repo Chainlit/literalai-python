@@ -247,7 +247,7 @@ class LiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
 
     def make_gql_call(
-        self, description: str, query: str, variables: Dict[str, Any]
+        self, description: str, query: str, variables: Dict[str, Any], timeout: Optional[int] = 10
     ) -> Dict:
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
@@ -259,7 +259,7 @@ class LiteralAPI(BaseLiteralAPI):
                 self.graphql_endpoint,
                 json={"query": query, "variables": variables},
                 headers=self.headers,
-                timeout=10,
+                timeout=timeout,
             )
 
             try:
@@ -323,8 +323,9 @@ class LiteralAPI(BaseLiteralAPI):
         description: str,
         variables: Dict,
         process_response: Callable[..., R],
+        timeout: Optional[int] = None,
     ) -> R:
-        response = self.make_gql_call(description, query, variables)
+        response = self.make_gql_call(description, query, variables, timeout)
         return process_response(response)
 
     # User API
@@ -1413,12 +1414,20 @@ class LiteralAPI(BaseLiteralAPI):
             raise ValueError("Either the `id` or the `name` must be provided.")
 
         cached_prompt = self._get_prompt_cache(id, name, version)
+        timeout = 1 if cached_prompt else None
 
         try:
             if id:
-                prompt = self.gql_helper(*get_prompt_helper(self, id=id))
+                prompt = self.gql_helper(
+                    *get_prompt_helper(self, id=id), timeout=timeout
+                )
             elif name:
-                prompt = self.gql_helper(*get_prompt_helper(self, name=name, version=version))
+                prompt = self.gql_helper(
+                    *get_prompt_helper(
+                        self, name=name, version=version
+                    ),
+                    timeout=timeout
+                )
 
             self._create_prompt_cache(prompt)
             return prompt
@@ -2660,13 +2669,15 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
         sync_api = LiteralAPI(self.api_key, self.url)
         cached_prompt = self._get_prompt_cache(id, name)
+        timeout = 1 if cached_prompt else None
 
         try:
             if id:
-                prompt = await self.gql_helper(*get_prompt_helper(sync_api, id=id))
+                prompt = await self.gql_helper(*get_prompt_helper(sync_api, id=id), timeout=timeout)
             elif name:
                 prompt = await self.gql_helper(
-                    *get_prompt_helper(sync_api, name=name, version=version)
+                    *get_prompt_helper(sync_api, name=name, version=version),
+                    timeout=timeout,
                 )
 
             self._create_prompt_cache(prompt)
