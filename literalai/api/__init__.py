@@ -169,7 +169,7 @@ class BaseLiteralAPI:
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
 
-        self._prompt_cache = {}
+        self._prompt_cache: Dict[str, Prompt] = dict()
 
     @property
     def headers(self):
@@ -217,6 +217,8 @@ class BaseLiteralAPI:
         key_name = self._get_prompt_cache_key(name=name)
         if key_name in self._prompt_cache:
             return self._prompt_cache.get(key_name)
+
+        return None
 
     def _create_prompt_cache(self, prompt: Prompt):
         """Creates cache for prompt. 3 entries are created/updated: id, name, name:version
