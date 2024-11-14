@@ -2,7 +2,6 @@ import logging
 import os
 import uuid
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -102,9 +101,6 @@ from literalai.observability.filter import (
 )
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
-if TYPE_CHECKING:
-    from typing import Tuple  # noqa: F401
-
 import httpx
 
 from literalai.my_types import Environment, PaginatedResponse
@@ -170,6 +166,7 @@ class BaseLiteralAPI:
         self.rest_endpoint = self.url + "/api"
 
         self._prompt_cache: Dict[str, Prompt] = dict()
+        self._prompt_storage: Dict[str, Prompt] = dict()
 
     @property
     def headers(self):
@@ -206,31 +203,40 @@ class BaseLiteralAPI:
     def _get_prompt_cache(self, id: Optional[str] = None, name: Optional[str] = None, version: Optional[int] = None) -> Optional[Prompt]:
         """Returns the cached prompt, using key in this order: id, name-version, name
         """
+        ref_key = None
+        
         key_id = self._get_prompt_cache_key(id=id)
         if key_id in self._prompt_cache:
-            return self._prompt_cache.get(key_id)
+            ref_key = self._prompt_cache[key_id]
+        else:
+            key_name_version = self._get_prompt_cache_key(name=name, version=version)
+            if key_name_version in self._prompt_cache:
+                ref_key = self._prompt_cache[key_name_version]
+            else:
+                key_name = self._get_prompt_cache_key(name=name)
+                if key_name in self._prompt_cache:
+                    ref_key = self._prompt_cache[key_name]
 
-        key_name_version = self._get_prompt_cache_key(name=name, version=version)
-        if key_name_version in self._prompt_cache:
-            return self._prompt_cache.get(key_name_version)
-
-        key_name = self._get_prompt_cache_key(name=name)
-        if key_name in self._prompt_cache:
-            return self._prompt_cache.get(key_name)
+        if ref_key and ref_key in self._prompt_storage:
+            return self._prompt_storage[ref_key]
 
         return None
 
     def _create_prompt_cache(self, prompt: Prompt):
-        """Creates cache for prompt. 3 entries are created/updated: id, name, name:version
+        """Creates cache for prompt. All keys point to the same storage key (prompt.id)
+        to avoid storing multiple copies of the same prompt.
         """
+        storage_key = f"id:{prompt.id}"
+        self._prompt_storage[storage_key] = prompt
+
         key_id = self._get_prompt_cache_key(id=prompt.id)
-        self._prompt_cache[key_id] = prompt
+        self._prompt_cache[key_id] = storage_key
 
         key_name = self._get_prompt_cache_key(name=prompt.name)
-        self._prompt_cache[key_name] = prompt
+        self._prompt_cache[key_name] = storage_key
         
         key_name_version = self._get_prompt_cache_key(name=prompt.name, version=prompt.version)
-        self._prompt_cache[key_name_version] = prompt
+        self._prompt_cache[key_name_version] = storage_key
 
 
 class LiteralAPI(BaseLiteralAPI):
