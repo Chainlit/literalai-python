@@ -195,14 +195,13 @@ class BaseLiteralAPI:
     ) -> str:
         key = ""
         if id:
-            return f"id:{id}"
+            key = f"id:{id}"
         elif name:
             key = f"name:{name}"
             if version:
                 key += f":version:{version}"
-            return key
-        else:
-            raise ValueError("Either the `id` or the `name` must be provided.")
+
+        return key
 
     def _get_prompt_cache(self, id: Optional[str] = None, name: Optional[str] = None, version: Optional[int] = None) -> Optional[Prompt]:
         """Returns the cached prompt, using key in this order: id, name-version, name
@@ -1411,7 +1410,7 @@ class LiteralAPI(BaseLiteralAPI):
         if not (id or name):
             raise ValueError("Either the `id` or the `name` must be provided.")
 
-        cached_prompt = self._get_prompt_cache(id, name)
+        cached_prompt = self._get_prompt_cache(id, name, version)
 
         try:
             if id:
