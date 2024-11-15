@@ -219,7 +219,7 @@ class BaseLiteralAPI:
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
 
-        self.prompt_cache = PromptCache()
+        self.prompt_cache = SharedPromptCache()
 
     @property
     def headers(self):
@@ -1415,7 +1415,7 @@ class LiteralAPI(BaseLiteralAPI):
         if not (id or name):
             raise ValueError("Either the `id` or the `name` must be provided.")
 
-        cached_prompt = self._get_prompt_cache(id, name, version)
+        cached_prompt = self.prompt_cache.get(id, name, version)
         timeout = 1 if cached_prompt else None
 
         try:
@@ -1424,7 +1424,7 @@ class LiteralAPI(BaseLiteralAPI):
             elif name:
                 prompt = self.gql_helper(*get_prompt_helper(self, name=name, version=version, timeout=timeout))
 
-            self._create_prompt_cache(prompt)
+            self.prompt_cache.put(prompt)
             return prompt
 
         except Exception as e:
@@ -2659,7 +2659,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             raise ValueError("Either the `id` or the `name` must be provided.")
 
         sync_api = LiteralAPI(self.api_key, self.url)
-        cached_prompt = self._get_prompt_cache(id, name)
+        cached_prompt = self.prompt_cache.get(id, name, version)
         timeout = 1 if cached_prompt else None
 
         try:
@@ -2674,7 +2674,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                     )
                 )
 
-            self._create_prompt_cache(prompt)
+            self.prompt_cache.put(prompt)
             return prompt
 
         except Exception as e:
