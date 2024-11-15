@@ -1,3 +1,4 @@
+from threading import Lock
 import logging
 import os
 import uuid
@@ -141,6 +142,59 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
     return handle_bytes(variables)
 
 
+class SharedPromptCache:
+    """
+    Thread-safe singleton cache for storing prompts.
+    Only one instance will exist regardless of how many times it's instantiated.
+    """
+    _instance = None
+    _lock = Lock()
+
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+
+                cls._instance._prompts: dict[str, Prompt] = {}
+                cls._instance._name_index: dict[str, str] = {}
+                cls._instance._name_version_index: dict[tuple[str, int], str] = {}
+        return cls._instance
+
+    def get(
+        self,
+        id: Optional[str] = None,
+        name: Optional[str] = None,
+        version: Optional[int] = None
+    ) -> Optional[Prompt]:
+        """
+        Retrieves a prompt using the most specific criteria provided.
+        Lookup priority: id, name-version, name
+        """
+        if id:
+            prompt_id = id
+        elif name and version:
+            prompt_id = self._name_version_index.get((name, version))
+        elif name:
+            prompt_id = self._name_index.get(name)
+
+        return self._prompts.get(prompt_id) if prompt_id else None
+
+    def put(self, prompt: Prompt):
+        with self._lock: 
+            self._prompts[prompt.id] = prompt
+            self._name_index[prompt.name] = prompt.id
+            self._name_version_index[(prompt.name, prompt.version)] = prompt.id
+
+    def clear(self) -> None:
+        """
+        Clears all cached promopts and indices.
+        """
+        with self._lock:
+            self._prompts.clear()
+            self._name_index.clear()
+            self._name_version_index.clear()
+
+
 class BaseLiteralAPI:
     def __init__(
         self,
@@ -165,8 +219,7 @@ class BaseLiteralAPI:
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
 
-        self._prompt_cache: dict[str, str] = dict()
-        self._prompt_storage: dict[str, Prompt] = dict()
+        self.prompt_cache = PromptCache()
 
     @property
     def headers(self):
@@ -184,59 +237,6 @@ class BaseLiteralAPI:
 
         return h
 
-    def _get_prompt_cache_key(
-        self,
-        id: Optional[str] = None,
-        name: Optional[str] = None,
-        version: Optional[int] = None,
-    ) -> str:
-        key = ""
-        if id:
-            key = f"id:{id}"
-        elif name:
-            key = f"name:{name}"
-            if version:
-                key += f":version:{version}"
-
-        return key
-
-    def _get_prompt_cache(self, id: Optional[str] = None, name: Optional[str] = None, version: Optional[int] = None) -> Optional[Prompt]:
-        """Returns the cached prompt, using key in this order: id, name-version, name
-        """
-        ref_key = None
-        
-        key_id = self._get_prompt_cache_key(id=id)
-        if key_id in self._prompt_cache:
-            ref_key = self._prompt_cache[key_id]
-        else:
-            key_name_version = self._get_prompt_cache_key(name=name, version=version)
-            if key_name_version in self._prompt_cache:
-                ref_key = self._prompt_cache[key_name_version]
-            else:
-                key_name = self._get_prompt_cache_key(name=name)
-                if key_name in self._prompt_cache:
-                    ref_key = self._prompt_cache[key_name]
-
-        if ref_key and ref_key in self._prompt_storage:
-            return self._prompt_storage[ref_key]
-
-        return None
-
-    def _create_prompt_cache(self, prompt: Prompt):
-        """Creates cache for prompt. All keys point to the same storage key (prompt.id)
-        to avoid storing multiple copies of the same prompt.
-        """
-        storage_key = f"id:{prompt.id}"
-        self._prompt_storage[storage_key] = prompt
-
-        key_id = self._get_prompt_cache_key(id=prompt.id)
-        self._prompt_cache[key_id] = storage_key
-
-        key_name = self._get_prompt_cache_key(name=prompt.name)
-        self._prompt_cache[key_name] = storage_key
-        
-        key_name_version = self._get_prompt_cache_key(name=prompt.name, version=prompt.version)
-        self._prompt_cache[key_name_version] = storage_key
 
 
 class LiteralAPI(BaseLiteralAPI):
