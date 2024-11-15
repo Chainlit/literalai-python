@@ -286,7 +286,7 @@ class LiteralAPI(BaseLiteralAPI):
 
             if json.get("data"):
                 if isinstance(json["data"], dict):
-                    for key, value in json["data"].items():
+                    for value in json["data"].values():
                         if value and value.get("ok") is False:
                             raise_error(
                                 f"""Failed to {description}: {
@@ -294,10 +294,6 @@ class LiteralAPI(BaseLiteralAPI):
                             )
 
             return json
-
-        # This should not be reached, exceptions should be thrown beforehands
-        # Added because of mypy
-        raise Exception("Unknown error")
 
     def make_rest_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
         with httpx.Client(follow_redirects=True) as client:
@@ -1554,7 +1550,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
             if json.get("data"):
                 if isinstance(json["data"], dict):
-                    for key, value in json["data"].items():
+                    for value in json["data"].values():
                         if value and value.get("ok") is False:
                             raise_error(
                                 f"""Failed to {description}: {
@@ -1562,10 +1558,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                             )
 
             return json
-
-        # This should not be reached, exceptions should be thrown beforehands
-        # Added because of mypy
-        raise Exception("Unkown error")
 
     async def make_rest_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
         async with httpx.AsyncClient(follow_redirects=True) as client:
