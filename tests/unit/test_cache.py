@@ -4,17 +4,17 @@ import time
 import random
 
 from literalai.prompt_engineering.prompt import Prompt
-from literalai.api import SharedPromptCache
+from literalai.api import SharedPromptCache, LiteralAPI
 
 def default_prompt(id: str = "1", name: str = "test", version: int = 1) -> Prompt:
     return Prompt(
-        api=None,
+        api=LiteralAPI(),
         id=id,
         name=name, 
         version=version,
         created_at="",
         updated_at="",
-        type="chat",
+        type="chat",  # type: ignore
         url="",
         version_desc=None,
         template_messages=[],
@@ -34,7 +34,7 @@ def test_singleton_instance():
 def test_get_empty_cache():
     """Test getting from empty cache returns None"""
     cache = SharedPromptCache()
-    cache.clear()  # Ensure clean state
+    cache.clear() 
     
     assert cache._prompts == {}
     assert cache._name_index == {}
@@ -90,12 +90,10 @@ def test_multiple_versions():
     cache.put(prompt1)
     cache.put(prompt2)
     
-    # Get specific versions
     assert cache.get(name="test", version=1) is prompt1
     assert cache.get(name="test", version=2) is prompt2
     
-    # Get by name should return latest version
-    assert cache.get(name="test") is prompt2  # Returns the last indexed version
+    assert cache.get(name="test") is prompt2 
 
 def test_clear_cache():
     """Test clearing the cache"""
@@ -114,7 +112,7 @@ def test_update_existing_prompt():
     cache.clear()
     
     prompt1 = default_prompt()
-    prompt2 = default_prompt(id="1", version=2) # Same ID, different version
+    prompt2 = default_prompt(id="1", version=2)
     
     cache.put(prompt1)
     cache.put(prompt2)
@@ -134,10 +132,8 @@ def test_lookup_priority():
     cache.put(prompt1)
     cache.put(prompt2)
     
-    # ID should take precedence
     assert cache.get(id="1", name="test", version=2) is prompt1
     
-    # Name-version should take precedence over name
     assert cache.get(name="test", version=2) is prompt2
 
 def test_thread_safety():

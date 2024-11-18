@@ -1,5 +1,4 @@
 import logging
-import time
 import os
 from threading import Lock
 import uuid
@@ -147,20 +146,21 @@ class SharedPromptCache:
     """
     Thread-safe singleton cache for storing prompts with memory leak prevention.
     Only one instance will exist regardless of how many times it's instantiated.
-    Implements LRU eviction policy when cache reaches maximum size.
     """
     _instance = None
     _lock = Lock()
+    _prompts: dict[str, Prompt]
+    _name_index: dict[str, str]
+    _name_version_index: dict[tuple[str, int], str]
 
-    def __new__(cls, max_size: int = 1000):
+    def __new__(cls):
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
 
-                cls._instance._max_size = max_size
-                cls._instance._prompts: dict[str, Prompt] = {}
-                cls._instance._name_index: dict[str, str] = {}
-                cls._instance._name_version_index: dict[tuple[str, int], str] = {}
+                cls._instance._prompts = {}
+                cls._instance._name_index = {}
+                cls._instance._name_version_index = {}
         return cls._instance
 
     def get(
@@ -171,7 +171,6 @@ class SharedPromptCache:
     ) -> Optional[Prompt]:
         """
         Retrieves a prompt using the most specific criteria provided.
-        Updates access time for LRU tracking.
         Lookup priority: id, name-version, name
         """
         if id and not isinstance(id, str):
@@ -184,9 +183,9 @@ class SharedPromptCache:
         if id:
             prompt_id = id
         elif name and version:
-            prompt_id = self._name_version_index.get((name, version))
+            prompt_id = self._name_version_index.get((name, version)) or ""
         elif name:
-            prompt_id = self._name_index.get(name)
+            prompt_id = self._name_index.get(name) or ""
         else:
             return None
 
@@ -196,7 +195,7 @@ class SharedPromptCache:
 
     def put(self, prompt: Prompt):
         """
-        Stores a prompt in the cache, managing size limits with LRU eviction.
+        Stores a prompt in the cache.
         """
         if not isinstance(prompt, Prompt):
             raise TypeError("Expected a Prompt object")

@@ -5,6 +5,7 @@ from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
+    from literalai.api import SharedPromptCache
 
 from literalai.api import gql
 
