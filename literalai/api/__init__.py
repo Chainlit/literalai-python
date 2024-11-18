@@ -1,6 +1,7 @@
-from threading import Lock
 import logging
+import time
 import os
+from threading import Lock
 import uuid
 from typing import (
     Any,
@@ -144,17 +145,19 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
 
 class SharedPromptCache:
     """
-    Thread-safe singleton cache for storing prompts.
+    Thread-safe singleton cache for storing prompts with memory leak prevention.
     Only one instance will exist regardless of how many times it's instantiated.
+    Implements LRU eviction policy when cache reaches maximum size.
     """
     _instance = None
     _lock = Lock()
 
-    def __new__(cls):
+    def __new__(cls, max_size: int = 1000):
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
 
+                cls._instance._max_size = max_size
                 cls._instance._prompts: dict[str, Prompt] = {}
                 cls._instance._name_index: dict[str, str] = {}
                 cls._instance._name_version_index: dict[tuple[str, int], str] = {}
@@ -168,18 +171,36 @@ class SharedPromptCache:
     ) -> Optional[Prompt]:
         """
         Retrieves a prompt using the most specific criteria provided.
+        Updates access time for LRU tracking.
         Lookup priority: id, name-version, name
         """
+        if id and not isinstance(id, str):
+            raise TypeError("Expected a string for id")
+        if name and not isinstance(name, str):
+            raise TypeError("Expected a string for name")
+        if version and not isinstance(version, int):
+            raise TypeError("Expected an integer for version")
+
         if id:
             prompt_id = id
         elif name and version:
             prompt_id = self._name_version_index.get((name, version))
         elif name:
             prompt_id = self._name_index.get(name)
+        else:
+            return None
 
-        return self._prompts.get(prompt_id) if prompt_id else None
+        if prompt_id and prompt_id in self._prompts:
+            return self._prompts.get(prompt_id)
+        return None
 
     def put(self, prompt: Prompt):
+        """
+        Stores a prompt in the cache, managing size limits with LRU eviction.
+        """
+        if not isinstance(prompt, Prompt):
+            raise TypeError("Expected a Prompt object")
+
         with self._lock: 
             self._prompts[prompt.id] = prompt
             self._name_index[prompt.name] = prompt.id
@@ -1415,14 +1436,15 @@ class LiteralAPI(BaseLiteralAPI):
         if not (id or name):
             raise ValueError("Either the `id` or the `name` must be provided.")
 
-        cached_prompt = self.prompt_cache.get(id, name, version)
-        timeout = 1 if cached_prompt else None
+        get_prompt_query, description, variables, process_response, timeout, cached_prompt = get_prompt_helper(
+            api=self,id=id, name=name, version=version, prompt_cache=self.prompt_cache
+        )
 
         try:
             if id:
-                prompt = self.gql_helper(*get_prompt_helper(self, id=id, timeout=timeout))
+                prompt = self.gql_helper(get_prompt_query, description, variables, process_response, timeout)
             elif name:
-                prompt = self.gql_helper(*get_prompt_helper(self, name=name, version=version, timeout=timeout))
+                prompt = self.gql_helper(get_prompt_query, description, variables, process_response, timeout)
 
             self.prompt_cache.put(prompt)
             return prompt
@@ -2659,19 +2681,18 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             raise ValueError("Either the `id` or the `name` must be provided.")
 
         sync_api = LiteralAPI(self.api_key, self.url)
-        cached_prompt = self.prompt_cache.get(id, name, version)
-        timeout = 1 if cached_prompt else None
+        get_prompt_query, description, variables, process_response, timeout, cached_prompt = get_prompt_helper(
+            api=sync_api, id=id, name=name, version=version, prompt_cache=self.prompt_cache
+        )
 
         try:
             if id:
                 prompt = await self.gql_helper(
-                    *get_prompt_helper(sync_api, id=id, timeout=timeout)
+                    get_prompt_query, description, variables, process_response, timeout
                 )
             elif name:
                 prompt = await self.gql_helper(
-                    *get_prompt_helper(
-                        sync_api, name=name, version=version, timeout=timeout
-                    )
+                    get_prompt_query, description, variables, process_response, timeout
                 )
 
             self.prompt_cache.put(prompt)
