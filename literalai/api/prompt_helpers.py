@@ -57,6 +57,17 @@ def create_prompt_helper(
     return gql.CREATE_PROMPT_VERSION, description, variables, process_response
 
 
+def get_prompt_cache_key(id: Optional[str], name: Optional[str], version: Optional[int]) -> str:
+    if id:  
+        return id
+    elif name and version:
+        return f"{name}-{version}"
+    elif name:
+        return name
+    else:
+        raise ValueError("Either the `id` or the `name` must be provided.")
+
+
 def get_prompt_helper(
     api: "LiteralAPI",
     id: Optional[str] = None,
@@ -65,14 +76,12 @@ def get_prompt_helper(
     prompt_cache: Optional["SharedPromptCache"] = None,
 ) -> tuple[str, str, dict, Callable, int, Optional[Prompt]]:
     """Helper function for getting prompts with caching logic"""
-    if not (id or name):
-        raise ValueError("Either the `id` or the `name` must be provided.")
 
     cached_prompt = None
     timeout = 10
 
     if prompt_cache:
-        cached_prompt = prompt_cache.get(id, name, version)
+        cached_prompt = prompt_cache.get(get_prompt_cache_key(id, name, version))
         timeout = 1 if cached_prompt else timeout
 
     variables = {"id": id, "name": name, "version": version}

@@ -1,6 +1,5 @@
 import logging
 import os
-from threading import Lock
 import uuid
 from typing import (
     Any,
@@ -142,77 +141,40 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
     return handle_bytes(variables)
 
 
-class SharedPromptCache:
+class SharedCache:
     """
     Thread-safe singleton cache for storing prompts with memory leak prevention.
     Only one instance will exist regardless of how many times it's instantiated.
     """
     _instance = None
-    _lock = Lock()
-    _prompts: dict[str, Prompt]
-    _name_index: dict[str, str]
-    _name_version_index: dict[tuple[str, int], str]
+    _cache: dict[str, Any]
 
     def __new__(cls):
-        with cls._lock:
-            if cls._instance is None:
-                cls._instance = super().__new__(cls)
-
-                cls._instance._prompts = {}
-                cls._instance._name_index = {}
-                cls._instance._name_version_index = {}
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.cache = {}
         return cls._instance
 
-    def get(
-        self,
-        id: Optional[str] = None,
-        name: Optional[str] = None,
-        version: Optional[int] = None
-    ) -> Optional[Prompt]:
-        """
-        Retrieves a prompt using the most specific criteria provided.
-        Lookup priority: id, name-version, name
-        """
-        if id and not isinstance(id, str):
-            raise TypeError("Expected a string for id")
-        if name and not isinstance(name, str):
-            raise TypeError("Expected a string for name")
-        if version and not isinstance(version, int):
-            raise TypeError("Expected an integer for version")
+    def get_cache(self) -> dict[str, Any]:
+        return self._cache
 
-        if id:
-            prompt_id = id
-        elif name and version:
-            prompt_id = self._name_version_index.get((name, version)) or ""
-        elif name:
-            prompt_id = self._name_index.get(name) or ""
-        else:
-            return None
-
-        if prompt_id and prompt_id in self._prompts:
-            return self._prompts.get(prompt_id)
-        return None
-
-    def put(self, prompt: Prompt):
+    def get(self, key: str) -> Optional[Any]:
         """
-        Stores a prompt in the cache.
+        Retrieves a value from the cache using the provided key.
         """
-        if not isinstance(prompt, Prompt):
-            raise TypeError("Expected a Prompt object")
+        return self._cache.get(key)
 
-        with self._lock: 
-            self._prompts[prompt.id] = prompt
-            self._name_index[prompt.name] = prompt.id
-            self._name_version_index[(prompt.name, prompt.version)] = prompt.id
+    def put(self, key: str, value: Any):
+        """
+        Stores a value in the cache.
+        """
+        self._cache[key] = value
 
     def clear(self) -> None:
         """
-        Clears all cached promopts and indices.
+        Clears all cached values.
         """
-        with self._lock:
-            self._prompts.clear()
-            self._name_index.clear()
-            self._name_version_index.clear()
+        self._cache.clear()
 
 
 class BaseLiteralAPI:
@@ -239,7 +201,7 @@ class BaseLiteralAPI:
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
 
-        self.prompt_cache = SharedPromptCache()
+        self.cache = SharedCache()
 
     @property
     def headers(self):
@@ -1445,7 +1407,9 @@ class LiteralAPI(BaseLiteralAPI):
             elif name:
                 prompt = self.gql_helper(get_prompt_query, description, variables, process_response, timeout)
 
-            self.prompt_cache.put(prompt)
+            self.cache.put(prompt.id, prompt)
+            self.cache.put(prompt.name, prompt)
+            self.cache.put(f"{prompt.name}-{prompt.version}", prompt)
             return prompt
 
         except Exception as e:
