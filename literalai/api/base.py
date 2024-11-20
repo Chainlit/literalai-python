@@ -12,7 +12,7 @@ from typing_extensions import deprecated
 
 from literalai.my_types import Environment
 
-from literalai.evaluation.dataset import Dataset, DatasetType
+from literalai.evaluation.dataset import DatasetType
 from literalai.evaluation.dataset_experiment import (
     DatasetExperimentItem,
 )
