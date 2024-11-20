@@ -1225,13 +1225,13 @@ class LiteralAPI(BaseLiteralAPI):
 
     def get_dataset_item(self, id: str):
         """
-        Retrieves a dataset item by its unique identifier.
+        Retrieves a dataset item by ID.
 
         Args:
-            id (str): The unique identifier of the dataset item to retrieve.
+            id (str): ID of the `DatasetItem` to retrieve.
 
         Returns:
-            Dict: The dataset item data.
+            `DatasetItem`: The dataset item.
         """
         return self.gql_helper(*get_dataset_item_helper(id))
 
@@ -2462,17 +2462,10 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         )
 
     async def get_dataset_item(self, id: str):
-        """
-        Asynchronously retrieves a dataset item by its ID.
-
-        Args:
-            id (str): The unique identifier of the dataset item.
-
-        Returns:
-            The result of the GraphQL helper function for fetching a dataset item.
-        """
         return await self.gql_helper(*get_dataset_item_helper(id))
 
+    get_dataset_item.__doc__ = LiteralAPI.get_dataset_item.__doc__
+    
     async def delete_dataset_item(self, id: str):
         return await self.gql_helper(*delete_dataset_item_helper(id))
 
