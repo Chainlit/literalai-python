@@ -5,7 +5,7 @@ from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
-    from literalai.api import SharedPromptCache
+    from literalai.api import SharedCache
 
 from literalai.api import gql
 
@@ -73,15 +73,15 @@ def get_prompt_helper(
     id: Optional[str] = None,
     name: Optional[str] = None,
     version: Optional[int] = 0,
-    prompt_cache: Optional["SharedPromptCache"] = None,
+    cache: Optional["SharedCache"] = None,
 ) -> tuple[str, str, dict, Callable, int, Optional[Prompt]]:
     """Helper function for getting prompts with caching logic"""
 
     cached_prompt = None
     timeout = 10
 
-    if prompt_cache:
-        cached_prompt = prompt_cache.get(get_prompt_cache_key(id, name, version))
+    if cache:
+        cached_prompt = cache.get(get_prompt_cache_key(id, name, version))
         timeout = 1 if cached_prompt else timeout
 
     variables = {"id": id, "name": name, "version": version}
@@ -89,8 +89,8 @@ def get_prompt_helper(
     def process_response(response):
         prompt_version = response["data"]["promptVersion"]
         prompt = Prompt.from_dict(api, prompt_version) if prompt_version else None
-        if prompt_cache:
-            prompt_cache.put(prompt)
+        if cache and prompt:
+            cache.put_prompt(prompt)
         return prompt
 
     description = "get prompt"

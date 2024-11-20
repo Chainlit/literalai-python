@@ -143,16 +143,15 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
 
 class SharedCache:
     """
-    Thread-safe singleton cache for storing prompts with memory leak prevention.
+    Singleton cache for storing data.
     Only one instance will exist regardless of how many times it's instantiated.
     """
     _instance = None
-    _cache: dict[str, Any]
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.cache = {}
+            cls._instance._cache = {}
         return cls._instance
 
     def get_cache(self) -> dict[str, Any]:
@@ -162,13 +161,22 @@ class SharedCache:
         """
         Retrieves a value from the cache using the provided key.
         """
+        if not isinstance(key, str):
+            raise TypeError("Key must be a string")
         return self._cache.get(key)
 
     def put(self, key: str, value: Any):
         """
         Stores a value in the cache.
         """
+        if not isinstance(key, str):
+            raise TypeError("Key must be a string")
         self._cache[key] = value
+
+    def put_prompt(self, prompt: Prompt):
+        self.put(prompt.id, prompt)
+        self.put(prompt.name, prompt)
+        self.put(f"{prompt.name}-{prompt.version}", prompt)
 
     def clear(self) -> None:
         """
@@ -1398,7 +1406,7 @@ class LiteralAPI(BaseLiteralAPI):
             raise ValueError("Either the `id` or the `name` must be provided.")
 
         get_prompt_query, description, variables, process_response, timeout, cached_prompt = get_prompt_helper(
-            api=self,id=id, name=name, version=version, prompt_cache=self.prompt_cache
+            api=self,id=id, name=name, version=version, cache=self.cache
         )
 
         try:
@@ -1407,9 +1415,6 @@ class LiteralAPI(BaseLiteralAPI):
             elif name:
                 prompt = self.gql_helper(get_prompt_query, description, variables, process_response, timeout)
 
-            self.cache.put(prompt.id, prompt)
-            self.cache.put(prompt.name, prompt)
-            self.cache.put(f"{prompt.name}-{prompt.version}", prompt)
             return prompt
 
         except Exception as e:
@@ -2645,7 +2650,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
         sync_api = LiteralAPI(self.api_key, self.url)
         get_prompt_query, description, variables, process_response, timeout, cached_prompt = get_prompt_helper(
-            api=sync_api, id=id, name=name, version=version, prompt_cache=self.prompt_cache
+            api=sync_api, id=id, name=name, version=version, cache=self.cache
         )
 
         try:
@@ -2658,7 +2663,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                     get_prompt_query, description, variables, process_response, timeout
                 )
 
-            self.prompt_cache.put(prompt)
             return prompt
 
         except Exception as e:
