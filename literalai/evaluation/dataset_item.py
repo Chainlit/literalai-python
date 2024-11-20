@@ -16,6 +16,9 @@ class DatasetItemDict(TypedDict, total=False):
 
 @dataclass(repr=False)
 class DatasetItem(Utils):
+    """
+    A `Dataset` item.
+    """
     id: str
     created_at: str
     dataset_id: str
@@ -25,6 +28,9 @@ class DatasetItem(Utils):
     intermediary_steps: Optional[List[Dict]] = None
 
     def to_dict(self):
+        """
+        Dumps the contents of the object into a dictionary.
+        """
         return {
             "id": self.id,
             "createdAt": self.created_at,
@@ -37,6 +43,9 @@ class DatasetItem(Utils):
 
     @classmethod
     def from_dict(cls, dataset_item: DatasetItemDict) -> "DatasetItem":
+        """
+        Builds a `DatasetItem` object from a dictionary.
+        """
         return cls(
             id=dataset_item.get("id", ""),
             created_at=dataset_item.get("createdAt", ""),

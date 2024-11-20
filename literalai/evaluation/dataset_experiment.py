@@ -64,7 +64,11 @@ class DatasetExperimentDict(TypedDict, total=False):
 
 
 @dataclass(repr=False)
+# TODO: Rename to Experiment
 class DatasetExperiment(Utils):
+    """
+    An experiment, linked or not to a `Dataset`.
+    """
     api: "LiteralAPI"
     id: str
     created_at: str

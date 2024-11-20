@@ -62,6 +62,29 @@ class PromptDict(TypedDict, total=False):
 
 @dataclass(repr=False)
 class Prompt(Utils):
+    """
+    Represents a version of a prompt template with variables, tools and settings.
+
+    Attributes
+    ----------
+    template_messages : List[GenerationMessage] 
+        The messages that make up the prompt. Messages can be of type `text` or `image`.
+        Messages can reference variables.
+    variables : List[PromptVariable]
+        Variables exposed in the prompt.
+    tools : Optional[List[Dict]]
+        Tools LLM can pick from.
+    settings : ProviderSettings
+        LLM provider settings.
+
+    Methods
+    -------
+    format_messages(**kwargs: Any):
+        Formats the prompt's template messages with the given variables.
+        Variables may be passed as a dictionary or as keyword arguments.
+        Keyword arguments take precedence over variables passed as a dictionary.
+    """
+
     api: "LiteralAPI"
     id: str
     created_at: str
@@ -129,7 +152,6 @@ class Prompt(Utils):
         Args:
             variables (Optional[Dict[str, Any]]): Optional variables to resolve in the template messages.
 
-
         Returns:
             List[Any]: List of formatted chat completion messages.
         """
@@ -160,6 +182,9 @@ class Prompt(Utils):
 
     @deprecated('Please use "format_messages" instead')
     def format(self, variables: Optional[Dict[str, Any]] = None) -> List[Any]:
+        """
+        Deprecated. Please use `format_messages` instead.
+        """
         return self.format_messages(**(variables or {}))
 
     def to_langchain_chat_prompt_template(self, additional_messages=[]):

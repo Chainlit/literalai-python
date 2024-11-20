@@ -26,6 +26,9 @@ class DatasetDict(TypedDict, total=False):
 
 @dataclass(repr=False)
 class Dataset(Utils):
+    """
+    A dataset of items.
+    """
     api: "LiteralAPI"
     id: str
     created_at: str

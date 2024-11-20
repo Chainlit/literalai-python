@@ -89,6 +89,7 @@ from literalai.evaluation.dataset_experiment import (
     DatasetExperiment,
     DatasetExperimentItem,
 )
+from literalai.evaluation.dataset_item import DatasetItem
 from literalai.observability.filter import (
     generations_filters,
     generations_order_by,
@@ -1236,29 +1237,29 @@ class LiteralAPI(BaseLiteralAPI):
 
     def delete_dataset_item(self, id: str):
         """
-        Deletes a dataset item by its unique identifier.
+        Deletes a dataset item by ID.
 
         Args:
-            id (str): The unique identifier of the dataset item to delete.
+            id (str): ID of the dataset item to delete.
 
         Returns:
-            Dict: The result of the dataset item deletion operation.
+            `DatasetItem`: The deleted item.
         """
         return self.gql_helper(*delete_dataset_item_helper(id))
 
     def add_step_to_dataset(
         self, dataset_id: str, step_id: str, metadata: Optional[Dict] = None
-    ):
+    ) -> DatasetItem:
         """
         Adds a step to a dataset.
 
         Args:
             dataset_id (str): The unique identifier of the dataset.
             step_id (str): The unique identifier of the step to add.
-            metadata (Optional[Dict]): Additional metadata for the step being added.
+            metadata (Optional[Dict]): Additional metadata related to the step to add.
 
         Returns:
-            Dict: The result of adding the step to the dataset.
+            Dict: The created `DatasetItem`.
         """
         return self.gql_helper(
             *add_step_to_dataset_helper(dataset_id, step_id, metadata)
@@ -1266,17 +1267,17 @@ class LiteralAPI(BaseLiteralAPI):
 
     def add_generation_to_dataset(
         self, dataset_id: str, generation_id: str, metadata: Optional[Dict] = None
-    ):
+    ) -> DatasetItem:
         """
         Adds a generation to a dataset.
 
         Args:
             dataset_id (str): The unique identifier of the dataset.
             generation_id (str): The unique identifier of the generation to add.
-            metadata (Optional[Dict]): Additional metadata for the generation being added.
+            metadata (Optional[Dict]): Additional metadata related to the generation to add.
 
         Returns:
-            Dict: The result of adding the generation to the dataset.
+            Dict: The created `DatasetItem`.
         """
         return self.gql_helper(
             *add_generation_to_dataset_helper(dataset_id, generation_id, metadata)
@@ -1302,6 +1303,9 @@ class LiteralAPI(BaseLiteralAPI):
 
     @deprecated('Please use "get_or_create_prompt_lineage" instead.')
     def create_prompt_lineage(self, name: str, description: Optional[str] = None):
+        """
+        Deprecated. Please use **get_or_create_prompt_lineage** instead.
+        """
         return self.get_or_create_prompt_lineage(name, description)
 
     def get_or_create_prompt(
@@ -1338,6 +1342,9 @@ class LiteralAPI(BaseLiteralAPI):
         template_messages: List[GenerationMessage],
         settings: Optional[ProviderSettings] = None,
     ) -> Prompt:
+        """
+        Deprecated. Please use **get_or_create_prompt** instead.
+        """
         return self.get_or_create_prompt(name, template_messages, settings)
 
     def get_prompt(
@@ -1377,17 +1384,17 @@ class LiteralAPI(BaseLiteralAPI):
         tools: Optional[List[Dict]] = None,
     ) -> Optional[str]:
         """
-        Creates a prompt variation for an experiment.
-        This variation is not an official version until manually saved.
+        Creates a prompt variant to use as part of an experiment.
+        This variant is not an official Prompt version until manually saved.
 
         Args:
-            name (str): The name of the prompt to retrieve or create.
+            name (str): Name of the variant to create.
             template_messages (List[GenerationMessage]): A list of template messages for the prompt.
             settings (Optional[Dict]): Optional settings for the prompt.
-            tools (Optional[List[Dict]]): Optional tool options for the model
+            tools (Optional[List[Dict]]): Optional tools for the model.
 
         Returns:
-            prompt_variant_id: The prompt variant id to link with the experiment.
+            prompt_variant_id: The ID of the created prompt variant id, which you can link to an experiment.
         """
         lineage = self.gql_helper(*get_prompt_lineage_helper(name))
         lineage_id = lineage["id"] if lineage else None
@@ -2467,53 +2474,27 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(*get_dataset_item_helper(id))
 
     async def delete_dataset_item(self, id: str):
-        """
-        Asynchronously deletes a dataset item by its ID.
-
-        Args:
-            id (str): The unique identifier of the dataset item to delete.
-
-        Returns:
-            The result of the GraphQL helper function for deleting a dataset item.
-        """
         return await self.gql_helper(*delete_dataset_item_helper(id))
+
+    delete_dataset_item.__doc__ = LiteralAPI.delete_dataset_item.__doc__
 
     async def add_step_to_dataset(
         self, dataset_id: str, step_id: str, metadata: Optional[Dict] = None
-    ):
-        """
-        Asynchronously adds a step to a dataset.
-
-        Args:
-            dataset_id (str): The unique identifier of the dataset.
-            step_id (str): The unique identifier of the step to add.
-            metadata (Optional[Dict]): Additional metadata for the step being added.
-
-        Returns:
-            The result of the GraphQL helper function for adding a step to a dataset.
-        """
+    ) -> DatasetItem:
         return await self.gql_helper(
             *add_step_to_dataset_helper(dataset_id, step_id, metadata)
         )
 
+    add_step_to_dataset.__doc__ = LiteralAPI.add_step_to_dataset.__doc__
+
     async def add_generation_to_dataset(
         self, dataset_id: str, generation_id: str, metadata: Optional[Dict] = None
-    ):
-        """
-        Asynchronously adds a generation to a dataset.
-
-        Args:
-            dataset_id (str): The unique identifier of the dataset.
-            generation_id (str): The unique identifier of the generation to add.
-            metadata (Optional[Dict]): Additional metadata for the generation being added.
-
-        Returns:
-            The result of the GraphQL helper function for adding a generation to a dataset.
-        """
+    ) -> DatasetItem:
         return await self.gql_helper(
             *add_generation_to_dataset_helper(dataset_id, generation_id, metadata)
         )
 
+    add_generation_to_dataset.__doc__ = LiteralAPI.add_generation_to_dataset.__doc__
     # Prompt API
 
     async def get_or_create_prompt_lineage(
@@ -2528,6 +2509,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     @deprecated('Please use "get_or_create_prompt_lineage" instead.')
     async def create_prompt_lineage(self, name: str, description: Optional[str] = None):
         return await self.get_or_create_prompt_lineage(name, description)
+
+    create_prompt_lineage.__doc__ = LiteralAPI.create_prompt_lineage.__doc__
 
     async def get_or_create_prompt(
         self,
@@ -2557,6 +2540,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     ):
         return await self.get_or_create_prompt(name, template_messages, settings)
 
+    create_prompt.__doc__ = LiteralAPI.create_prompt.__doc__
+
     async def create_prompt_variant(
         self,
         name: str,
@@ -2564,19 +2549,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         settings: Optional[ProviderSettings] = None,
         tools: Optional[List[Dict]] = None,
     ) -> Optional[str]:
-        """
-        Creates a prompt variation for an experiment.
-        This variation is not an official version until manually saved.
-
-        Args:
-            name (str): The name of the prompt to retrieve or create.
-            template_messages (List[GenerationMessage]): A list of template messages for the prompt.
-            settings (Optional[Dict]): Optional settings for the prompt.
-            tools (Optional[List[Dict]]): Optional tool options for the model
-
-        Returns:
-            prompt_variant_id: The prompt variant id to link with the experiment.
-        """
         lineage = await self.gql_helper(*get_prompt_lineage_helper(name))
         lineage_id = lineage["id"] if lineage else None
         return await self.gql_helper(
