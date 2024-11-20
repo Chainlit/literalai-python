@@ -1,6 +1,7 @@
 import logging
-import os
 import uuid
+
+from typing_extensions import deprecated
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,7 +15,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import deprecated
+from literalai.api.base import BaseLiteralAPI
 
 from literalai.api.attachment_helpers import (
     AttachmentUpload,
@@ -109,7 +110,7 @@ if TYPE_CHECKING:
 
 import httpx
 
-from literalai.my_types import Environment, PaginatedResponse, User
+from literalai.my_types import PaginatedResponse, User
 from literalai.observability.generation import (
     ChatGeneration,
     CompletionGeneration,
@@ -145,47 +146,6 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
         return item
 
     return handle_bytes(variables)
-
-
-class BaseLiteralAPI:
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        url: Optional[str] = None,
-        environment: Optional[Environment] = None,
-    ):
-        if url and url[-1] == "/":
-            url = url[:-1]
-
-        if api_key is None:
-            raise Exception("LITERAL_API_KEY not set")
-        if url is None:
-            raise Exception("LITERAL_API_URL not set")
-
-        self.api_key = api_key
-        self.url = url
-
-        if environment:
-            os.environ["LITERAL_ENV"] = environment
-
-        self.graphql_endpoint = self.url + "/api/graphql"
-        self.rest_endpoint = self.url + "/api"
-
-    @property
-    def headers(self):
-        from literalai.version import __version__
-
-        h = {
-            "Content-Type": "application/json",
-            "x-api-key": self.api_key,
-            "x-client-name": "py-literal-client",
-            "x-client-version": __version__,
-        }
-
-        if env := os.getenv("LITERAL_ENV"):
-            h["x-env"] = env
-
-        return h
 
 
 class LiteralAPI(BaseLiteralAPI):
@@ -293,85 +253,23 @@ class LiteralAPI(BaseLiteralAPI):
         before: Optional[str] = None,
         filters: Optional[users_filters] = None,
     ) -> PaginatedResponse[User]:
-        """
-        Retrieves a list of users based on pagination and optional filters.
-
-        Args:
-            first (Optional[int]): The number of users to retrieve.
-            after (Optional[str]): A cursor for use in pagination, fetching records after this cursor.
-            before (Optional[str]): A cursor for use in pagination, fetching records before this cursor.
-            filters (Optional[users_filters]): Filters to apply to the user query.
-
-        Returns:
-            `PaginatedResponse[User]`: A paginated response containing the queried user data.
-        """
         return self.gql_helper(*get_users_helper(first, after, before, filters))
 
     def get_user(self, id: Optional[str] = None, identifier: Optional[str] = None) -> User:
-        """
-        Retrieves a user based on the provided ID or identifier.
-
-        Args:
-            id (Optional[str]): The unique ID of the user.
-            identifier (Optional[str]): A unique identifier for the user, such as a username or email.
-
-        Returns:
-            `User`: The user with requested id or identifier.
-        """
         return self.gql_helper(*get_user_helper(id, identifier))
 
     def create_user(self, identifier: str, metadata: Optional[Dict] = None) -> User:
-        """
-        Creates a new user with the specified identifier and optional metadata.
-
-        Args:
-            identifier (str): A unique identifier for the user, such as a username or email.
-            metadata (Optional[Dict]): Additional data associated with the user.
-
-        Returns:
-            `User`: The created user object.
-        """
         return self.gql_helper(*create_user_helper(identifier, metadata))
 
     def update_user(
         self, id: str, identifier: Optional[str] = None, metadata: Optional[Dict] = None
     ) -> User:
-        """
-        Updates an existing user identified by the given ID, with optional new identifier and metadata.
-
-        Args:
-            id (str): The unique ID of the user to update.
-            identifier (Optional[str]): A new identifier for the user, such as a username or email.
-            metadata (Optional[Dict]): New or updated metadata for the user.
-
-        Returns:
-            `User`: The updated user object.
-        """
         return self.gql_helper(*update_user_helper(id, identifier, metadata))
 
     def delete_user(self, id: str) -> Dict:
-        """
-        Deletes a user identified by the given ID.
-
-        Args:
-            id (str): The unique ID of the user to delete.
-
-        Returns:
-            Dict: The deleted user as a dict.
-        """
         return self.gql_helper(*delete_user_helper(id))
 
     def get_or_create_user(self, identifier: str, metadata: Optional[Dict] = None):
-        """
-        Retrieves a user by their identifier, or creates a new user if it does not exist.
-
-        Args:
-            identifier (str): The identifier of the user to retrieve or create.
-            metadata (Optional[Dict]): Metadata to associate with the user if they are created.
-
-        Returns:
-            `User`: The existing or newly created user.
-        """
         user = self.get_user(identifier=identifier)
         if user:
             return user
@@ -391,21 +289,6 @@ class LiteralAPI(BaseLiteralAPI):
         order_by: Optional[threads_order_by] = None,
         step_types_to_keep: Optional[List[StepType]] = None,
     ) -> PaginatedResponse[Thread]:
-        """
-        Fetches a list of threads based on pagination and optional filters.
-
-        Args:
-            first (Optional[int]): Number of threads to fetch.
-            after (Optional[str]): Cursor for pagination, fetch threads after this cursor.
-            before (Optional[str]): Cursor for pagination, fetch threads before this cursor.
-            filters (Optional[threads_filters]): Filters to apply on the threads query.
-            order_by (Optional[threads_order_by]): Order by clause for threads.
-            step_types_to_keep (Optional[List[StepType]]) : If set, only steps of the corresponding types
-                                                            will be returned
-
-        Returns:
-            `PaginatedResponse[Thread]`: A paginated response containing the queried thread data.
-        """
         return self.gql_helper(
             *get_threads_helper(
                 first, after, before, filters, order_by, step_types_to_keep
@@ -420,33 +303,11 @@ class LiteralAPI(BaseLiteralAPI):
         filters: Optional[threads_filters] = None,
         order_by: Optional[threads_order_by] = None,
     ) -> PaginatedResponse[Thread]:
-        """
-        Lists threads based on pagination and optional filters, similar to get_threads but may include additional processing.
-
-        Args:
-            first (Optional[int]): Number of threads to list.
-            after (Optional[str]): Cursor for pagination, list threads after this cursor.
-            before (Optional[str]): Cursor for pagination, list threads before this cursor.
-            filters (Optional[threads_filters]): Filters to apply on the threads listing.
-            order_by (Optional[threads_order_by]): Order by clause for threads.
-
-        Returns:
-            `PaginatedResponse[Thread]`: A paginated response containing the queried thread data.
-        """
         return self.gql_helper(
             *list_threads_helper(first, after, before, filters, order_by)
         )
 
     def get_thread(self, id: str) -> Thread:
-        """
-        Retrieves a single thread by its ID.
-
-        Args:
-            id (str): The unique identifier of the thread.
-
-        Returns:
-            `Thread`: The thread corresponding to the provided ID.
-        """
         return self.gql_helper(*get_thread_helper(id))
 
     def create_thread(
@@ -456,18 +317,6 @@ class LiteralAPI(BaseLiteralAPI):
         participant_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ) -> Thread:
-        """
-        Creates a `Thread` with the specified details.
-
-        Args:
-            name (Optional[str]): Name of the thread.
-            metadata (Optional[Dict]): Metadata associated with the thread.
-            participant_id (Optional[str]): Identifier for the participant.
-            tags (Optional[List[str]]): List of tags associated with the thread.
-
-        Returns:
-            `Thread`: The created thread.
-        """
         return self.gql_helper(
             *create_thread_helper(name, metadata, participant_id, tags)
         )
@@ -480,19 +329,6 @@ class LiteralAPI(BaseLiteralAPI):
         participant_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ) -> Thread:
-        """
-        Updates an existing thread or creates a new one if it does not exist.
-
-        Args:
-            id (str): The unique identifier of the thread.
-            name (Optional[str]): Name of the thread.
-            metadata (Optional[Dict]): Metadata associated with the thread.
-            participant_id (Optional[str]): Identifier for the participant.
-            tags (Optional[List[str]]): List of tags associated with the thread.
-
-        Returns:
-            `Thread`: The updated or newly created thread.
-        """
         return self.gql_helper(
             *upsert_thread_helper(id, name, metadata, participant_id, tags)
         )
@@ -505,33 +341,11 @@ class LiteralAPI(BaseLiteralAPI):
         participant_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ) -> Thread:
-        """
-        Updates the specified details of an existing thread.
-
-        Args:
-            id (str): The unique identifier of the thread to update.
-            name (Optional[str]): New name of the thread.
-            metadata (Optional[Dict]): New metadata for the thread.
-            participant_id (Optional[str]): New identifier for the participant.
-            tags (Optional[List[str]]): New list of tags for the thread.
-
-        Returns:
-            `Thread`: The updated thread.
-        """
         return self.gql_helper(
             *update_thread_helper(id, name, metadata, participant_id, tags)
         )
 
     def delete_thread(self, id: str) -> bool:
-        """
-        Deletes a thread identified by its ID.
-
-        Args:
-            id (str): The unique identifier of the thread to delete.
-
-        Returns:
-            `bool`: True if the thread was deleted, False otherwise.
-        """
         return self.gql_helper(*delete_thread_helper(id))
 
     ##################################################################################
@@ -546,33 +360,11 @@ class LiteralAPI(BaseLiteralAPI):
         filters: Optional[scores_filters] = None,
         order_by: Optional[scores_order_by] = None,
     ) -> PaginatedResponse[Score]:
-        """
-        Fetches scores based on pagination and optional filters.
-
-        Args:
-            first (Optional[int]): The number of scores to retrieve.
-            after (Optional[str]): A cursor for use in pagination, fetching records after this cursor.
-            before (Optional[str]): A cursor for use in pagination, fetching records before this cursor.
-            filters (Optional[scores_filters]): Filters to apply to the scores query.
-            order_by (Optional[scores_order_by]): Ordering options for the scores.
-
-        Returns:
-            `PaginatedResponse[Score]`: A paginated response containing the queried scores.
-        """
         return self.gql_helper(
             *get_scores_helper(first, after, before, filters, order_by)
         )
 
     def create_scores(self, scores: List[ScoreDict]):
-        """
-        Creates multiple scores.
-
-        Args:
-            scores (List[ScoreDict]): A list of dictionaries representing the scores to be created.
-
-        Returns:
-            List[ScoreDict]: The created scores as a list of dictionaries.
-        """
         check_scores_finite(scores)
 
         query = create_scores_query_builder(scores)
@@ -597,22 +389,6 @@ class LiteralAPI(BaseLiteralAPI):
         comment: Optional[str] = None,
         tags: Optional[List[str]] = None,
     ) -> Score:
-        """
-        Creates a single score in the database.
-
-        Args:
-            name (str): The name of the score.
-            value (float): The numerical value of the score.
-            type (ScoreType): The type of the score.
-            step_id (Optional[str]): The ID of the step associated with the score.
-            generation_id (Optional[str]): The ID of the generation associated with the score.
-            dataset_experiment_item_id (Optional[str]): The ID of the dataset experiment item associated with the score.
-            comment (Optional[str]): An optional comment about the score.
-            tags (Optional[List[str]]): Optional tags associated with the score.
-
-        Returns:
-            `Score`: The created score.
-        """
         if generation_id:
             logger.warning(
                 "generation_id is deprecated and will be removed in a future version, please use step_id instead"
@@ -636,28 +412,9 @@ class LiteralAPI(BaseLiteralAPI):
         id: str,
         update_params: ScoreUpdate,
     ) -> Score:
-        """
-        Updates a score identified by its ID with new parameters.
-
-        Args:
-            id (str): The unique identifier of the score to update.
-            update_params (ScoreUpdate): A dictionary of parameters to update in the score.
-
-        Returns:
-            `Score`: The updated score.
-        """
         return self.gql_helper(*update_score_helper(id, update_params))
 
     def delete_score(self, id: str):
-        """
-        Deletes a score by ID.
-
-        Args:
-            id (str): ID of score to delete.
-
-        Returns:
-            Dict: The deleted `Score` as a dict.
-        """
         return self.gql_helper(*delete_score_helper(id))
 
     ##################################################################################
@@ -670,17 +427,6 @@ class LiteralAPI(BaseLiteralAPI):
         thread_id: Optional[str] = None,
         mime: Optional[str] = "application/octet-stream",
     ) -> Dict:
-        """
-        Uploads a file to the server.
-
-        Args:
-            content (Union[bytes, str]): The content of the file to upload.
-            thread_id (Optional[str]): The ID of the thread associated with the file.
-            mime (Optional[str]): The MIME type of the file. Defaults to 'application/octet-stream'.
-
-        Returns:
-            Dict: A dictionary containing the object key and URL of the uploaded file, or None values if the upload fails.
-        """
         id = str(uuid.uuid4())
         body = {"fileName": id, "contentType": mime}
         if thread_id:
@@ -760,24 +506,6 @@ class LiteralAPI(BaseLiteralAPI):
         content: Optional[Union[bytes, str]] = None,
         path: Optional[str] = None,
     ) -> "Attachment":
-        """
-        Creates an attachment associated with a thread and step, potentially uploading file content.
-
-        Args:
-            thread_id (str): The ID of the thread to which the attachment is linked.
-            step_id (str): The ID of the step to which the attachment is linked.
-            id (Optional[str]): The ID of the attachment, if updating an existing one.
-            metadata (Optional[Dict]): Metadata associated with the attachment.
-            mime (Optional[str]): MIME type of the file, if content is provided.
-            name (Optional[str]): Name of the attachment.
-            object_key (Optional[str]): Object key of the uploaded file, if already known.
-            url (Optional[str]): URL of the uploaded file, if already known.
-            content (Optional[Union[bytes, str]]): File content to upload.
-            path (Optional[str]): Path where the file should be stored.
-
-        Returns:
-            `Attachment`: The created attachment.
-        """
         if not thread_id:
             if active_thread := active_thread_var.get(None):
                 thread_id = active_thread.id
@@ -823,40 +551,12 @@ class LiteralAPI(BaseLiteralAPI):
         return process_response(response)
 
     def update_attachment(self, id: str, update_params: AttachmentUpload) -> Attachment:
-        """
-        Updates an existing attachment with new parameters.
-
-        Args:
-            id (str): The unique identifier of the attachment to update.
-            update_params (AttachmentUpload): The parameters to update in the attachment.
-
-        Returns:
-            `Attachment`: The updated attachment.
-        """
         return self.gql_helper(*update_attachment_helper(id, update_params))
 
     def get_attachment(self, id: str) -> Optional[Attachment]:
-        """
-        Retrieves an attachment by its ID.
-
-        Args:
-            id (str): The unique identifier of the attachment to retrieve.
-
-        Returns:
-            The attachment data as returned by the GraphQL helper function.
-        """
         return self.gql_helper(*get_attachment_helper(id))
 
     def delete_attachment(self, id: str):
-        """
-        Deletes an attachment identified by ID.
-
-        Args:
-            id (str): The unique identifier of the attachment to delete.
-
-        Returns:
-            `Attachment`: The deleted attachment.
-        """
         return self.gql_helper(*delete_attachment_helper(id))
 
     ##################################################################################
@@ -877,25 +577,6 @@ class LiteralAPI(BaseLiteralAPI):
         tags: Optional[List[str]] = None,
         root_run_id: Optional[str] = None,
     ) -> Step:
-        """
-        Creates a new step with the specified parameters.
-
-        Args:
-            thread_id (Optional[str]): The ID of the thread this step is associated with.
-            type (Optional[StepType]): The type of the step, defaults to "undefined".
-            start_time (Optional[str]): The start time of the step.
-            end_time (Optional[str]): The end time of the step.
-            input (Optional[Dict]): Input data for the step.
-            output (Optional[Dict]): Output data from the step.
-            metadata (Optional[Dict]): Metadata associated with the step.
-            parent_id (Optional[str]): The ID of the parent step, if any.
-            name (Optional[str]): The name of the step.
-            tags (Optional[List[str]]): Tags associated with the step.
-            root_run_id (Optional[str]): The ID of the root run, if any.
-
-        Returns:
-            `Step`: The created step.
-        """
         return self.gql_helper(
             *create_step_helper(
                 thread_id=thread_id,
@@ -925,24 +606,6 @@ class LiteralAPI(BaseLiteralAPI):
         end_time: Optional[str] = None,
         parent_id: Optional[str] = None,
     ) -> Step:
-        """
-        Updates an existing step identified by its ID with new parameters.
-
-        Args:
-            id (str): The unique identifier of the step to update.
-            type (Optional[StepType]): The type of the step.
-            input (Optional[str]): Input data for the step.
-            output (Optional[str]): Output data from the step.
-            metadata (Optional[Dict]): Metadata associated with the step.
-            name (Optional[str]): The name of the step.
-            tags (Optional[List[str]]): Tags associated with the step.
-            start_time (Optional[str]): The start time of the step.
-            end_time (Optional[str]): The end time of the step.
-            parent_id (Optional[str]): The ID of the parent step, if any.
-
-        Returns:
-            `Step`: The updated step.
-        """
         return self.gql_helper(
             *update_step_helper(
                 id=id,
@@ -966,19 +629,6 @@ class LiteralAPI(BaseLiteralAPI):
         filters: Optional[steps_filters] = None,
         order_by: Optional[steps_order_by] = None,
     ) -> PaginatedResponse[Step]:
-        """
-        Fetches a list of steps based on pagination and optional filters.
-
-        Args:
-            first (Optional[int]): Number of steps to fetch.
-            after (Optional[str]): Cursor for pagination, fetch steps after this cursor.
-            before (Optional[str]): Cursor for pagination, fetch steps before this cursor.
-            filters (Optional[steps_filters]): Filters to apply on the steps query.
-            order_by (Optional[steps_order_by]): Order by clause for steps.
-
-        Returns:
-            `PaginatedResponse[Step]`: The list of steps matching the criteria.
-        """
         return self.gql_helper(
             *get_steps_helper(first, after, before, filters, order_by)
         )
@@ -987,46 +637,20 @@ class LiteralAPI(BaseLiteralAPI):
         self,
         id: str,
     ) -> Optional[Step]:
-        """
-        Retrieves a step by its ID.
-
-        Args:
-            id (str): The unique identifier of the step to retrieve.
-
-        Returns:
-            `Step`: The step with requested ID.
-        """
         return self.gql_helper(*get_step_helper(id=id))
 
     def delete_step(
         self,
         id: str,
     ) -> bool:
-        """
-        Deletes a step identified by its ID.
-
-        Args:
-            id (str): The unique identifier of the step to delete.
-
-        Returns:
-            `bool`: True if the step was deleted successfully, False otherwise.
-        """
         return self.gql_helper(*delete_step_helper(id=id))
 
     def send_steps(self, steps: List[Union[StepDict, "Step"]]):
-        """
-        Sends a list of steps to process.  
-        Step ingestion happens asynchronously if you configured a cache. See [Cache Configuration](https://docs.literalai.com/self-hosting/deployment#4-cache-configuration-optional).
-
-        Args:
-            steps (List[Union[StepDict, Step]]): A list of steps or step dictionaries to send.
-
-        Returns:
-            `Dict`: Dictionary with keys "ok" (boolean) and "message" (string).
-        """
         return self.gql_helper(*send_steps_helper(steps=steps))
 
-    # Generation API
+    ##################################################################################
+    #                                 Generation APIs                                #
+    ##################################################################################
 
     def get_generations(
         self,
@@ -1036,19 +660,6 @@ class LiteralAPI(BaseLiteralAPI):
         filters: Optional[generations_filters] = None,
         order_by: Optional[generations_order_by] = None,
     ):
-        """
-        Fetches a list of generations based on pagination and optional filters.
-
-        Args:
-            first (Optional[int]): The number of generations to retrieve.
-            after (Optional[str]): A cursor for use in pagination, fetching records after this cursor.
-            before (Optional[str]): A cursor for use in pagination, fetching records before this cursor.
-            filters (Optional[generations_filters]): Filters to apply to the generations query.
-            order_by (Optional[generations_order_by]): Order by clause for generations.
-
-        Returns:
-            A list of generations that match the criteria.
-        """
         return self.gql_helper(
             *get_generations_helper(first, after, before, filters, order_by)
         )
@@ -1056,42 +667,11 @@ class LiteralAPI(BaseLiteralAPI):
     def create_generation(
         self, generation: Union[ChatGeneration, CompletionGeneration]
     ):
-        """
-        Creates a new generation, either a chat or completion type.
-
-        ```py
-        from literalai.observability.generation import ChatGeneration
-        from literalai import LiteralClient
-
-        literalai_client = LiteralClient(api_key=)
-
-        example_generation = ChatGeneration(
-            messages=[
-                {
-                    "role": "user",
-                    "content": "Hello, how can I help you today?"
-                },
-            ],
-            message_completion={
-                "role": "assistant",
-                "content": "Sure, I can help with that. What do you need to know?"
-            },
-            model="gpt-4o-mini",
-            provider="OpenAI"
-        )
-
-        literalai_client.api.create_generation(example_generation)
-        ```
-
-        Args:
-            generation (Union[ChatGeneration, CompletionGeneration]): The generation data to create.
-
-        Returns:
-            The result of the creation operation.
-        """
         return self.gql_helper(*create_generation_helper(generation))
 
-    # Dataset API
+    ##################################################################################
+    #                                   Dataset APIs                                 #
+    ##################################################################################
 
     def create_dataset(
         self,
@@ -1100,18 +680,6 @@ class LiteralAPI(BaseLiteralAPI):
         metadata: Optional[Dict] = None,
         type: DatasetType = "key_value",
     ):
-        """
-        Creates a new dataset with the specified properties.
-
-        Args:
-            name (str): The name of the dataset.
-            description (Optional[str]): A description of the dataset.
-            metadata (Optional[Dict]): Additional metadata for the dataset.
-            type (DatasetType): The type of the dataset, defaults to "key_value".
-
-        Returns:
-            The result of the dataset creation operation.
-        """
         return self.gql_helper(
             *create_dataset_helper(self, name, description, metadata, type)
         )
@@ -1119,16 +687,6 @@ class LiteralAPI(BaseLiteralAPI):
     def get_dataset(
         self, id: Optional[str] = None, name: Optional[str] = None
     ) -> Optional[Dataset]:
-        """
-        Retrieves a dataset by its ID or name.
-
-        Args:
-            id (Optional[str]): The unique identifier of the dataset.
-            name (Optional[str]): The name of the dataset.
-
-        Returns:
-            The dataset data as returned by the REST helper function.
-        """
         subpath, _, variables, process_response = get_dataset_helper(
             self, id=id, name=name
         )
@@ -1142,35 +700,16 @@ class LiteralAPI(BaseLiteralAPI):
         description: Optional[str] = None,
         metadata: Optional[Dict] = None,
     ):
-        """
-        Updates an existing dataset identified by its ID with new properties.
-
-        Args:
-            id (str): The unique identifier of the dataset to update.
-            name (Optional[str]): A new name for the dataset.
-            description (Optional[str]): A new description for the dataset.
-            metadata (Optional[Dict]): New or updated metadata for the dataset.
-
-        Returns:
-            The result of the dataset update operation.
-        """
         return self.gql_helper(
             *update_dataset_helper(self, id, name, description, metadata)
         )
 
     def delete_dataset(self, id: str):
-        """
-        Deletes a dataset identified by its ID.
-
-        Args:
-            id (str): The unique identifier of the dataset to delete.
-
-        Returns:
-            The result of the deletion operation.
-        """
         return self.gql_helper(*delete_dataset_helper(self, id))
 
-    # Dataset Experiment APIs
+    ##################################################################################
+    #                                  Experiment APIs                               #
+    ##################################################################################
 
     def create_experiment(
         self,
@@ -1179,18 +718,6 @@ class LiteralAPI(BaseLiteralAPI):
         prompt_variant_id: Optional[str] = None,
         params: Optional[Dict] = None,
     ) -> "DatasetExperiment":
-        """
-        Creates a new experiment associated with a specific dataset.
-
-        Args:
-            name (str): The name of the experiment.
-            dataset_id (Optional[str]): The unique identifier of the dataset.
-            prompt_variant_id (Optional[str]): The identifier of the prompt variant to associate to the experiment.
-            params (Optional[Dict]): Additional parameters for the experiment.
-
-        Returns:
-            DatasetExperiment: The newly created experiment object.
-        """
         return self.gql_helper(
             *create_experiment_helper(
                 api=self,
@@ -1204,15 +731,6 @@ class LiteralAPI(BaseLiteralAPI):
     def create_experiment_item(
         self, experiment_item: DatasetExperimentItem
     ) -> DatasetExperimentItem:
-        """
-        Creates an experiment item within an existing experiment.
-
-        Args:
-            experiment_item (DatasetExperimentItem): The experiment item to be created, containing all necessary data.
-
-        Returns:
-            DatasetExperimentItem: The newly created experiment item with scores attached.
-        """
         # Create the dataset experiment item
         result = self.gql_helper(
             *create_experiment_item_helper(
@@ -1241,60 +759,19 @@ class LiteralAPI(BaseLiteralAPI):
         expected_output: Optional[Dict] = None,
         metadata: Optional[Dict] = None,
     ):
-        """
-        Creates an item in a dataset with the specified properties.
-
-        Args:
-            dataset_id (str): The unique identifier of the dataset.
-            input (Dict): The input data for the dataset item.
-            expected_output (Optional[Dict]): The expected output data for the dataset item.
-            metadata (Optional[Dict]): Additional metadata for the dataset item.
-
-        Returns:
-            DatasetItem: The created dataset item.
-        """
         return self.gql_helper(
             *create_dataset_item_helper(dataset_id, input, expected_output, metadata)
         )
 
     def get_dataset_item(self, id: str):
-        """
-        Retrieves a dataset item by ID.
-
-        Args:
-            id (str): ID of the `DatasetItem` to retrieve.
-
-        Returns:
-            `DatasetItem`: The dataset item.
-        """
         return self.gql_helper(*get_dataset_item_helper(id))
 
     def delete_dataset_item(self, id: str):
-        """
-        Deletes a dataset item by ID.
-
-        Args:
-            id (str): ID of the dataset item to delete.
-
-        Returns:
-            `DatasetItem`: The deleted item.
-        """
         return self.gql_helper(*delete_dataset_item_helper(id))
 
     def add_step_to_dataset(
         self, dataset_id: str, step_id: str, metadata: Optional[Dict] = None
     ) -> DatasetItem:
-        """
-        Adds a step to a dataset.
-
-        Args:
-            dataset_id (str): The unique identifier of the dataset.
-            step_id (str): The unique identifier of the step to add.
-            metadata (Optional[Dict]): Additional metadata related to the step to add.
-
-        Returns:
-            Dict: The created `DatasetItem`.
-        """
         return self.gql_helper(
             *add_step_to_dataset_helper(dataset_id, step_id, metadata)
         )
@@ -1302,44 +779,21 @@ class LiteralAPI(BaseLiteralAPI):
     def add_generation_to_dataset(
         self, dataset_id: str, generation_id: str, metadata: Optional[Dict] = None
     ) -> DatasetItem:
-        """
-        Adds a generation to a dataset.
-
-        Args:
-            dataset_id (str): The unique identifier of the dataset.
-            generation_id (str): The unique identifier of the generation to add.
-            metadata (Optional[Dict]): Additional metadata related to the generation to add.
-
-        Returns:
-            Dict: The created `DatasetItem`.
-        """
         return self.gql_helper(
             *add_generation_to_dataset_helper(dataset_id, generation_id, metadata)
         )
 
-    # Prompt API
+    ##################################################################################
+    #                                   Prompt APIs                                  #
+    ##################################################################################
 
     def get_or_create_prompt_lineage(
         self, name: str, description: Optional[str] = None
     ):
-        """
-        Creates a prompt lineage with the specified name and optional description.
-        If the prompt lineage with that name already exists, it is returned.
-
-        Args:
-            name (str): The name of the prompt lineage.
-            description (Optional[str]): An optional description of the prompt lineage.
-
-        Returns:
-            Dict: The result of the prompt lineage creation operation.
-        """
         return self.gql_helper(*create_prompt_lineage_helper(name, description))
 
-    @deprecated('Please use "get_or_create_prompt_lineage" instead.')
+    @deprecated("Use get_or_create_prompt_lineage instead")
     def create_prompt_lineage(self, name: str, description: Optional[str] = None):
-        """
-        Deprecated. Please use **get_or_create_prompt_lineage** instead.
-        """
         return self.get_or_create_prompt_lineage(name, description)
 
     def get_or_create_prompt(
@@ -1349,36 +803,19 @@ class LiteralAPI(BaseLiteralAPI):
         settings: Optional[ProviderSettings] = None,
         tools: Optional[List[Dict]] = None,
     ) -> Prompt:
-        """
-        A `Prompt` is fully defined by its `name`, `template_messages`, `settings` and tools.
-        If a prompt already exists for the given arguments, it is returned.
-        Otherwise, a new prompt is created.
-
-        Args:
-            name (str): The name of the prompt to retrieve or create.
-            template_messages (List[GenerationMessage]): A list of template messages for the prompt.
-            settings (Optional[Dict]): Optional settings for the prompt.
-            tools (Optional[List[Dict]]): Optional tool options for the model
-
-        Returns:
-            Prompt: The prompt that was retrieved or created.
-        """
         lineage = self.get_or_create_prompt_lineage(name)
         lineage_id = lineage["id"]
         return self.gql_helper(
             *create_prompt_helper(self, lineage_id, template_messages, settings, tools)
         )
 
-    @deprecated('Please use "get_or_create_prompt" instead.')
+    @deprecated("Please use `get_or_create_prompt` instead.")
     def create_prompt(
         self,
         name: str,
         template_messages: List[GenerationMessage],
         settings: Optional[ProviderSettings] = None,
     ) -> Prompt:
-        """
-        Deprecated. Please use **get_or_create_prompt** instead.
-        """
         return self.get_or_create_prompt(name, template_messages, settings)
 
     def get_prompt(
@@ -1387,22 +824,6 @@ class LiteralAPI(BaseLiteralAPI):
         name: Optional[str] = None,
         version: Optional[int] = None,
     ) -> Prompt:
-        """
-        Gets a prompt either by:
-        - `id`
-        - or `name` and (optional) `version`
-
-        Either the `id` or the `name` must be provided.
-        If both are provided, the `id` is used.
-
-        Args:
-            id (str): The unique identifier of the prompt to retrieve.
-            name (str): The name of the prompt to retrieve.
-            version (Optional[int]): The version number of the prompt to retrieve.
-
-        Returns:
-            Prompt: The prompt with the given identifier or name.
-        """
         if id:
             return self.gql_helper(*get_prompt_helper(self, id=id))
         elif name:
@@ -1417,19 +838,6 @@ class LiteralAPI(BaseLiteralAPI):
         settings: Optional[ProviderSettings] = None,
         tools: Optional[List[Dict]] = None,
     ) -> Optional[str]:
-        """
-        Creates a prompt variant to use as part of an experiment.
-        This variant is not an official Prompt version until manually saved.
-
-        Args:
-            name (str): Name of the variant to create.
-            template_messages (List[GenerationMessage]): A list of template messages for the prompt.
-            settings (Optional[Dict]): Optional settings for the prompt.
-            tools (Optional[List[Dict]]): Optional tools for the model.
-
-        Returns:
-            prompt_variant_id: The ID of the created prompt variant id, which you can link to an experiment.
-        """
         lineage = self.gql_helper(*get_prompt_lineage_helper(name))
         lineage_id = lineage["id"] if lineage else None
         return self.gql_helper(
@@ -1439,41 +847,20 @@ class LiteralAPI(BaseLiteralAPI):
         )
 
     def get_prompt_ab_testing(self, name: str) -> List[PromptRollout]:
-        """
-        Get the A/B testing configuration for a prompt lineage.
-
-        Args:
-            name (str): The name of the prompt lineage.
-        Returns:
-            List[PromptRollout]
-        """
         return self.gql_helper(*get_prompt_ab_testing_helper(name=name))
 
     def update_prompt_ab_testing(
         self, name: str, rollouts: List[PromptRollout]
     ) -> Dict:
-        """
-        Update the A/B testing configuration for a prompt lineage.
-
-        Args:
-            name (str): The name of the prompt lineage.
-            rollouts (List[PromptRollout]): The percentage rollout for each prompt version.
-
-        Returns:
-            Dict
-        """
         return self.gql_helper(
             *update_prompt_ab_testing_helper(name=name, rollouts=rollouts)
         )
 
-    # Misc API
-    def get_my_project_id(self):
-        """
-        Retrieves the projectId associated to the API key.
+    ##################################################################################
+    #                                  Misc APIs                                   #
+    ##################################################################################
 
-        Returns:
-            The projectId associated to the API key.
-        """
+    def get_my_project_id(self):
         response = self.make_rest_call("/my-project", {})
         return response["projectId"]
 
@@ -1583,35 +970,25 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         after: Optional[str] = None,
         before: Optional[str] = None,
         filters: Optional[users_filters] = None,
-    ):
+    ) -> PaginatedResponse[User]:
         return await self.gql_helper(*get_users_helper(first, after, before, filters))
-
-    get_users.__doc__ = LiteralAPI.get_users.__doc__
 
     async def get_user(
         self, id: Optional[str] = None, identifier: Optional[str] = None
     ) -> User:
         return await self.gql_helper(*get_user_helper(id, identifier))
 
-    get_user.__doc__ = LiteralAPI.get_user.__doc__
-
     async def create_user(self, identifier: str, metadata: Optional[Dict] = None) -> User:
         return await self.gql_helper(*create_user_helper(identifier, metadata))
-
-    create_user.__doc__ = LiteralAPI.create_user.__doc__
 
     async def update_user(
         self, id: str, identifier: Optional[str] = None, metadata: Optional[Dict] = None
     ) -> User:
         return await self.gql_helper(*update_user_helper(id, identifier, metadata))
 
-    update_user.__doc__ = LiteralAPI.update_user.__doc__
-
     async def delete_user(self, id: str) -> Dict:
         return await self.gql_helper(*delete_user_helper(id))
     
-    delete_user.__doc__ = LiteralAPI.delete_user.__doc__
-
     async def get_or_create_user(
         self, identifier: str, metadata: Optional[Dict] = None
     ):
@@ -1620,8 +997,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             return user
 
         return await self.create_user(identifier, metadata)
-
-    get_or_create_user.__doc__ = LiteralAPI.get_or_create_user.__doc__
 
     ##################################################################################
     #                                 Thread APIs                                    #
@@ -1642,8 +1017,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             )
         )
     
-    get_threads.__doc__ = LiteralAPI.get_threads.__doc__
-
     async def list_threads(
         self,
         first: Optional[int] = None,
@@ -1655,13 +1028,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(
             *list_threads_helper(first, after, before, filters, order_by)
         )
-    
-    list_threads.__doc__ = LiteralAPI.list_threads.__doc__
 
     async def get_thread(self, id: str) -> Thread:
         return await self.gql_helper(*get_thread_helper(id))
-
-    get_thread.__doc__ = LiteralAPI.get_thread.__doc__
 
     async def create_thread(
         self,
@@ -1673,8 +1042,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(
             *create_thread_helper(name, metadata, participant_id, tags)
         )
-
-    create_thread.__doc__ = LiteralAPI.create_thread.__doc__
 
     async def upsert_thread(
         self,
@@ -1688,8 +1055,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *upsert_thread_helper(id, name, metadata, participant_id, tags)
         )
 
-    upsert_thread.__doc__ = LiteralAPI.upsert_thread.__doc__
-
     async def update_thread(
         self,
         id: str,
@@ -1702,12 +1067,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *update_thread_helper(id, name, metadata, participant_id, tags)
         )
 
-    update_thread.__doc__ = LiteralAPI.update_thread.__doc__
-
     async def delete_thread(self, id: str) -> bool:
         return await self.gql_helper(*delete_thread_helper(id))
-
-    delete_thread.__doc__ = LiteralAPI.delete_thread.__doc__
 
     ##################################################################################
     #                                  Score APIs                                    #
@@ -1726,8 +1087,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *get_scores_helper(first, after, before, filters, order_by)
         )
 
-    get_scores.__doc__ = LiteralAPI.get_scores.__doc__
-
     async def create_scores(self, scores: List[ScoreDict]):
         check_scores_finite(scores)
 
@@ -1744,8 +1103,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(
             query, "create scores", variables, process_response
         )
-
-    create_scores.__doc__ = LiteralAPI.create_scores.__doc__
 
     async def create_score(
         self,
@@ -1776,8 +1133,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             )
         )
 
-    create_score.__doc__ = LiteralAPI.create_score.__doc__
-
     async def update_score(
         self,
         id: str,
@@ -1785,12 +1140,8 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     ) -> Score:
         return await self.gql_helper(*update_score_helper(id, update_params))
 
-    update_score.__doc__ = LiteralAPI.update_score.__doc__
-
     async def delete_score(self, id: str):
         return await self.gql_helper(*delete_score_helper(id))
-
-    delete_score.__doc__ = LiteralAPI.delete_score.__doc__
 
     ##################################################################################
     #                                Attachment APIs                                 #
@@ -1866,12 +1217,10 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 logger.error(f"Failed to upload file: {str(e)}")
                 return {"object_key": None, "url": None}
 
-    upload_file.__doc__ = LiteralAPI.upload_file.__doc__
-
     async def create_attachment(
         self,
-        thread_id: str,
-        step_id: str,
+        thread_id: Optional[str] = None,
+        step_id: Optional[str] = None,
         id: Optional[str] = None,
         metadata: Optional[Dict] = None,
         mime: Optional[str] = None,
@@ -1881,6 +1230,16 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         content: Optional[Union[bytes, str]] = None,
         path: Optional[str] = None,
     ) -> "Attachment":
+        if not thread_id:
+            if active_thread := active_thread_var.get(None):
+                thread_id = active_thread.id
+
+        if not step_id:
+            if active_steps := active_steps_var.get([]):
+                step_id = active_steps[-1].id
+            else:
+                raise Exception("No step_id provided and no active step found.")
+
         (
             query,
             description,
@@ -1917,22 +1276,14 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         response = await self.make_gql_call(description, query, variables)
         return process_response(response)
 
-    create_attachment.__doc__ = LiteralAPI.create_attachment.__doc__
-
     async def update_attachment(self, id: str, update_params: AttachmentUpload) -> Attachment:
         return await self.gql_helper(*update_attachment_helper(id, update_params))
-
-    update_attachment.__doc__ = LiteralAPI.update_attachment.__doc__
 
     async def get_attachment(self, id: str) -> Optional[Attachment]:
         return await self.gql_helper(*get_attachment_helper(id))
 
-    get_attachment.__doc__ = LiteralAPI.get_attachment.__doc__
-
     async def delete_attachment(self, id: str):
         return await self.gql_helper(*delete_attachment_helper(id))
-
-    delete_attachment.__doc__ = LiteralAPI.delete_attachment.__doc__
 
     ##################################################################################
     #                                     Step APIs                                  #
@@ -1969,8 +1320,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             )
         )
 
-    create_step.__doc__ = LiteralAPI.create_step.__doc__
-
     async def update_step(
         self,
         id: str,
@@ -1999,8 +1348,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             )
         )
 
-    update_step.__doc__ = LiteralAPI.update_step.__doc__
-
     async def get_steps(
         self,
         first: Optional[int] = None,
@@ -2013,15 +1360,11 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *get_steps_helper(first, after, before, filters, order_by)
         )
 
-    get_steps.__doc__ = LiteralAPI.get_steps.__doc__
-
     async def get_step(
         self,
         id: str,
     ) -> Optional[Step]:
         return await self.gql_helper(*get_step_helper(id=id))
-
-    get_step.__doc__ = LiteralAPI.get_step.__doc__
 
     async def delete_step(
         self,
@@ -2029,14 +1372,12 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     ) -> bool:
         return await self.gql_helper(*delete_step_helper(id=id))
 
-    delete_step.__doc__ = LiteralAPI.delete_step.__doc__
-
     async def send_steps(self, steps: List[Union[StepDict, "Step"]]):
         return await self.gql_helper(*send_steps_helper(steps=steps))
 
-    send_steps.__doc__ = LiteralAPI.send_steps.__doc__
-
-    # Generation API
+    ##################################################################################
+    #                                 Generation APIs                                #
+    ##################################################################################
 
     async def get_generations(
         self,
@@ -2046,42 +1387,18 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         filters: Optional[generations_filters] = None,
         order_by: Optional[generations_order_by] = None,
     ):
-        """
-        Asynchronously fetches a list of generations based on pagination and optional filters.
-
-        Args:
-            first (Optional[int]): The number of generations to retrieve.
-            after (Optional[str]): A cursor for use in pagination, fetching records after this cursor.
-            before (Optional[str]): A cursor for use in pagination, fetching records before this cursor.
-            filters (Optional[generations_filters]): Filters to apply to the generations query.
-            order_by (Optional[generations_order_by]): Ordering options for the generations.
-
-        Returns:
-            The result of the GraphQL helper function for fetching generations.
-        """
         return await self.gql_helper(
             *get_generations_helper(first, after, before, filters, order_by)
         )
     
-    get_generations.__doc__ = LiteralAPI.get_generations.__doc__
-
     async def create_generation(
         self, generation: Union[ChatGeneration, CompletionGeneration]
     ):
-        """
-        Asynchronously creates a new generation with the specified details.
-
-        Args:
-            generation (Union[ChatGeneration, CompletionGeneration]): The generation data to create.
-
-        Returns:
-            The result of the GraphQL helper function for creating a generation.
-        """
         return await self.gql_helper(*create_generation_helper(generation))
 
-    create_generation.__doc__ = LiteralAPI.create_generation.__doc__
-
-    # Dataset API
+    ##################################################################################
+    #                                  Dataset APIs                                  #
+    ##################################################################################
 
     async def create_dataset(
         self,
@@ -2090,44 +1407,18 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         metadata: Optional[Dict] = None,
         type: DatasetType = "key_value",
     ):
-        """
-        Asynchronously creates a new dataset with the specified details.
-
-        Args:
-            name (str): The name of the dataset.
-            description (Optional[str]): A description of the dataset.
-            metadata (Optional[Dict]): Metadata associated with the dataset.
-            type (DatasetType): The type of the dataset, defaults to "key_value".
-
-        Returns:
-            The result of the GraphQL helper function for creating a dataset.
-        """
         sync_api = LiteralAPI(self.api_key, self.url)
         return await self.gql_helper(
             *create_dataset_helper(sync_api, name, description, metadata, type)
         )
     
-    create_dataset.__doc__ = LiteralAPI.create_dataset.__doc__
-
     async def get_dataset(self, id: Optional[str] = None, name: Optional[str] = None):
-        """
-        Asynchronously retrieves a dataset by its ID or name.
-
-        Args:
-            id (Optional[str]): The unique identifier of the dataset to retrieve.
-            name (Optional[str]): The name of the dataset to retrieve.
-
-        Returns:
-            The processed response from the REST API call.
-        """
         sync_api = LiteralAPI(self.api_key, self.url)
         subpath, _, variables, process_response = get_dataset_helper(
             sync_api, id=id, name=name
         )
         response = await self.make_rest_call(subpath, variables)
         return process_response(response)
-
-    get_dataset.__doc__ = LiteralAPI.get_dataset.__doc__
 
     async def update_dataset(
         self,
@@ -2136,41 +1427,18 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         description: Optional[str] = None,
         metadata: Optional[Dict] = None,
     ):
-        """
-        Asynchronously updates an existing dataset identified by its ID with new details.
-
-        Args:
-            id (str): The unique identifier of the dataset to update.
-            name (Optional[str]): The new name of the dataset.
-            description (Optional[str]): A new description for the dataset.
-            metadata (Optional[Dict]): New metadata for the dataset.
-
-        Returns:
-            The result of the GraphQL helper function for updating a dataset.
-        """
         sync_api = LiteralAPI(self.api_key, self.url)
         return await self.gql_helper(
             *update_dataset_helper(sync_api, id, name, description, metadata)
         )
 
-    update_dataset.__doc__ = LiteralAPI.update_dataset.__doc__
-
     async def delete_dataset(self, id: str):
-        """
-        Asynchronously deletes a dataset identified by its ID.
-
-        Args:
-            id (str): The unique identifier of the dataset to delete.
-
-        Returns:
-            The result of the GraphQL helper function for deleting a dataset.
-        """
         sync_api = LiteralAPI(self.api_key, self.url)
         return await self.gql_helper(*delete_dataset_helper(sync_api, id))
 
-    delete_dataset.__doc__ = LiteralAPI.delete_dataset.__doc__
-
-    # Dataset Experiment APIs
+    ##################################################################################
+    #                                 Experiment APIs                                #
+    ##################################################################################
 
     async def create_experiment(
         self,
@@ -2191,20 +1459,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             )
         )
 
-    create_experiment.__doc__ = LiteralAPI.create_experiment.__doc__
-
     async def create_experiment_item(
         self, experiment_item: DatasetExperimentItem
     ) -> DatasetExperimentItem:
-        """
-        Asynchronously creates an item within an experiment.
-
-        Args:
-            experiment_item (DatasetExperimentItem): The experiment item to be created.
-
-        Returns:
-            DatasetExperimentItem: The created experiment item with updated scores.
-        """
         check_scores_finite(experiment_item.scores)
 
         # Create the dataset experiment item
@@ -2226,9 +1483,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
         return result
     
-    create_experiment_item.__doc__ = LiteralAPI.create_experiment_item.__doc__
-
-    # DatasetItem API
+    ##################################################################################
+    #                                 DatasetItem APIs                               #
+    ##################################################################################
 
     async def create_dataset_item(
         self,
@@ -2241,17 +1498,11 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *create_dataset_item_helper(dataset_id, input, expected_output, metadata)
         )
     
-    create_dataset_item.__doc__ = LiteralAPI.create_dataset_item.__doc__
-
     async def get_dataset_item(self, id: str):
         return await self.gql_helper(*get_dataset_item_helper(id))
 
-    get_dataset_item.__doc__ = LiteralAPI.get_dataset_item.__doc__
-    
     async def delete_dataset_item(self, id: str):
         return await self.gql_helper(*delete_dataset_item_helper(id))
-
-    delete_dataset_item.__doc__ = LiteralAPI.delete_dataset_item.__doc__
 
     async def add_step_to_dataset(
         self, dataset_id: str, step_id: str, metadata: Optional[Dict] = None
@@ -2260,8 +1511,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *add_step_to_dataset_helper(dataset_id, step_id, metadata)
         )
 
-    add_step_to_dataset.__doc__ = LiteralAPI.add_step_to_dataset.__doc__
-
     async def add_generation_to_dataset(
         self, dataset_id: str, generation_id: str, metadata: Optional[Dict] = None
     ) -> DatasetItem:
@@ -2269,23 +1518,18 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *add_generation_to_dataset_helper(dataset_id, generation_id, metadata)
         )
 
-    add_generation_to_dataset.__doc__ = LiteralAPI.add_generation_to_dataset.__doc__
-    # Prompt API
+    ##################################################################################
+    #                                   Prompt APIs                                  #
+    ##################################################################################
 
     async def get_or_create_prompt_lineage(
         self, name: str, description: Optional[str] = None
     ):
         return await self.gql_helper(*create_prompt_lineage_helper(name, description))
 
-    get_or_create_prompt_lineage.__doc__ = (
-        LiteralAPI.get_or_create_prompt_lineage.__doc__
-    )
-
     @deprecated('Please use "get_or_create_prompt_lineage" instead.')
     async def create_prompt_lineage(self, name: str, description: Optional[str] = None):
         return await self.get_or_create_prompt_lineage(name, description)
-
-    create_prompt_lineage.__doc__ = LiteralAPI.create_prompt_lineage.__doc__
 
     async def get_or_create_prompt(
         self,
@@ -2304,9 +1548,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             )
         )
 
-    get_or_create_prompt.__doc__ = LiteralAPI.get_or_create_prompt.__doc__
-
-    @deprecated('Please use "get_or_create_prompt" instead.')
+    @deprecated("Please use `get_or_create_prompt` instead.")
     async def create_prompt(
         self,
         name: str,
@@ -2314,8 +1556,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         settings: Optional[ProviderSettings] = None,
     ):
         return await self.get_or_create_prompt(name, template_messages, settings)
-
-    create_prompt.__doc__ = LiteralAPI.create_prompt.__doc__
 
     async def create_prompt_variant(
         self,
@@ -2331,8 +1571,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 lineage_id, template_messages, settings, tools
             )
         )
-
-    create_prompt_variant.__doc__ = LiteralAPI.create_prompt_variant.__doc__
 
     async def get_prompt(
         self,
@@ -2350,8 +1588,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         else:
             raise ValueError("Either the `id` or the `name` must be provided.")
 
-    get_prompt.__doc__ = LiteralAPI.get_prompt.__doc__
-
     async def update_prompt_ab_testing(
         self, name: str, rollouts: List[PromptRollout]
     ) -> Dict:
@@ -2359,17 +1595,13 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             *update_prompt_ab_testing_helper(name=name, rollouts=rollouts)
         )
 
-    update_prompt_ab_testing.__doc__ = LiteralAPI.update_prompt_ab_testing.__doc__
-
     async def get_prompt_ab_testing(self, name: str) -> List[PromptRollout]:
         return await self.gql_helper(*get_prompt_ab_testing_helper(name=name))
 
-    get_prompt_ab_testing.__doc__ = LiteralAPI.get_prompt_ab_testing.__doc__
-
-    # Misc API
+    ##################################################################################
+    #                                    Misc APIs                                   #
+    ##################################################################################
 
     async def get_my_project_id(self):
         response = await self.make_rest_call("/my-project", {})
         return response["projectId"]
-
-    get_my_project_id.__doc__ = LiteralAPI.get_my_project_id.__doc__

@@ -36,7 +36,7 @@ def get_users_helper(
 def create_user_helper(identifier: str, metadata: Optional[Dict] = None):
     variables = {"identifier": identifier, "metadata": metadata}
 
-    def process_response(response):
+    def process_response(response) -> User:
         return User.from_dict(response["data"]["createParticipant"])
 
     description = "create user"
