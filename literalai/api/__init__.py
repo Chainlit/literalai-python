@@ -147,6 +147,7 @@ class SharedCache:
     Only one instance will exist regardless of how many times it's instantiated.
     """
     _instance = None
+    _cache: dict[str, Any]
 
     def __new__(cls):
         if cls._instance is None:
