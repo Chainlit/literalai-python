@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Optional, TypedDict, Callable
 from literalai.observability.generation import GenerationMessage
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
+from literalai.cache.prompt_helpers import put_prompt
+
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
     from literalai.api import SharedCache
@@ -90,7 +92,7 @@ def get_prompt_helper(
         prompt_version = response["data"]["promptVersion"]
         prompt = Prompt.from_dict(api, prompt_version) if prompt_version else None
         if cache and prompt:
-            cache.put_prompt(prompt)
+            put_prompt(cache, prompt)
         return prompt
 
     description = "get prompt"

@@ -103,6 +103,7 @@ from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 import httpx
 
+from literalai.cache.shared_cache import SharedCache
 from literalai.my_types import Environment, PaginatedResponse
 from literalai.observability.generation import (
     ChatGeneration,
@@ -139,51 +140,6 @@ def _prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
         return item
 
     return handle_bytes(variables)
-
-
-class SharedCache:
-    """
-    Singleton cache for storing data.
-    Only one instance will exist regardless of how many times it's instantiated.
-    """
-    _instance = None
-    _cache: dict[str, Any]
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._cache = {}
-        return cls._instance
-
-    def get_cache(self) -> dict[str, Any]:
-        return self._cache
-
-    def get(self, key: str) -> Optional[Any]:
-        """
-        Retrieves a value from the cache using the provided key.
-        """
-        if not isinstance(key, str):
-            raise TypeError("Key must be a string")
-        return self._cache.get(key)
-
-    def put(self, key: str, value: Any):
-        """
-        Stores a value in the cache.
-        """
-        if not isinstance(key, str):
-            raise TypeError("Key must be a string")
-        self._cache[key] = value
-
-    def put_prompt(self, prompt: Prompt):
-        self.put(prompt.id, prompt)
-        self.put(prompt.name, prompt)
-        self.put(f"{prompt.name}-{prompt.version}", prompt)
-
-    def clear(self) -> None:
-        """
-        Clears all cached values.
-        """
-        self._cache.clear()
 
 
 class BaseLiteralAPI:

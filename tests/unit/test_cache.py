@@ -1,7 +1,9 @@
 import pytest
 
 from literalai.prompt_engineering.prompt import Prompt
-from literalai.api import SharedCache, LiteralAPI
+from literalai.api import LiteralAPI
+from literalai.cache.shared_cache import SharedCache
+from literalai.cache.prompt_helpers import put_prompt
 
 def default_prompt(id: str = "1", name: str = "test", version: int = 1) -> Prompt:
     return Prompt(
@@ -41,7 +43,7 @@ def test_put_and_get_prompt_by_id_by_name_version_by_name():
     cache.clear()
     
     prompt = default_prompt()
-    cache.put_prompt(prompt)
+    put_prompt(cache, prompt)
     
     retrieved_by_id = cache.get(id="1")
     assert retrieved_by_id is prompt
@@ -56,7 +58,7 @@ def test_clear_cache():
     """Test clearing the cache"""
     cache = SharedCache()
     prompt = default_prompt()
-    cache.put_prompt(prompt)
+    put_prompt(cache, prompt)
     
     cache.clear()
     assert cache.get_cache() == {}
