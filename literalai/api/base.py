@@ -17,9 +17,9 @@ from literalai.evaluation.dataset import DatasetType
 from literalai.evaluation.dataset_experiment import (
     DatasetExperimentItem,
 )
-from literalai.api.attachment_helpers import (
+from literalai.api.helpers.attachment_helpers import (
     AttachmentUpload)
-from literalai.api.score_helpers import (
+from literalai.api.helpers.score_helpers import (
     ScoreUpdate,
 )
 
