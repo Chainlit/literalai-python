@@ -17,14 +17,14 @@ from typing import (
 
 from literalai.api.base import BaseLiteralAPI, prepare_variables
 
-from literalai.api.attachment_helpers import (
+from literalai.api.helpers.attachment_helpers import (
     AttachmentUpload,
     create_attachment_helper,
     delete_attachment_helper,
     get_attachment_helper,
     update_attachment_helper,
 )
-from literalai.api.dataset_helpers import (
+from literalai.api.helpers.dataset_helpers import (
     add_generation_to_dataset_helper,
     add_step_to_dataset_helper,
     create_dataset_helper,
@@ -37,7 +37,7 @@ from literalai.api.dataset_helpers import (
     get_dataset_item_helper,
     update_dataset_helper,
 )
-from literalai.api.generation_helpers import (
+from literalai.api.helpers.generation_helpers import (
     create_generation_helper,
     get_generations_helper,
 )
@@ -51,7 +51,7 @@ from literalai.api.helpers.prompt_helpers import (
     get_prompt_lineage_helper,
     update_prompt_ab_testing_helper,
 )
-from literalai.api.score_helpers import (
+from literalai.api.helpers.score_helpers import (
     ScoreUpdate,
     check_scores_finite,
     create_score_helper,
@@ -60,7 +60,7 @@ from literalai.api.score_helpers import (
     get_scores_helper,
     update_score_helper,
 )
-from literalai.api.step_helpers import (
+from literalai.api.helpers.step_helpers import (
     create_step_helper,
     delete_step_helper,
     get_step_helper,
@@ -68,7 +68,7 @@ from literalai.api.step_helpers import (
     send_steps_helper,
     update_step_helper,
 )
-from literalai.api.thread_helpers import (
+from literalai.api.helpers.thread_helpers import (
     create_thread_helper,
     delete_thread_helper,
     get_thread_helper,
@@ -77,7 +77,7 @@ from literalai.api.thread_helpers import (
     update_thread_helper,
     upsert_thread_helper,
 )
-from literalai.api.user_helpers import (
+from literalai.api.helpers.user_helpers import (
     create_user_helper,
     delete_user_helper,
     get_user_helper,
