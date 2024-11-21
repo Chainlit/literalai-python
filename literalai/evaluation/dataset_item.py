@@ -17,7 +17,7 @@ class DatasetItemDict(TypedDict, total=False):
 @dataclass(repr=False)
 class DatasetItem(Utils):
     """
-    A `Dataset` item.
+    A `Dataset` item, containing `input`, `expectedOutput` and `metadata`.
     """
     id: str
     created_at: str

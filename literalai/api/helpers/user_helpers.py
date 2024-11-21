@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from literalai.observability.filter import users_filters
 from literalai.my_types import PaginatedResponse, User
 
-from literalai.api import gql
+from literalai.api.helpers import gql
 
 
 def get_users_helper(

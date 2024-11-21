@@ -1,6 +1,8 @@
 from literalai.client import AsyncLiteralClient, LiteralClient
 from literalai.evaluation.dataset import Dataset
 from literalai.evaluation.dataset_item import DatasetItem
+from literalai.evaluation.dataset_experiment import DatasetExperiment, DatasetExperimentItem
+from literalai.prompt_engineering.prompt import Prompt
 from literalai.my_types import *  # noqa
 from literalai.observability.generation import (
     BaseGeneration,
@@ -27,5 +29,8 @@ __all__ = [
     "Dataset",
     "Attachment",
     "DatasetItem",
+    "DatasetExperiment",
+    "DatasetExperimentItem",
+    "Prompt",
     "__version__",
 ]

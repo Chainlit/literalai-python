@@ -3,7 +3,7 @@ from typing import Dict, Optional, TypedDict, Union
 
 from literalai.observability.step import Attachment
 
-from literalai.api import gql
+from literalai.api.helpers import gql
 
 
 def create_attachment_helper(

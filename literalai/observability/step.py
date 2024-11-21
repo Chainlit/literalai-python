@@ -68,6 +68,16 @@ class AttachmentDict(TypedDict, total=False):
 
 @dataclass(repr=False)
 class Score(Utils):
+    """
+    A score captures information about the quality of a step/experiment item. 
+    It can be of type either:
+    - HUMAN: to capture human feedback
+    - CODE: to capture the result of a code execution (deterministic)
+    - AI: to capture the result of an AI model or a hybrid approach including code as well (non-deterministic)
+
+    Learn more about scores [here](https://docs.literalai.com/guides/settings/scoring#score-schemas).
+    """
+
     name: str
     type: ScoreType
     value: float
@@ -116,6 +126,10 @@ class Score(Utils):
 
 @dataclass(repr=False)
 class Attachment(Utils):
+    """
+    An attachment is an object that can be associated with a step. 
+    It can be an image, a file, a video, etc.
+    """
     step_id: Optional[str] = None
     thread_id: Optional[str] = None
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -276,77 +290,31 @@ class Step(Utils):
 
     ## Step parameters
 
-    <ParamField path="thread_id" type="uuid">
-    The id of the thread
-    </ParamField>
-
-    <ParamField path="id" type="uuid">
-    The id of the step. If not provided, a random uuid will be generated. Use
-    custom ones to match your own system. Step ids must be unique across your
-    project.
-    </ParamField>
-
-    <ParamField path="name" type="string" default="">
-    The name of the step (automatically set to the function name if using the
-    decorator)
-    </ParamField>
-
-    <ParamField path="type" type="StepType" default="undefined">
-    The type of the step. A Step can be one of the following types:
-
-    - `run`: A generic step
-    - `tool`: A step that runs a tool
-    - `llm`: A step that runs a language model
-    - `embedding`: A step that runs an embedding model
-    - `retrieval`: A step that retrieves documents
-    - `rerank`: A step that reranks documents
-    - `undefined`: An undefined step
-
-    </ParamField>
-
-    <ParamField path="metadata" type="dict" default="{}">
-    Metadata associated with the step. This enables you to add custom fields to
-    your steps.
-    </ParamField>
-
-    <ParamField path="parent_id" type="uuid">
-    The id of the parent step. This enables you to create nested steps.
-    </ParamField>
-
-    <ParamField path="start_time" type="string">
-    The start time of the step.
-    </ParamField>
-
-    <ParamField path="end_time" type="string">
-    The end time of the step.
-    </ParamField>
-
-    <ParamField path="created_at" type="string">
-    The server-side creation time of the step.
-    </ParamField>
-
-    <ParamField path="input" type="dict">
-    A dictionary symbolizing an input.
-    Prefer using `content` key to store a message.
-    </ParamField>
-
-    <ParamField path="output" type="dict">
-    A dictionary symbolizing an output.
-    Prefer using `content` key to store a message.
-    </ParamField>
-
-    <ParamField path="tags" type="List[str]" default="[]">
-    The tags of the step. This is a complimentary field to the metadata field. It
-    enables you to add custom tags to your steps.
-    </ParamField>
-
-    <ParamField path="generation" type="BaseGeneration">
-    The generation object associated with the step.
-    </ParamField>
-
-    <ParamField path="attachments" type="List[Attachment]" default="[]">
-    The attachments associated with the step.
-    </ParamField>
+    Attributes:
+        **thread_id** (Optional[str]): The id of the thread.
+        **id** (Optional[str]): The id of the step. If not provided, a random uuid will be generated. Use
+          custom ones to match your own system. Step ids must be unique across your
+          project.
+        **name** (Optional[str]): The name of the step (automatically set to the function name if using the
+          decorator).
+        **type** (Optional[StepType]): The type of the step. A Step can be one of the following types:
+          - `run`: A generic step
+          - `tool`: A step that runs a tool
+          - `llm`: A step that runs a language model
+          - `embedding`: A step that runs an embedding model
+          - `retrieval`: A step that retrieves documents
+          - `rerank`: A step that reranks documents
+          - `undefined`: An undefined step
+        **metadata** (Optional[Dict]): Metadata associated with the step. This enables you to add custom fields to your steps.
+        **parent_id** (Optional[str]): The id of the parent step. This enables you to create nested steps.
+        **start_time** (Optional[str]): The start time of the step.
+        **end_time** (Optional[str]): The end time of the step.
+        **created_at** (Optional[str]): The server-side creation time of the step.
+        **input** (Optional[Dict]): A dictionary symbolizing an input. Prefer using `content` key to store a message.
+        **output** (Optional[Dict]): A dictionary symbolizing an output. Prefer using `content` key to store a message.
+        **tags** (Optional[List[str]]): The tags of the step. This is a complimentary field to the metadata field. It enables you to add custom tags to your steps.
+        **generation** (Optional[Union[ChatGeneration, CompletionGeneration]]): The generation object associated with the step.
+        **attachments** (Optional[List[Attachment]]): The attachments associated with the step.
     """
 
     id: str

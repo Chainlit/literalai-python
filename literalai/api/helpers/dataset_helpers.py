@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Dict, Optional
 
-from literalai.api import gql
+from literalai.api.helpers import gql
 from literalai.evaluation.dataset import Dataset, DatasetType
 from literalai.evaluation.dataset_experiment import (
     DatasetExperiment,

@@ -4,7 +4,7 @@ from literalai.observability.filter import steps_filters, steps_order_by
 from literalai.my_types import PaginatedResponse
 from literalai.observability.step import Step, StepDict, StepType
 
-from literalai.api import gql
+from literalai.api.helpers import gql
 
 
 def create_step_helper(

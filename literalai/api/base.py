@@ -2,6 +2,7 @@ import os
 
 from abc import ABC, abstractmethod
 from typing import (
+    Any,
     Dict,
     List,
     Optional,
@@ -36,7 +37,7 @@ from literalai.observability.filter import (
 from literalai.prompt_engineering.prompt import ProviderSettings
 
 
-from literalai.api.prompt_helpers import (
+from literalai.api.helpers.prompt_helpers import (
     PromptRollout)
 
 from literalai.observability.generation import (
@@ -52,6 +53,23 @@ from literalai.observability.step import (
     StepType,
 )
 
+def prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively checks and converts bytes objects in variables.
+    """
+
+    def handle_bytes(item):
+        if isinstance(item, bytes):
+            return "STRIPPED_BINARY_DATA"
+        elif isinstance(item, dict):
+            return {k: handle_bytes(v) for k, v in item.items()}
+        elif isinstance(item, list):
+            return [handle_bytes(i) for i in item]
+        elif isinstance(item, tuple):
+            return tuple(handle_bytes(i) for i in item)
+        return item
+
+    return handle_bytes(variables)
 
 class BaseLiteralAPI(ABC):
     def __init__(
@@ -503,13 +521,13 @@ class BaseLiteralAPI(ABC):
     @abstractmethod
     def get_attachment(self, id: str):
         """
-        Retrieves an attachment by its ID.
+        Retrieves an attachment by ID.
 
         Args:
-            id (str): The unique identifier of the attachment to retrieve.
+            id (str): ID of the attachment to retrieve.
 
         Returns:
-            The attachment data as returned by the GraphQL helper function.
+            `Attachment`: The attachment object with requested ID.
         """
         pass
 
@@ -701,7 +719,7 @@ class BaseLiteralAPI(ABC):
         from literalai.observability.generation import ChatGeneration
         from literalai import LiteralClient
 
-        literalai_client = LiteralClient(api_key=)
+        literalai_client = LiteralClient(api_key="lsk-***")
 
         example_generation = ChatGeneration(
             messages=[
@@ -725,7 +743,7 @@ class BaseLiteralAPI(ABC):
             generation (Union[ChatGeneration, CompletionGeneration]): The generation data to create.
 
         Returns:
-            The result of the creation operation.
+            `Union[ChatGeneration, CompletionGeneration]`: The created generation, either a chat or completion type.
         """
         pass
 
@@ -747,7 +765,7 @@ class BaseLiteralAPI(ABC):
             type (DatasetType): The type of the dataset, defaults to "key_value".
 
         Returns:
-            The result of the dataset creation operation.
+            `Dataset`: The created dataset, empty initially.
         """
         pass
 
@@ -785,7 +803,7 @@ class BaseLiteralAPI(ABC):
             metadata (Optional[Dict]): New or updated metadata for the dataset.
 
         Returns:
-            The result of the dataset update operation.
+            `Dataset`: The dataset with updated properties.
         """
         pass
 
@@ -798,7 +816,7 @@ class BaseLiteralAPI(ABC):
             id (str): The unique identifier of the dataset to delete.
 
         Returns:
-            The result of the deletion operation.
+            `Dataset`: The deleted dataset.
         """
         pass
 
@@ -942,7 +960,7 @@ class BaseLiteralAPI(ABC):
             description (Optional[str]): An optional description of the prompt lineage.
 
         Returns:
-            Dict: The result of the prompt lineage creation operation.
+            `Dict`: The prompt lineage data as a dictionary.
         """
         pass
 
@@ -954,6 +972,9 @@ class BaseLiteralAPI(ABC):
         template_messages: List[GenerationMessage],
         settings: Optional[ProviderSettings] = None,
     ):
+        """
+        Deprecated. Please use `get_or_create_prompt` instead.
+        """
         pass
 
     @abstractmethod
@@ -1059,9 +1080,9 @@ class BaseLiteralAPI(ABC):
     @abstractmethod
     def get_my_project_id(self):
         """
-        Retrieves the projectId associated to the API key.
+        Retrieves the project ID associated with the API key.
 
         Returns:
-            The projectId associated to the API key.
+            `str`: The project ID for current API key.
         """
         pass

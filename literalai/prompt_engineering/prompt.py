@@ -67,22 +67,22 @@ class Prompt(Utils):
 
     Attributes
     ----------
-    template_messages : List[GenerationMessage] 
-        The messages that make up the prompt. Messages can be of type `text` or `image`.
-        Messages can reference variables.
-    variables : List[PromptVariable]
-        Variables exposed in the prompt.
-    tools : Optional[List[Dict]]
-        Tools LLM can pick from.
-    settings : ProviderSettings
-        LLM provider settings.
+        template_messages : List[GenerationMessage] 
+            The messages that make up the prompt. Messages can be of type `text` or `image`.
+            Messages can reference variables.
+        variables : List[PromptVariable]
+            Variables exposed in the prompt.
+        tools : Optional[List[Dict]]
+            Tools LLM can pick from.
+        settings : ProviderSettings
+            LLM provider settings.
 
     Methods
     -------
-    format_messages(**kwargs: Any):
-        Formats the prompt's template messages with the given variables.
-        Variables may be passed as a dictionary or as keyword arguments.
-        Keyword arguments take precedence over variables passed as a dictionary.
+        format_messages(**kwargs: Any):
+            Formats the prompt's template messages with the given variables.
+            Variables may be passed as a dictionary or as keyword arguments.
+            Keyword arguments take precedence over variables passed as a dictionary.
     """
 
     api: "LiteralAPI"
@@ -188,6 +188,9 @@ class Prompt(Utils):
         return self.format_messages(**(variables or {}))
 
     def to_langchain_chat_prompt_template(self, additional_messages=[]):
+        """
+        Converts a Literal AI prompt to a LangChain prompt template format.
+        """
         try:
             version("langchain")
         except Exception:

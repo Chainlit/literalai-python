@@ -21,6 +21,9 @@ class DatasetExperimentItemDict(TypedDict, total=False):
 
 @dataclass(repr=False)
 class DatasetExperimentItem(Utils):
+    """
+    An item of a `DatasetExperiment`: it may be linked to a `DatasetItem`.
+    """
     id: str
     dataset_experiment_id: str
     dataset_item_id: Optional[str]
@@ -64,7 +67,6 @@ class DatasetExperimentDict(TypedDict, total=False):
 
 
 @dataclass(repr=False)
-# TODO: Rename to Experiment
 class DatasetExperiment(Utils):
     """
     An experiment, linked or not to a `Dataset`.
@@ -79,6 +81,9 @@ class DatasetExperiment(Utils):
     items: List[DatasetExperimentItem] = field(default_factory=lambda: [])
 
     def log(self, item_dict: DatasetExperimentItemDict) -> DatasetExperimentItem:
+        """
+        Logs an item to the dataset experiment.
+        """
         experiment_run_id = active_experiment_item_run_id_var.get()
         dataset_experiment_item = DatasetExperimentItem.from_dict(
             {
