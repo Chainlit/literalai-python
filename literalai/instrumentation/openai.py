@@ -352,7 +352,6 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
             if not generation:
                 return result
 
-            print(result)
             if model := getattr(result, "model", None):
                 generation.model = model
                 if generation.settings:
