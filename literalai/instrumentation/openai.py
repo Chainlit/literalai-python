@@ -310,6 +310,8 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 and generation.model != chunk.model
             ):
                 generation.model = chunk.model
+                if generation.settings:
+                    generation.settings["model"] = chunk.model
 
             yield chunk
 
@@ -350,6 +352,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
             if not generation:
                 return result
 
+            print(result)
             if model := getattr(result, "model", None):
                 generation.model = model
                 if generation.settings:
