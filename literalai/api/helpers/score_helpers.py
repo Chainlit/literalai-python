@@ -5,7 +5,7 @@ from literalai.observability.filter import scores_filters, scores_order_by
 from literalai.my_types import PaginatedResponse
 from literalai.observability.step import ScoreType, ScoreDict, Score
 
-from literalai.api import gql
+from literalai.api.helpers import gql
 
 
 def get_scores_helper(

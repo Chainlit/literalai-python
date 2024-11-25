@@ -6,7 +6,7 @@ from literalai.my_types import (
 )
 from literalai.observability.generation import BaseGeneration, CompletionGeneration, ChatGeneration
 
-from literalai.api import gql
+from literalai.api.helpers import gql
 
 
 def get_generations_helper(

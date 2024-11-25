@@ -98,6 +98,9 @@ is_mistralai_instrumented = False
 
 
 def instrument_mistralai(client: "LiteralClient", on_new_generation=None):
+    """
+    Instruments all Mistral AI LLM calls to automatically send logs to Literal AI.
+    """
     global is_mistralai_instrumented
     if is_mistralai_instrumented:
         return
