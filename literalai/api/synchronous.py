@@ -144,19 +144,19 @@ class LiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
 
     def make_gql_call(
-        self, description: str, query: str, variables: Dict[str, Any]
-    ) -> Dict:
+        self, description: str, query: str, variables: dict[str, Any], timeout: Optional[int] = 10
+    ) -> dict:
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
 
-        variables = prepare_variables(variables)
+        variables = _prepare_variables(variables)
         with httpx.Client(follow_redirects=True) as client:
             response = client.post(
                 self.graphql_endpoint,
                 json={"query": query, "variables": variables},
                 headers=self.headers,
-                timeout=10,
+                timeout=timeout,
             )
 
             try:
@@ -177,7 +177,7 @@ class LiteralAPI(BaseLiteralAPI):
 
             if json.get("data"):
                 if isinstance(json["data"], dict):
-                    for _, value in json["data"].items():
+                    for value in json["data"].values():
                         if value and value.get("ok") is False:
                             raise_error(
                                 f"""Failed to {description}: {
@@ -185,7 +185,6 @@ class LiteralAPI(BaseLiteralAPI):
                             )
 
             return json
-
 
     def make_rest_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
         with httpx.Client(follow_redirects=True) as client:

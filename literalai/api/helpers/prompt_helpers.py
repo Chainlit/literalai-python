@@ -7,7 +7,7 @@ from literalai.cache.prompt_helpers import put_prompt
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
-    from literalai.api import SharedCache
+    from literalai.cache.shared_cache import SharedCache
 
 from literalai.api.helpers import gql
 

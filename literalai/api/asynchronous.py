@@ -106,9 +106,6 @@ from literalai.observability.filter import (
 from literalai.observability.thread import Thread
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
-if TYPE_CHECKING:
-    from typing import Tuple  # noqa: F401
-
 import httpx
 
 from literalai.my_types import PaginatedResponse, User
@@ -145,20 +142,20 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
 
     async def make_gql_call(
-        self, description: str, query: str, variables: Dict[str, Any]
+        self, description: str, query: str, variables: Dict[str, Any], timeout: Optional[int] = 10
     ) -> Dict:
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
 
-        variables = prepare_variables(variables)
+        variables = _prepare_variables(variables)
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.post(
                 self.graphql_endpoint,
                 json={"query": query, "variables": variables},
                 headers=self.headers,
-                timeout=10,
+                timeout=timeout,
             )
 
             try:
@@ -179,13 +176,12 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
             if json.get("data"):
                 if isinstance(json["data"], dict):
-                    for _, value in json["data"].items():
+                    for value in json["data"].values():
                         if value and value.get("ok") is False:
                             raise_error(
                                 f"""Failed to {description}: {
                                     value.get('message')}"""
                             )
-
             return json
 
     async def make_rest_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
@@ -211,15 +207,15 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                     f"""Failed to parse JSON response: {
                         e}, content: {response.content!r}"""
                 )
-
     async def gql_helper(
         self,
         query: str,
         description: str,
         variables: Dict,
         process_response: Callable[..., R],
+        timeout: Optional[int] = 10,
     ) -> R:
-        response = await self.make_gql_call(description, query, variables)
+        response = await self.make_gql_call(description, query, variables, timeout)
         return process_response(response)
 
     ##################################################################################
