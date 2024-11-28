@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from literalai.api import LiteralAPI
     from literalai.api import SharedCache
 
-from literalai.api import gql
+from literalai.api.helpers import gql
 
 
 def create_prompt_lineage_helper(name: str, description: Optional[str] = None):
@@ -113,7 +113,7 @@ def create_prompt_variant_helper(
         "tools": tools,
     }
 
-    def process_response(response):
+    def process_response(response) -> Optional[str]:
         variant = response["data"]["createPromptExperiment"]
         return variant["id"] if variant else None
 

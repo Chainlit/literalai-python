@@ -60,6 +60,9 @@ is_openai_instrumented = False
 
 
 def instrument_openai(client: "LiteralClient", on_new_generation=None):
+    """
+    Instruments all OpenAI LLM calls to automatically send logs to Literal AI.
+    """
     global is_openai_instrumented
     if is_openai_instrumented:
         return
@@ -307,6 +310,8 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
                 and generation.model != chunk.model
             ):
                 generation.model = chunk.model
+                if generation.settings:
+                    generation.settings["model"] = chunk.model
 
             yield chunk
 

@@ -5,7 +5,7 @@ from literalai.my_types import PaginatedResponse
 from literalai.observability.step import StepType
 from literalai.observability.thread import Thread
 
-from literalai.api import gql
+from literalai.api.helpers import gql
 
 
 def get_threads_helper(

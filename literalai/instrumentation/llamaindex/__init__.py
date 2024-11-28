@@ -7,6 +7,9 @@ from literalai.instrumentation.llamaindex.span_handler import LiteralSpanHandler
 is_llamaindex_instrumented = False
 
 def instrument_llamaindex(client: "LiteralClient"):
+    """
+    Instruments LlamaIndex to automatically send logs to Literal AI.
+    """
     global is_llamaindex_instrumented
     if is_llamaindex_instrumented:
         return
