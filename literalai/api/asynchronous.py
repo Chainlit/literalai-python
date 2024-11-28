@@ -3,7 +3,6 @@ import uuid
 
 from typing_extensions import deprecated
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -148,7 +147,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
 
-        variables = _prepare_variables(variables)
+        variables = prepare_variables(variables)
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.post(
@@ -443,7 +442,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         # Prepare form data
         form_data = (
             {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        )  # type: Dict[str, Union[tuple[Union[str, None], Any], tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 

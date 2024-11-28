@@ -3,7 +3,6 @@ import uuid
 
 from typing_extensions import deprecated
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -105,9 +104,6 @@ from literalai.observability.filter import (
 from literalai.observability.thread import Thread
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
-if TYPE_CHECKING:
-    from typing import Tuple  # noqa: F401
-
 import httpx
 
 from literalai.my_types import PaginatedResponse, User
@@ -150,7 +146,7 @@ class LiteralAPI(BaseLiteralAPI):
             logger.error(f"Failed to {description}: {error}")
             raise Exception(error)
 
-        variables = _prepare_variables(variables)
+        variables = prepare_variables(variables)
         with httpx.Client(follow_redirects=True) as client:
             response = client.post(
                 self.graphql_endpoint,
@@ -441,7 +437,7 @@ class LiteralAPI(BaseLiteralAPI):
         # Prepare form data
         form_data = (
             {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        )  # type: Dict[str, Union[tuple[Union[str, None], Any], tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
