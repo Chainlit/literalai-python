@@ -13,6 +13,7 @@ from typing_extensions import deprecated
 
 from literalai.my_types import Environment
 
+from literalai.cache.shared_cache import SharedCache
 from literalai.evaluation.dataset import DatasetType
 from literalai.evaluation.dataset_experiment import (
     DatasetExperimentItem,
@@ -94,6 +95,8 @@ class BaseLiteralAPI(ABC):
 
         self.graphql_endpoint = self.url + "/api/graphql"
         self.rest_endpoint = self.url + "/api"
+
+        self.cache = SharedCache()
 
     @property
     def headers(self):
@@ -1011,9 +1014,9 @@ class BaseLiteralAPI(ABC):
         """
         Gets a prompt either by:
         - `id`
-        - or `name` and (optional) `version`
+        - `name` and (optional) `version`
 
-        Either the `id` or the `name` must be provided.
+        At least the `id` or the `name` must be passed to the function.
         If both are provided, the `id` is used.
 
         Args:

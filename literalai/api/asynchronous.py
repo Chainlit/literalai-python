@@ -3,7 +3,6 @@ import uuid
 
 from typing_extensions import deprecated
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -106,9 +105,6 @@ from literalai.observability.filter import (
 from literalai.observability.thread import Thread
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
-if TYPE_CHECKING:
-    from typing import Tuple  # noqa: F401
-
 import httpx
 
 from literalai.my_types import PaginatedResponse, User
@@ -145,7 +141,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
 
     async def make_gql_call(
-        self, description: str, query: str, variables: Dict[str, Any]
+        self, description: str, query: str, variables: Dict[str, Any], timeout: Optional[int] = 10
     ) -> Dict:
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
@@ -158,7 +154,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 self.graphql_endpoint,
                 json={"query": query, "variables": variables},
                 headers=self.headers,
-                timeout=10,
+                timeout=timeout,
             )
 
             try:
@@ -179,13 +175,12 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
             if json.get("data"):
                 if isinstance(json["data"], dict):
-                    for _, value in json["data"].items():
+                    for value in json["data"].values():
                         if value and value.get("ok") is False:
                             raise_error(
                                 f"""Failed to {description}: {
                                     value.get('message')}"""
                             )
-
             return json
 
     async def make_rest_call(self, subpath: str, body: Dict[str, Any]) -> Dict:
@@ -211,15 +206,15 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                     f"""Failed to parse JSON response: {
                         e}, content: {response.content!r}"""
                 )
-
     async def gql_helper(
         self,
         query: str,
         description: str,
         variables: Dict,
         process_response: Callable[..., R],
+        timeout: Optional[int] = 10,
     ) -> R:
-        response = await self.make_gql_call(description, query, variables)
+        response = await self.make_gql_call(description, query, variables, timeout)
         return process_response(response)
 
     ##################################################################################
@@ -447,7 +442,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         # Prepare form data
         form_data = (
             {}
-        )  # type: Dict[str, Union[Tuple[Union[str, None], Any], Tuple[Union[str, None], Any, Any]]]
+        )  # type: Dict[str, Union[tuple[Union[str, None], Any], tuple[Union[str, None], Any, Any]]]
         for field_name, field_value in fields.items():
             form_data[field_name] = (None, field_value)
 
@@ -838,16 +833,32 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         id: Optional[str] = None,
         name: Optional[str] = None,
         version: Optional[int] = None,
-    ) -> "Prompt":
+    ) -> Prompt:
+        if not (id or name):
+            raise ValueError("At least the `id` or the `name` must be provided.")
+
         sync_api = LiteralAPI(self.api_key, self.url)
-        if id:
-            return await self.gql_helper(*get_prompt_helper(sync_api, id=id))
-        elif name:
-            return await self.gql_helper(
-                *get_prompt_helper(sync_api, name=name, version=version)
-            )
-        else:
-            raise ValueError("Either the `id` or the `name` must be provided.")
+        get_prompt_query, description, variables, process_response, timeout, cached_prompt = get_prompt_helper(
+            api=sync_api, id=id, name=name, version=version, cache=self.cache
+        )
+
+        try:
+            if id:
+                prompt = await self.gql_helper(
+                    get_prompt_query, description, variables, process_response, timeout
+                )
+            elif name:
+                prompt = await self.gql_helper(
+                    get_prompt_query, description, variables, process_response, timeout
+                )
+
+            return prompt
+
+        except Exception as e:
+            if cached_prompt:
+                logger.warning("Failed to get prompt from API, returning cached prompt")
+                return cached_prompt
+            raise e
 
     async def update_prompt_ab_testing(
         self, name: str, rollouts: List["PromptRollout"]

@@ -1,10 +1,13 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict
+from typing import TYPE_CHECKING, Optional, TypedDict, Callable
 
 from literalai.observability.generation import GenerationMessage
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
+from literalai.cache.prompt_helpers import put_prompt
+
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
+    from literalai.cache.shared_cache import SharedCache
 
 from literalai.api.helpers import gql
 
@@ -36,9 +39,9 @@ def get_prompt_lineage_helper(name: str):
 def create_prompt_helper(
     api: "LiteralAPI",
     lineage_id: str,
-    template_messages: List[GenerationMessage],
+    template_messages: list[GenerationMessage],
     settings: Optional[ProviderSettings] = None,
-    tools: Optional[List[Dict]] = None,
+    tools: Optional[list[dict]] = None,
 ):
     variables = {
         "lineageId": lineage_id,
@@ -56,28 +59,52 @@ def create_prompt_helper(
     return gql.CREATE_PROMPT_VERSION, description, variables, process_response
 
 
+def get_prompt_cache_key(id: Optional[str], name: Optional[str], version: Optional[int]) -> str:
+    if id:  
+        return id
+    elif name and version:
+        return f"{name}-{version}"
+    elif name:
+        return name
+    else:
+        raise ValueError("Either the `id` or the `name` must be provided.")
+
+
 def get_prompt_helper(
     api: "LiteralAPI",
     id: Optional[str] = None,
     name: Optional[str] = None,
     version: Optional[int] = 0,
-):
+    cache: Optional["SharedCache"] = None,
+) -> tuple[str, str, dict, Callable, int, Optional[Prompt]]:
+    """Helper function for getting prompts with caching logic"""
+
+    cached_prompt = None
+    timeout = 10
+
+    if cache:
+        cached_prompt = cache.get(get_prompt_cache_key(id, name, version))
+        timeout = 1 if cached_prompt else timeout
+
     variables = {"id": id, "name": name, "version": version}
 
     def process_response(response):
-        prompt = response["data"]["promptVersion"]
-        return Prompt.from_dict(api, prompt) if prompt else None
+        prompt_version = response["data"]["promptVersion"]
+        prompt = Prompt.from_dict(api, prompt_version) if prompt_version else None
+        if cache and prompt:
+            put_prompt(cache, prompt)
+        return prompt
 
     description = "get prompt"
 
-    return gql.GET_PROMPT_VERSION, description, variables, process_response
+    return gql.GET_PROMPT_VERSION, description, variables, process_response, timeout, cached_prompt
 
 
 def create_prompt_variant_helper(
     from_lineage_id: Optional[str] = None,
-    template_messages: List[GenerationMessage] = [],
+    template_messages: list[GenerationMessage] = [],
     settings: Optional[ProviderSettings] = None,
-    tools: Optional[List[Dict]] = None,
+    tools: Optional[list[dict]] = None,
 ):
     variables = {
         "fromLineageId": from_lineage_id,
@@ -105,7 +132,7 @@ def get_prompt_ab_testing_helper(
 ):
     variables = {"lineageName": name}
 
-    def process_response(response) -> List[PromptRollout]:
+    def process_response(response) -> list[PromptRollout]:
         response_data = response["data"]["promptLineageRollout"]
         return list(map(lambda x: x["node"], response_data["edges"]))
 
@@ -114,10 +141,10 @@ def get_prompt_ab_testing_helper(
     return gql.GET_PROMPT_AB_TESTING, description, variables, process_response
 
 
-def update_prompt_ab_testing_helper(name: str, rollouts: List[PromptRollout]):
+def update_prompt_ab_testing_helper(name: str, rollouts: list[PromptRollout]):
     variables = {"name": name, "rollouts": rollouts}
 
-    def process_response(response) -> Dict:
+    def process_response(response) -> dict:
         return response["data"]["updatePromptLineageRollout"]
 
     description = "update prompt A/B testing"
