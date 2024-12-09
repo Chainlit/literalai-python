@@ -100,7 +100,7 @@ def extract_document_info(nodes: List[NodeWithScore]):
 
 
 def build_message_dict(message: ChatMessage):
-    message_dict = {
+    message_dict: GenerationMessage = {
         "role": convert_message_role(message.role),
         "content": message.content,
     }
@@ -163,21 +163,18 @@ class LiteralEventHandler(BaseEventHandler):
         object.__setattr__(self, "_client", literal_client)
         object.__setattr__(self, "_span_handler", llama_index_span_handler)
 
-    def _convert_message(
-        self,
-        message: ChatMessage,
-    ):
+    def _convert_message(self, message: ChatMessage):
         tool_calls = message.additional_kwargs.get("tool_calls")
-        msg = GenerationMessage(
-            name=getattr(message, "name", None),
-            role=convert_message_role(message.role),
-            content="",
-        )
-
-        msg["content"] = message.content
-
-        if tool_calls:
-            msg["tool_calls"] = [tool_call.to_dict() for tool_call in tool_calls]
+        msg: GenerationMessage = {
+            "name": getattr(message, "name", None),
+            "role": convert_message_role(message.role),
+            "content": message.content,
+            "tool_calls": (
+                [tool_call.to_dict() for tool_call in tool_calls]
+                if tool_calls
+                else None
+            ),
+        }
 
         return msg
 
