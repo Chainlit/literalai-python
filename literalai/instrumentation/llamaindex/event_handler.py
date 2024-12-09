@@ -144,8 +144,8 @@ def extract_query(x: Union[str, QueryBundle]):
 class LiteralEventHandler(BaseEventHandler):
     """This class handles events coming from LlamaIndex."""
 
-    _client: "LiteralClient" = PrivateAttr(...)
-    _span_handler: "LiteralSpanHandler" = PrivateAttr(...)
+    _client: "LiteralClient" = PrivateAttr()
+    _span_handler: "LiteralSpanHandler" = PrivateAttr()
     runs: Dict[str, List[Step]] = {}
     streaming_run_ids: List[str] = []
     _standalone_step_id: Optional[str] = None
@@ -238,7 +238,7 @@ class LiteralEventHandler(BaseEventHandler):
                     thread_id=thread_id,
                     content=query,
                 )
-            
+
             # Retrieval wraps the Embedding step in LlamaIndex
             if isinstance(event, RetrievalStartEvent):
                 run = self._client.start_step(

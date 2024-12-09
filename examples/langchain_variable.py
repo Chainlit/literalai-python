@@ -32,7 +32,7 @@ input_messages = messages.format_messages(
 cb = lai.langchain_callback()
 
 # Returns a langchain_openai.ChatOpenAI instance.
-gpt_4o = init_chat_model(
+gpt_4o = init_chat_model(  # type: ignore
     model_provider=prompt.provider,
     **prompt.settings,
 )

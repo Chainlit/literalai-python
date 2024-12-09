@@ -67,7 +67,7 @@ class Prompt(Utils):
 
     Attributes
     ----------
-        template_messages : List[GenerationMessage] 
+        template_messages : List[GenerationMessage]
             The messages that make up the prompt. Messages can be of type `text` or `image`.
             Messages can reference variables.
         variables : List[PromptVariable]
@@ -214,9 +214,9 @@ class Prompt(Utils):
 
         class CustomChatPromptTemplate(ChatPromptTemplate):
             orig_messages: Optional[List[GenerationMessage]] = Field(
-                default_factory=list
+                default_factory=lambda: []
             )
-            default_vars: Optional[Dict] = Field(default_factory=dict)
+            default_vars: Optional[Dict] = Field(default_factory=lambda: {})
             prompt_id: Optional[str] = None
 
             def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
