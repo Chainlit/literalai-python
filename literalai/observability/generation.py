@@ -67,15 +67,16 @@ class BaseGeneration(Utils):
         to_dict(self) -> Dict:
             Converts the generation object to a dictionary.
     """
+
     id: Optional[str] = None
     prompt_id: Optional[str] = None
     provider: Optional[str] = None
     model: Optional[str] = None
     error: Optional[str] = None
-    settings: Optional[Dict] = Field(default_factory=dict)
-    variables: Optional[Dict] = Field(default_factory=dict)
-    tags: Optional[List[str]] = Field(default_factory=list)
-    metadata: Optional[Dict] = Field(default_factory=dict)
+    settings: Optional[Dict] = Field(default_factory=lambda: {})
+    variables: Optional[Dict] = Field(default_factory=lambda: {})
+    tags: Optional[List[str]] = Field(default_factory=lambda: [])
+    metadata: Optional[Dict] = Field(default_factory=lambda: {})
     tools: Optional[List[Dict]] = None
     token_count: Optional[int] = None
     input_token_count: Optional[int] = None
@@ -129,6 +130,7 @@ class CompletionGeneration(BaseGeneration, Utils):
         completion (Optional[str]): The generated completion text.
         type (GenerationType): The type of generation, which is set to GenerationType.COMPLETION.
     """
+
     prompt: Optional[str] = None
     completion: Optional[str] = None
     type = GenerationType.COMPLETION
@@ -177,8 +179,9 @@ class ChatGeneration(BaseGeneration, Utils):
         message_completion (Optional[GenerationMessage]): The completion message of the chat generation.
         type (GenerationType): The type of generation, which is set to GenerationType.CHAT.
     """
+
     type = GenerationType.CHAT
-    messages: Optional[List[GenerationMessage]] = Field(default_factory=list)
+    messages: Optional[List[GenerationMessage]] = Field(default_factory=lambda: [])
     message_completion: Optional[GenerationMessage] = None
 
     def to_dict(self):
@@ -213,4 +216,3 @@ class ChatGeneration(BaseGeneration, Utils):
             messages=generation_dict.get("messages", []),
             message_completion=generation_dict.get("messageCompletion"),
         )
-
