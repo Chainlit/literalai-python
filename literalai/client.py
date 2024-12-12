@@ -1,5 +1,6 @@
 import os
 from typing import Any, Dict, List, Optional, Union
+from typing_extensions import deprecated
 
 from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
@@ -92,18 +93,21 @@ class BaseLiteralClient:
         else:
             return self  # type: ignore
 
+    @deprecated("Use Literal.initialize instead")
     def instrument_openai(self):
         """
         Instruments the OpenAI SDK so that all LLM calls are logged to Literal AI.
         """
         instrument_openai(self.to_sync())
 
+    @deprecated("Use Literal.initialize instead")
     def instrument_mistralai(self):
         """
         Instruments the Mistral AI SDK so that all LLM calls are logged to Literal AI.
         """
         instrument_mistralai(self.to_sync())
 
+    @deprecated("Use Literal.initialize instead")
     def instrument_llamaindex(self):
         """
         Instruments the Llama Index framework so that all RAG & LLM calls are logged to Literal AI.
