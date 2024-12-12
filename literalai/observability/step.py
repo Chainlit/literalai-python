@@ -16,6 +16,7 @@ from typing import (
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
+from traceloop.sdk import Traceloop
 from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
@@ -69,7 +70,7 @@ class AttachmentDict(TypedDict, total=False):
 @dataclass(repr=False)
 class Score(Utils):
     """
-    A score captures information about the quality of a step/experiment item. 
+    A score captures information about the quality of a step/experiment item.
     It can be of type either:
     - HUMAN: to capture human feedback
     - CODE: to capture the result of a code execution (deterministic)
@@ -127,9 +128,10 @@ class Score(Utils):
 @dataclass(repr=False)
 class Attachment(Utils):
     """
-    An attachment is an object that can be associated with a step. 
+    An attachment is an object that can be associated with a step.
     It can be an image, a file, a video, etc.
     """
+
     step_id: Optional[str] = None
     thread_id: Optional[str] = None
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -522,6 +524,21 @@ class StepContextManager:
 
         if active_root_run_var.get() is None and self.step_type == "run":
             active_root_run_var.set(self.step)
+            Traceloop.set_association_properties(
+                {
+                    "literal.thread_id": str(self.step.thread_id),
+                    "literal.parent_id": self.step.id,
+                    "literal.root_run_id": str(self.step.id),
+                }
+            )
+        else:
+            Traceloop.set_association_properties(
+                {
+                    "literal.thread_id": str(self.thread_id),
+                    "literal.parent_id": self.step.id,
+                    "literal.root_run_id": str(self.step.root_run_id),
+                }
+            )
 
         return self.step
 
@@ -549,6 +566,21 @@ class StepContextManager:
 
         if active_root_run_var.get() is None and self.step_type == "run":
             active_root_run_var.set(self.step)
+            Traceloop.set_association_properties(
+                {
+                    "literal.thread_id": str(self.step.thread_id),
+                    "literal.parent_id": self.step.id,
+                    "literal.root_run_id": str(self.step.id),
+                }
+            )
+        else:
+            Traceloop.set_association_properties(
+                {
+                    "literal.thread_id": str(self.thread_id),
+                    "literal.parent_id": self.step.id,
+                    "literal.root_run_id": str(self.step.root_run_id),
+                }
+            )
 
         return self.step
 
@@ -637,6 +669,7 @@ def step_decorator(
                             step.output = {"content": deepcopy(result)}
                 except Exception:
                     pass
+
                 return result
 
         return sync_wrapper

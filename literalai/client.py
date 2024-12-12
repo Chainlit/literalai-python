@@ -1,4 +1,5 @@
 import os
+from traceloop.sdk import Traceloop
 from typing import Any, Dict, List, Optional, Union
 from typing_extensions import deprecated
 
@@ -11,6 +12,7 @@ from literalai.evaluation.experiment_item_run import (
     experiment_item_run_decorator,
 )
 from literalai.event_processor import EventProcessor
+from literalai.exporter import LoggingSpanExporter
 from literalai.instrumentation.mistralai import instrument_mistralai
 from literalai.instrumentation.openai import instrument_openai
 from literalai.my_types import Environment
@@ -122,6 +124,10 @@ class BaseLiteralClient:
         from literalai.instrumentation.llamaindex import instrument_llamaindex
 
         instrument_llamaindex(self.to_sync())
+
+    @classmethod
+    def initialize(cls):
+        Traceloop.init(exporter=LoggingSpanExporter())
 
     def langchain_callback(
         self,
