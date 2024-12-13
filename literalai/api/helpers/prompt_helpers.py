@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict, Callable
+from typing import TYPE_CHECKING, Optional, TypedDict, Callable
 
 from literalai.observability.generation import GenerationMessage
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
