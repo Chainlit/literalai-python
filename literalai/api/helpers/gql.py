@@ -999,6 +999,7 @@ GET_PROMPT_LINEAGE = """query promptLineage(
         name: $name
     ) {
         id
+        deletedAt
     }
 }"""
 
@@ -1083,6 +1084,7 @@ query GetPrompt($id: String, $name: String, $version: Int) {
         version
         lineage {
             name
+            deletedAt
         }
     }
 }

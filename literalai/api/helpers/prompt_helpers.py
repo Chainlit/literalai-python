@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Optional, TypedDict, Callable
+import logging
+from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict, Callable
 
 from literalai.observability.generation import GenerationMessage
 from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
@@ -12,11 +13,16 @@ if TYPE_CHECKING:
 from literalai.api.helpers import gql
 
 
+logger = logging.getLogger(__name__)
+
+
 def create_prompt_lineage_helper(name: str, description: Optional[str] = None):
     variables = {"name": name, "description": description}
 
     def process_response(response):
         prompt = response["data"]["createPromptLineage"]
+        if prompt and prompt.get("deletedAt"):
+            logger.warn("This prompt lineage is part of a deleted lineage")
         return prompt
 
     description = "create prompt lineage"
@@ -29,6 +35,8 @@ def get_prompt_lineage_helper(name: str):
 
     def process_response(response):
         prompt = response["data"]["promptLineage"]
+        if prompt and prompt.get("deletedAt"):
+            logger.warn("This prompt lineage is part of a deleted lineage")
         return prompt
 
     description = "get prompt lineage"
@@ -52,6 +60,10 @@ def create_prompt_helper(
 
     def process_response(response):
         prompt = response["data"]["createPromptVersion"]
+        prompt_lineage = prompt.get("lineage")
+
+        if prompt_lineage and prompt_lineage.get("deletedAt"):
+            logger.warn("This prompt version is part of a deleted lineage")
         return Prompt.from_dict(api, prompt) if prompt else None
 
     description = "create prompt version"
@@ -90,6 +102,10 @@ def get_prompt_helper(
 
     def process_response(response):
         prompt_version = response["data"]["promptVersion"]
+        prompt_lineage = prompt_version.get("lineage")
+
+        if prompt_lineage and prompt_lineage.get("deletedAt"):
+            logger.warn("This prompt version is part of a deleted lineage")
         prompt = Prompt.from_dict(api, prompt_version) if prompt_version else None
         if cache and prompt:
             put_prompt(cache, prompt)
