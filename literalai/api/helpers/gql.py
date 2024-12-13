@@ -989,6 +989,7 @@ CREATE_PROMPT_LINEAGE = """mutation createPromptLineage(
     ) {
       id
       name
+      deletedAt
     }
   }"""
 
@@ -1024,6 +1025,7 @@ CREATE_PROMPT_VERSION = """mutation createPromptVersion(
       id
       lineage {
         name
+        deletedAt
       }
       version
       createdAt
