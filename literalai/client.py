@@ -131,7 +131,8 @@ class BaseLiteralClient:
     def initialize(self):
         with redirect_stdout(io.StringIO()):
             Traceloop.init(
-                exporter=LoggingSpanExporter(event_processor=self.event_processor)
+                disable_batch=True,
+                exporter=LoggingSpanExporter(event_processor=self.event_processor),
             )
 
     def langchain_callback(
