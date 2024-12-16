@@ -1,7 +1,10 @@
+import json
 import os
 from traceloop.sdk import Traceloop
 from typing import Any, Dict, List, Optional, Union
 from typing_extensions import deprecated
+import io
+from contextlib import redirect_stdout
 
 from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
@@ -125,9 +128,11 @@ class BaseLiteralClient:
 
         instrument_llamaindex(self.to_sync())
 
-    @classmethod
-    def initialize(cls):
-        Traceloop.init(exporter=LoggingSpanExporter())
+    def initialize(self):
+        with redirect_stdout(io.StringIO()):
+            Traceloop.init(
+                exporter=LoggingSpanExporter(event_processor=self.event_processor)
+            )
 
     def langchain_callback(
         self,
@@ -361,6 +366,27 @@ class BaseLiteralClient:
         Gets the current root run from the context.
         """
         return active_root_run_var.get()
+
+    def set_properties(
+        self,
+        name: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
+        thread = active_thread_var.get()
+        root_run = active_root_run_var.get()
+        parent = active_steps_var.get()[-1] if active_steps_var.get() else None
+
+        Traceloop.set_association_properties(
+            {
+                "literal.thread_id": str(thread.id) if thread else "None",
+                "literal.parent_id": str(parent.id) if parent else "None",
+                "literal.root_run_id": str(root_run.id) if root_run else "None",
+                "literal.name": str(name) if name else "None",
+                "literal.tags": json.dumps(tags) if tags else "None",
+                "literal.metadata": json.dumps(metadata) if metadata else "None",
+            }
+        )
 
     def reset_context(self):
         """

@@ -98,6 +98,7 @@ class EventProcessor:
             self.processing_counter -= len(batch)
 
     def flush_and_stop(self):
+        time.sleep(4)
         self.stop_event.set()
         if not self.disabled:
             self.processing_thread.join()
