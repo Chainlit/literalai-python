@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import json
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
-from typing import Dict, List, Optional, Sequence, cast
+from typing import Dict, List, Optional, Sequence, Union, cast
 import logging
 
 
@@ -149,13 +149,13 @@ class LoggingSpanExporter(SpanExporter):
             "id": str(span.context.span_id) if span.context else None,
             "name": span_props.get("name", span.name),
             "type": "llm",
-            "metadata": self._extract_json(span_props.get("metadata", "{}")),
+            "metadata": self._extract_json(str(span_props.get("metadata", "{}"))),
             "startTime": start_time,
             "endTime": end_time,
             "threadId": span_props.get("thread_id"),
             "parentId": span_props.get("parent_id"),
             "rootRunId": span_props.get("root_run_id"),
-            "tags": self._extract_json(span_props.get("tags", "[]")),
+            "tags": self._extract_json(str(span_props.get("tags", "[]"))),
             "input": {
                 "content": (
                     generation_content["messages"]
@@ -218,7 +218,7 @@ class LoggingSpanExporter(SpanExporter):
 
         return messages
 
-    def _extract_json(self, data: str) -> Dict | List | str:
+    def _extract_json(self, data: str) -> Union[Dict, List, str]:
         try:
             content = json.loads(data)
         except Exception:
