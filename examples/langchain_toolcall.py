@@ -19,6 +19,7 @@ search = TavilySearchResults(max_results=2)
 tools = [search]
 
 lai_client = LiteralClient()
+lai_client.initialize()
 lai_prompt = lai_client.api.get_or_create_prompt(
     name="LC Agent",
     settings={
@@ -37,12 +38,12 @@ lai_prompt = lai_client.api.get_or_create_prompt(
         {"role": "assistant", "content": "{{agent_scratchpad}}"},
     ],
 )
-prompt = lai_prompt.to_langchain_chat_prompt_template()
+prompt = lai_prompt.to_langchain_chat_prompt_template(
+    additional_messages=[("placeholder", "{agent_scratchpad}")],
+)
 
 agent: BaseSingleActionAgent = create_tool_calling_agent(model, tools, prompt)  # type: ignore
 agent_executor = AgentExecutor(agent=agent, tools=tools)
-
-cb = lai_client.langchain_callback()
 
 # Replace with ainvoke for asynchronous execution.
 agent_executor.invoke(
@@ -56,5 +57,5 @@ agent_executor.invoke(
         ],
         "input": "whats the weather in sf?",
     },
-    config=RunnableConfig(callbacks=[cb], run_name="Weather SF"),
+    config=RunnableConfig(run_name="Weather SF"),
 )

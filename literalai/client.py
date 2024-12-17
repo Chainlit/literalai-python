@@ -29,6 +29,7 @@ from literalai.observability.step import (
     step_decorator,
 )
 from literalai.observability.thread import ThreadContextManager, thread_decorator
+from literalai.prompt_engineering.prompt import Prompt
 from literalai.requirements import check_all_requirements
 
 
@@ -373,6 +374,7 @@ class BaseLiteralClient:
         name: Optional[str] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        prompt: Optional[Prompt] = None,
     ):
         thread = active_thread_var.get()
         root_run = active_root_run_var.get()
@@ -386,6 +388,7 @@ class BaseLiteralClient:
                 "literal.name": str(name) if name else "None",
                 "literal.tags": json.dumps(tags) if tags else "None",
                 "literal.metadata": json.dumps(metadata) if metadata else "None",
+                "literal.prompt": json.dumps(prompt.to_dict()) if prompt else "None",
             }
         )
 

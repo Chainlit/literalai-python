@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import json
+from annotated_types import Timezone
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from typing import Dict, List, Optional, Sequence, cast
@@ -10,6 +11,7 @@ from literalai.event_processor import EventProcessor
 from literalai.helper import utc_now
 from literalai.observability.generation import GenerationType
 from literalai.observability.step import Step, StepDict
+from literalai.prompt_engineering.prompt import PromptDict
 
 
 class LoggingSpanExporter(SpanExporter):
@@ -56,14 +58,8 @@ class LoggingSpanExporter(SpanExporter):
         """Force flush the exporter."""
         return True
 
-    #     # TODO: Add generation promptid
-    #     # TODO: Add generation variables
-    #     # TODO: Check missing variables
-    #     # TODO: ttFirstToken
-    #     # TODO: duration
-    #     # TODO: tokenThroughputInSeconds
-    #     # TODO: Add tools
-    #     # TODO: error check with gemini error
+    # TODO: error check with gemini error
+    # TODO: ttFirstToken
     def _create_step_from_span(self, span: ReadableSpan) -> Step:
         """Convert a span to a Step object"""
         attributes = span.attributes or {}
@@ -77,6 +73,11 @@ class LoggingSpanExporter(SpanExporter):
             datetime.fromtimestamp(span.end_time / 1e9, tz=timezone.utc).isoformat()
             if span.end_time
             else utc_now()
+        )
+        duration, token_throughput = self._calculate_duration_and_throughput(
+            span.start_time,
+            span.end_time,
+            int(str(attributes.get("llm.usage.total_tokens", 0))),
         )
 
         generation_type = attributes.get("llm.request.type")
@@ -103,19 +104,35 @@ class LoggingSpanExporter(SpanExporter):
             k: str(v) for k, v in span_props.items() if v is not None and v != "None"
         }
 
+        serialized_prompt = attributes.get(
+            "traceloop.association.properties.literal.prompt"
+        )
+        prompt = cast(
+            Optional[PromptDict],
+            (
+                self._extract_json(str(serialized_prompt))
+                if serialized_prompt and serialized_prompt != "None"
+                else None
+            ),
+        )
+
         generation_content = {
+            "duration": duration,
             "messages": (
-                self.extract_messages(cast(Dict, attributes)) if is_chat else None
+                self._extract_messages(cast(Dict, attributes)) if is_chat else None
             ),
             "message_completion": (
-                self.extract_messages(cast(Dict, attributes), "gen_ai.completion.")[0]
+                self._extract_messages(cast(Dict, attributes), "gen_ai.completion.")[0]
                 if is_chat
                 else None
             ),
             "prompt": attributes.get("gen_ai.prompt.0.user"),
+            "promptId": prompt.get("id") if prompt else None,
             "completion": attributes.get("gen_ai.completion.0.content"),
             "model": attributes.get("gen_ai.request.model"),
             "provider": attributes.get("gen_ai.system"),
+            "tokenThroughputInSeconds": token_throughput,
+            "variables": prompt.get("variables") if prompt else None,
         }
         generation_settings = {
             "max_tokens": attributes.get("gen_ai.request.max_tokens"),
@@ -133,13 +150,13 @@ class LoggingSpanExporter(SpanExporter):
             "id": str(span.context.span_id) if span.context else None,
             "name": span_props.get("name", span.name),
             "type": "llm",
-            "metadata": self.extract_json(span_props.get("metadata", "{}")),
+            "metadata": self._extract_json(span_props.get("metadata", "{}")),
             "startTime": start_time,
             "endTime": end_time,
             "threadId": span_props.get("thread_id"),
             "parentId": span_props.get("parent_id"),
             "rootRunId": span_props.get("root_run_id"),
-            "tags": self.extract_json(span_props.get("tags", "[]")),
+            "tags": self._extract_json(span_props.get("tags", "[]")),
             "input": {
                 "content": (
                     generation_content["messages"]
@@ -176,7 +193,7 @@ class LoggingSpanExporter(SpanExporter):
 
         return step
 
-    def extract_messages(
+    def _extract_messages(
         self, data: Dict, prefix: str = "gen_ai.prompt."
     ) -> List[Dict]:
         messages = []
@@ -188,11 +205,13 @@ class LoggingSpanExporter(SpanExporter):
 
             if role_key not in data or content_key not in data:
                 break
+            if data[role_key] == "placeholder":
+                break
 
             messages.append(
                 {
                     "role": data[role_key],
-                    "content": self.extract_json(data[content_key]),
+                    "content": self._extract_json(data[content_key]),
                 }
             )
 
@@ -200,10 +219,28 @@ class LoggingSpanExporter(SpanExporter):
 
         return messages
 
-    def extract_json(self, data: str) -> Dict | List | str:
+    def _extract_json(self, data: str) -> Dict | List | str:
         try:
             content = json.loads(data)
         except Exception:
             content = data
 
         return content
+
+    def _calculate_duration_and_throughput(
+        self,
+        start_time_ns: Optional[int],
+        end_time_ns: Optional[int],
+        total_tokens: Optional[int],
+    ) -> tuple[float, Optional[float]]:
+        """Calculate duration in seconds and token throughput per second."""
+        duration_ns = (
+            end_time_ns - start_time_ns if start_time_ns and end_time_ns else 0
+        )
+        duration_seconds = duration_ns / 1e9
+
+        token_throughput = None
+        if total_tokens is not None and duration_seconds > 0:
+            token_throughput = total_tokens / duration_seconds
+
+        return duration_seconds, token_throughput

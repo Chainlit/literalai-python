@@ -12,7 +12,7 @@ client = OpenAI()
 
 
 sdk = LiteralClient(batch_size=2)
-sdk.instrument_openai()
+sdk.initialize()
 
 
 @sdk.thread
