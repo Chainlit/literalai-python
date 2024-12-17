@@ -5,6 +5,8 @@ import uuid
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, TypedDict
 
+from traceloop.sdk import Traceloop
+
 from literalai.context import active_thread_var
 from literalai.my_types import UserDict, Utils
 from literalai.observability.step import Step, StepDict
@@ -188,6 +190,11 @@ class ThreadContextManager:
     def __enter__(self) -> "Optional[Thread]":
         thread_id = self.thread_id if self.thread_id else str(uuid.uuid4())
         active_thread_var.set(Thread(id=thread_id, name=self.name, **self.kwargs))
+        Traceloop.set_association_properties(
+            {
+                "literal.thread_id": thread_id,
+            }
+        )
         return active_thread_var.get()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -198,6 +205,11 @@ class ThreadContextManager:
     async def __aenter__(self):
         thread_id = self.thread_id if self.thread_id else str(uuid.uuid4())
         active_thread_var.set(Thread(id=thread_id, name=self.name, **self.kwargs))
+        Traceloop.set_association_properties(
+            {
+                "literal.thread_id": thread_id,
+            }
+        )
         return active_thread_var.get()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
