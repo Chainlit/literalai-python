@@ -7,7 +7,6 @@ from openai import OpenAI
 
 from dotenv import load_dotenv
 
-from literalai.observability.step import ScoreDict
 
 load_dotenv()
 

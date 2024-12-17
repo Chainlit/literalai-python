@@ -1,6 +1,5 @@
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 import json
-from annotated_types import Timezone
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from typing import Dict, List, Optional, Sequence, cast
