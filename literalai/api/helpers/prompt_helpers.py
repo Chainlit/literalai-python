@@ -68,7 +68,7 @@ def create_prompt_helper(
 
         if prompt_lineage and prompt_lineage.get("deletedAt"):
             logger.warning(
-                f"Prompt {prompt_lineage.name} was deleted - please update any references to use an active prompt in production"
+                f"Prompt {prompt_lineage.get('name')} was deleted - please update any references to use an active prompt in production"
             )
         return Prompt.from_dict(api, prompt) if prompt else None
 
