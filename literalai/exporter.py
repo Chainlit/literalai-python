@@ -13,6 +13,8 @@ from literalai.observability.step import Step, StepDict
 from literalai.prompt_engineering.prompt import PromptDict
 
 
+# TODO: Suppport Gemini models https://github.com/traceloop/openllmetry/issues/2419
+# TODO: Support llamaindex workflow https://github.com/traceloop/openllmetry/pull/2421
 class LoggingSpanExporter(SpanExporter):
     def __init__(
         self,
@@ -57,8 +59,6 @@ class LoggingSpanExporter(SpanExporter):
         """Force flush the exporter."""
         return True
 
-    # TODO: error check with gemini error
-    # TODO: ttFirstToken
     def _create_step_from_span(self, span: ReadableSpan) -> Step:
         """Convert a span to a Step object"""
         attributes = span.attributes or {}

@@ -16,6 +16,9 @@ lai_client.initialize()
 class JokeEvent(Event):
     joke: str
 
+class RewriteJoke(Event): 
+    joke: str
+
 
 class JokeFlow(Workflow):
     llm = OpenAI()
@@ -29,7 +32,11 @@ class JokeFlow(Workflow):
         return JokeEvent(joke=str(response))
 
     @step()
-    async def critique_joke(self, ev: JokeEvent) -> StopEvent:
+    async def return_joke(self, ev: JokeEvent) -> RewriteJoke:
+        return RewriteJoke(joke=ev.joke + "What is funny?")
+
+    @step()
+    async def critique_joke(self, ev: RewriteJoke) -> StopEvent:
         joke = ev.joke
 
         prompt = f"Give a thorough analysis and critique of the following joke: {joke}"
