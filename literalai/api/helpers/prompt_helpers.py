@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Optional, TypedDict, Callable
 
 from literalai.observability.generation import GenerationMessage
@@ -12,11 +13,18 @@ if TYPE_CHECKING:
 from literalai.api.helpers import gql
 
 
+logger = logging.getLogger(__name__)
+
+
 def create_prompt_lineage_helper(name: str, description: Optional[str] = None):
     variables = {"name": name, "description": description}
 
     def process_response(response):
         prompt = response["data"]["createPromptLineage"]
+        if prompt and prompt.get("deletedAt"):
+            logger.warning(
+                f"Prompt {name} was deleted - please update any references to use an active prompt in production"
+            )
         return prompt
 
     description = "create prompt lineage"
@@ -29,6 +37,10 @@ def get_prompt_lineage_helper(name: str):
 
     def process_response(response):
         prompt = response["data"]["promptLineage"]
+        if prompt and prompt.get("deletedAt"):
+            logger.warning(
+                f"Prompt {name} was deleted - please update any references to use an active prompt in production"
+            )
         return prompt
 
     description = "get prompt lineage"
@@ -52,6 +64,12 @@ def create_prompt_helper(
 
     def process_response(response):
         prompt = response["data"]["createPromptVersion"]
+        prompt_lineage = prompt.get("lineage")
+
+        if prompt_lineage and prompt_lineage.get("deletedAt"):
+            logger.warning(
+                f"Prompt {prompt_lineage.get('name')} was deleted - please update any references to use an active prompt in production"
+            )
         return Prompt.from_dict(api, prompt) if prompt else None
 
     description = "create prompt version"
@@ -59,8 +77,10 @@ def create_prompt_helper(
     return gql.CREATE_PROMPT_VERSION, description, variables, process_response
 
 
-def get_prompt_cache_key(id: Optional[str], name: Optional[str], version: Optional[int]) -> str:
-    if id:  
+def get_prompt_cache_key(
+    id: Optional[str], name: Optional[str], version: Optional[int]
+) -> str:
+    if id:
         return id
     elif name and version:
         return f"{name}-{version}"
@@ -90,6 +110,12 @@ def get_prompt_helper(
 
     def process_response(response):
         prompt_version = response["data"]["promptVersion"]
+        prompt_lineage = prompt_version.get("lineage")
+
+        if prompt_lineage and prompt_lineage.get("deletedAt"):
+            logger.warning(
+                f"Prompt {name} was deleted - please update any references to use an active prompt in production"
+            )
         prompt = Prompt.from_dict(api, prompt_version) if prompt_version else None
         if cache and prompt:
             put_prompt(cache, prompt)
@@ -97,7 +123,14 @@ def get_prompt_helper(
 
     description = "get prompt"
 
-    return gql.GET_PROMPT_VERSION, description, variables, process_response, timeout, cached_prompt
+    return (
+        gql.GET_PROMPT_VERSION,
+        description,
+        variables,
+        process_response,
+        timeout,
+        cached_prompt,
+    )
 
 
 def create_prompt_variant_helper(

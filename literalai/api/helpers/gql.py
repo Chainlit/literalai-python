@@ -989,6 +989,7 @@ CREATE_PROMPT_LINEAGE = """mutation createPromptLineage(
     ) {
       id
       name
+      deletedAt
     }
   }"""
 
@@ -999,6 +1000,7 @@ GET_PROMPT_LINEAGE = """query promptLineage(
         name: $name
     ) {
         id
+        deletedAt
     }
 }"""
 
@@ -1023,6 +1025,7 @@ CREATE_PROMPT_VERSION = """mutation createPromptVersion(
       id
       lineage {
         name
+        deletedAt
       }
       version
       createdAt
@@ -1083,6 +1086,7 @@ query GetPrompt($id: String, $name: String, $version: Int) {
         version
         lineage {
             name
+            deletedAt
         }
     }
 }
