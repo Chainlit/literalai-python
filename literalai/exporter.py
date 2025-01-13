@@ -114,17 +114,17 @@ class LoggingSpanExporter(SpanExporter):
                 else None
             ),
         )
+        messages = self._extract_messages(cast(Dict, attributes)) if is_chat else None
+
+        message_completions = self._extract_messages(cast(Dict, attributes), "gen_ai.completion.") if is_chat else None
+
+        message_completion = message_completions[-1] if message_completions else None
+        previous_messages = messages + message_completions[:-1] if message_completions else messages
 
         generation_content = {
             "duration": duration,
-            "messages": (
-                self._extract_messages(cast(Dict, attributes)) if is_chat else None
-            ),
-            "message_completion": (
-                self._extract_messages(cast(Dict, attributes), "gen_ai.completion.")[0]
-                if is_chat
-                else None
-            ),
+            "messages": previous_messages,
+            "message_completion": message_completion,
             "prompt": attributes.get("gen_ai.prompt.0.user"),
             "promptId": prompt.get("id") if prompt else None,
             "completion": attributes.get("gen_ai.completion.0.content"),
