@@ -114,9 +114,9 @@ class LoggingSpanExporter(SpanExporter):
                 else None
             ),
         )
-        messages = self._extract_messages(cast(Dict, attributes)) if is_chat else None
+        messages = self._extract_messages(cast(Dict, attributes)) if is_chat else []
 
-        message_completions = self._extract_messages(cast(Dict, attributes), "gen_ai.completion.") if is_chat else None
+        message_completions = self._extract_messages(cast(Dict, attributes), "gen_ai.completion.") if is_chat else []
 
         message_completion = message_completions[-1] if message_completions else None
         previous_messages = messages + message_completions[:-1] if message_completions else messages
