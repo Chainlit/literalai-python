@@ -16,5 +16,6 @@ setup(
         "httpx>=0.23.0",
         "pydantic>=1,<3",
         "chevron>=0.14.0",
+        "traceloop-sdk>=0.33.12",
     ],
 )
