@@ -380,7 +380,7 @@ class Step(Utils):
             setattr(self, key, value)
 
     def start(self):
-        active_steps = active_steps_var.get()
+        active_steps = active_steps_var.get([])
         if len(active_steps) > 0:
             parent_step = active_steps[-1]
             if not self.parent_id:
@@ -405,7 +405,7 @@ class Step(Utils):
         self.end_time = utc_now()
 
         # Update active steps
-        active_steps = active_steps_var.get()
+        active_steps = active_steps_var.get([])
 
         # Check if step is active
         if self not in active_steps:

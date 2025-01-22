@@ -275,12 +275,12 @@ class Teste2e:
             with async_client.step(name="test_ingestion") as step:
                 step.metadata = {"foo": "bar"}
                 assert async_client.event_processor.event_queue._qsize() == 0
-                stack = active_steps_var.get()
+                stack = active_steps_var.get([])
                 assert len(stack) == 1
 
             assert async_client.event_processor.event_queue._qsize() == 1
 
-        stack = active_steps_var.get()
+        stack = active_steps_var.get([])
         assert len(stack) == 0
 
     @pytest.mark.timeout(5)
