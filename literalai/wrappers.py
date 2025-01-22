@@ -53,7 +53,7 @@ def sync_wrapper(before_func=None, after_func=None):
             try:
                 result = original_func(*args, **kwargs)
             except Exception as e:
-                active_steps = active_steps_var.get()
+                active_steps = active_steps_var.get([])
                 if active_steps and len(active_steps) > 0:
                     current_step = active_steps[-1]
                     current_step.error = str(e)
@@ -87,7 +87,7 @@ def async_wrapper(before_func=None, after_func=None):
             try:
                 result = await original_func(*args, **kwargs)
             except Exception as e:
-                active_steps = active_steps_var.get()
+                active_steps = active_steps_var.get([])
                 if active_steps and len(active_steps) > 0:
                     current_step = active_steps[-1]
                     current_step.error = str(e)

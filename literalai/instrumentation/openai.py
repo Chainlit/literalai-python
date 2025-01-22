@@ -186,7 +186,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
     def before_wrapper(metadata: Dict):
         def before(context: BeforeContext, *args, **kwargs):
             active_thread = active_thread_var.get()
-            active_steps = active_steps_var.get()
+            active_steps = active_steps_var.get([])
             generation = init_generation(metadata["type"], kwargs)
 
             if (active_thread or active_steps) and not callable(on_new_generation):
@@ -209,7 +209,7 @@ def instrument_openai(client: "LiteralClient", on_new_generation=None):
     def async_before_wrapper(metadata: Dict):
         async def before(context: BeforeContext, *args, **kwargs):
             active_thread = active_thread_var.get()
-            active_steps = active_steps_var.get()
+            active_steps = active_steps_var.get([])
             generation = init_generation(metadata["type"], kwargs)
 
             if (active_thread or active_steps) and not callable(on_new_generation):
