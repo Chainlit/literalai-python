@@ -11,9 +11,9 @@ if TYPE_CHECKING:
 from literalai.context import active_steps_var, active_thread_var
 from literalai.helper import ensure_values_serializable
 from literalai.observability.generation import (
-    GenerationMessage,
-    CompletionGeneration,
     ChatGeneration,
+    CompletionGeneration,
+    GenerationMessage,
     GenerationType,
 )
 from literalai.wrappers import AfterContext, BeforeContext, wrap_all

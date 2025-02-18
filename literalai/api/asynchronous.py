@@ -1,21 +1,11 @@
 import logging
 import uuid
+from typing import Any, Callable, Dict, List, Literal, Optional, TypeVar, Union, cast
 
+import httpx
 from typing_extensions import deprecated
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
 
 from literalai.api.base import BaseLiteralAPI, prepare_variables
-
 from literalai.api.helpers.attachment_helpers import (
     AttachmentUpload,
     create_attachment_helper,
@@ -91,6 +81,7 @@ from literalai.evaluation.dataset_experiment import (
     DatasetExperimentItem,
 )
 from literalai.evaluation.dataset_item import DatasetItem
+from literalai.my_types import PaginatedResponse, User
 from literalai.observability.filter import (
     generations_filters,
     generations_order_by,
@@ -102,12 +93,6 @@ from literalai.observability.filter import (
     threads_order_by,
     users_filters,
 )
-from literalai.observability.thread import Thread
-from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
-
-import httpx
-
-from literalai.my_types import PaginatedResponse, User
 from literalai.observability.generation import (
     BaseGeneration,
     ChatGeneration,
@@ -123,6 +108,8 @@ from literalai.observability.step import (
     StepDict,
     StepType,
 )
+from literalai.observability.thread import Thread
+from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +128,11 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
 
     async def make_gql_call(
-        self, description: str, query: str, variables: Dict[str, Any], timeout: Optional[int] = 10
+        self,
+        description: str,
+        query: str,
+        variables: Dict[str, Any],
+        timeout: Optional[int] = 10,
     ) -> Dict:
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
@@ -166,8 +157,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 json = response.json()
             except ValueError as e:
                 raise_error(
-                    f"""Failed to parse JSON response: {
-                        e}, content: {response.content!r}"""
+                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
                 )
 
             if json.get("errors"):
@@ -178,8 +168,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                     for value in json["data"].values():
                         if value and value.get("ok") is False:
                             raise_error(
-                                f"""Failed to {description}: {
-                                    value.get('message')}"""
+                                f"""Failed to {description}: {value.get("message")}"""
                             )
             return json
 
@@ -203,9 +192,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 return response.json()
             except ValueError as e:
                 raise ValueError(
-                    f"""Failed to parse JSON response: {
-                        e}, content: {response.content!r}"""
+                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
                 )
+
     async def gql_helper(
         self,
         query: str,
@@ -235,7 +224,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     ) -> "User":
         return await self.gql_helper(*get_user_helper(id, identifier))
 
-    async def create_user(self, identifier: str, metadata: Optional[Dict] = None) -> "User":
+    async def create_user(
+        self, identifier: str, metadata: Optional[Dict] = None
+    ) -> "User":
         return await self.gql_helper(*create_user_helper(identifier, metadata))
 
     async def update_user(
@@ -245,7 +236,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
 
     async def delete_user(self, id: str) -> Dict:
         return await self.gql_helper(*delete_user_helper(id))
-    
+
     async def get_or_create_user(
         self, identifier: str, metadata: Optional[Dict] = None
     ) -> "User":
@@ -273,7 +264,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 first, after, before, filters, order_by, step_types_to_keep
             )
         )
-    
+
     async def list_threads(
         self,
         first: Optional[int] = None,
@@ -491,7 +482,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
                 thread_id = active_thread.id
 
         if not step_id:
-            if active_steps := active_steps_var.get([]):
+            if active_steps := active_steps_var.get():
                 step_id = active_steps[-1].id
             else:
                 raise Exception("No step_id provided and no active step found.")
@@ -532,7 +523,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         response = await self.make_gql_call(description, query, variables)
         return process_response(response)
 
-    async def update_attachment(self, id: str, update_params: AttachmentUpload) -> "Attachment":
+    async def update_attachment(
+        self, id: str, update_params: AttachmentUpload
+    ) -> "Attachment":
         return await self.gql_helper(*update_attachment_helper(id, update_params))
 
     async def get_attachment(self, id: str) -> Optional["Attachment"]:
@@ -544,7 +537,6 @@ class AsyncLiteralAPI(BaseLiteralAPI):
     ##################################################################################
     #                                     Step APIs                                  #
     ##################################################################################
-
 
     async def create_step(
         self,
@@ -646,7 +638,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(
             *get_generations_helper(first, after, before, filters, order_by)
         )
-    
+
     async def create_generation(
         self, generation: Union["ChatGeneration", "CompletionGeneration"]
     ) -> Union["ChatGeneration", "CompletionGeneration"]:
@@ -667,8 +659,10 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(
             *create_dataset_helper(sync_api, name, description, metadata, type)
         )
-    
-    async def get_dataset(self, id: Optional[str] = None, name: Optional[str] = None) -> "Dataset":
+
+    async def get_dataset(
+        self, id: Optional[str] = None, name: Optional[str] = None
+    ) -> "Dataset":
         sync_api = LiteralAPI(self.api_key, self.url)
         subpath, _, variables, process_response = get_dataset_helper(
             sync_api, id=id, name=name
@@ -738,7 +732,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         result.scores = await self.create_scores(experiment_item.scores)
 
         return result
-    
+
     ##################################################################################
     #                                 DatasetItem APIs                               #
     ##################################################################################
@@ -753,7 +747,7 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(
             *create_dataset_item_helper(dataset_id, input, expected_output, metadata)
         )
-    
+
     async def get_dataset_item(self, id: str) -> "DatasetItem":
         return await self.gql_helper(*get_dataset_item_helper(id))
 
@@ -784,7 +778,9 @@ class AsyncLiteralAPI(BaseLiteralAPI):
         return await self.gql_helper(*create_prompt_lineage_helper(name, description))
 
     @deprecated('Please use "get_or_create_prompt_lineage" instead.')
-    async def create_prompt_lineage(self, name: str, description: Optional[str] = None) -> Dict:
+    async def create_prompt_lineage(
+        self, name: str, description: Optional[str] = None
+    ) -> Dict:
         return await self.get_or_create_prompt_lineage(name, description)
 
     async def get_or_create_prompt(
@@ -838,7 +834,14 @@ class AsyncLiteralAPI(BaseLiteralAPI):
             raise ValueError("At least the `id` or the `name` must be provided.")
 
         sync_api = LiteralAPI(self.api_key, self.url)
-        get_prompt_query, description, variables, process_response, timeout, cached_prompt = get_prompt_helper(
+        (
+            get_prompt_query,
+            description,
+            variables,
+            process_response,
+            timeout,
+            cached_prompt,
+        ) = get_prompt_helper(
             api=sync_api, id=id, name=name, version=version, cache=self.cache
         )
 

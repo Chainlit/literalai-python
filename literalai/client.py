@@ -1,10 +1,11 @@
+import io
 import json
 import os
-from traceloop.sdk import Traceloop
-from typing import Any, Dict, List, Optional, Union
-from typing_extensions import deprecated
-import io
 from contextlib import redirect_stdout
+from typing import Any, Dict, List, Optional, Union
+
+from traceloop.sdk import Traceloop
+from typing_extensions import deprecated
 
 from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
@@ -343,7 +344,6 @@ class BaseLiteralClient:
         if hasattr(self, "global_metadata") and self.global_metadata:
             step.metadata = step.metadata or {}
             step.metadata.update(self.global_metadata)
-
         step.start()
         return step
 
@@ -378,7 +378,8 @@ class BaseLiteralClient:
     ):
         thread = active_thread_var.get()
         root_run = active_root_run_var.get()
-        parent = active_steps_var.get()[-1] if active_steps_var.get() else None
+        active_steps = active_steps_var.get()
+        parent = active_steps[-1] if active_steps else None
 
         Traceloop.set_association_properties(
             {
@@ -396,7 +397,7 @@ class BaseLiteralClient:
         """
         Resets the context, forgetting active steps & setting current thread to None.
         """
-        active_steps_var.set([])
+        active_steps_var.set(None)
         active_thread_var.set(None)
         active_root_run_var.set(None)
 

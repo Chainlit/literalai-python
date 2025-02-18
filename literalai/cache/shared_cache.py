@@ -6,6 +6,7 @@ class SharedCache:
     Singleton cache for storing data.
     Only one instance will exist regardless of how many times it's instantiated.
     """
+
     _instance = None
     _cache: dict[str, Any]
 
@@ -39,4 +40,3 @@ class SharedCache:
         Clears all cached values.
         """
         self._cache.clear()
-

@@ -1,11 +1,10 @@
 import json
 import uuid
-from typing import Any, Dict, Generic, List, Literal, Optional, Protocol, TypeVar
 from abc import abstractmethod
-
-from typing_extensions import TypedDict
+from typing import Any, Dict, Generic, List, Literal, Optional, Protocol, TypeVar
 
 from pydantic.dataclasses import Field, dataclass
+from typing_extensions import TypedDict
 
 Environment = Literal["dev", "staging", "prod", "experiment"]
 
@@ -41,7 +40,9 @@ class PageInfo(Utils):
         start_cursor = page_info_dict.get("startCursor", None)
         end_cursor = page_info_dict.get("endCursor", None)
         return cls(
-            has_next_page=has_next_page, start_cursor=start_cursor, end_cursor=end_cursor
+            has_next_page=has_next_page,
+            start_cursor=start_cursor,
+            end_cursor=end_cursor,
         )
 
 

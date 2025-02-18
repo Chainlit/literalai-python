@@ -1,12 +1,13 @@
 from typing import Any, Dict, Optional, Union
 
-from literalai.observability.filter import generations_filters, generations_order_by
-from literalai.my_types import (
-    PaginatedResponse,
-)
-from literalai.observability.generation import BaseGeneration, CompletionGeneration, ChatGeneration
-
 from literalai.api.helpers import gql
+from literalai.my_types import PaginatedResponse
+from literalai.observability.filter import generations_filters, generations_order_by
+from literalai.observability.generation import (
+    BaseGeneration,
+    ChatGeneration,
+    CompletionGeneration,
+)
 
 
 def get_generations_helper(
