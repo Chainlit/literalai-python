@@ -24,6 +24,7 @@ class DatasetExperimentItem(Utils):
     """
     An item of a `DatasetExperiment`: it may be linked to a `DatasetItem`.
     """
+
     id: str
     dataset_experiment_id: str
     dataset_item_id: Optional[str]
@@ -71,6 +72,7 @@ class DatasetExperiment(Utils):
     """
     An experiment, linked or not to a `Dataset`.
     """
+
     api: "LiteralAPI"
     id: str
     created_at: str

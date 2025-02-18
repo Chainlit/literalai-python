@@ -1,21 +1,11 @@
 import logging
 import uuid
+from typing import Any, Callable, Dict, List, Literal, Optional, TypeVar, Union, cast
 
+import httpx
 from typing_extensions import deprecated
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
 
 from literalai.api.base import BaseLiteralAPI, prepare_variables
-
 from literalai.api.helpers.attachment_helpers import (
     AttachmentUpload,
     create_attachment_helper,
@@ -90,6 +80,7 @@ from literalai.evaluation.dataset_experiment import (
     DatasetExperimentItem,
 )
 from literalai.evaluation.dataset_item import DatasetItem
+from literalai.my_types import PaginatedResponse, User
 from literalai.observability.filter import (
     generations_filters,
     generations_order_by,
@@ -101,12 +92,6 @@ from literalai.observability.filter import (
     threads_order_by,
     users_filters,
 )
-from literalai.observability.thread import Thread
-from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
-
-import httpx
-
-from literalai.my_types import PaginatedResponse, User
 from literalai.observability.generation import (
     BaseGeneration,
     ChatGeneration,
@@ -122,6 +107,8 @@ from literalai.observability.step import (
     StepDict,
     StepType,
 )
+from literalai.observability.thread import Thread
+from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +127,11 @@ class LiteralAPI(BaseLiteralAPI):
     R = TypeVar("R")
 
     def make_gql_call(
-        self, description: str, query: str, variables: dict[str, Any], timeout: Optional[int] = 10
+        self,
+        description: str,
+        query: str,
+        variables: dict[str, Any],
+        timeout: Optional[int] = 10,
     ) -> dict:
         def raise_error(error):
             logger.error(f"Failed to {description}: {error}")
@@ -164,8 +155,7 @@ class LiteralAPI(BaseLiteralAPI):
                 json = response.json()
             except ValueError as e:
                 raise_error(
-                    f"""Failed to parse JSON response: {
-                        e}, content: {response.content!r}"""
+                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
                 )
 
             if json.get("errors"):
@@ -176,8 +166,7 @@ class LiteralAPI(BaseLiteralAPI):
                     for value in json["data"].values():
                         if value and value.get("ok") is False:
                             raise_error(
-                                f"""Failed to {description}: {
-                                    value.get('message')}"""
+                                f"""Failed to {description}: {value.get("message")}"""
                             )
 
             return json
@@ -202,8 +191,7 @@ class LiteralAPI(BaseLiteralAPI):
                 return response.json()
             except ValueError as e:
                 raise ValueError(
-                    f"""Failed to parse JSON response: {
-                        e}, content: {response.content!r}"""
+                    f"Failed to parse JSON response: {e}, content: {response.content!r}"
                 )
 
     def gql_helper(
@@ -230,7 +218,9 @@ class LiteralAPI(BaseLiteralAPI):
     ) -> PaginatedResponse["User"]:
         return self.gql_helper(*get_users_helper(first, after, before, filters))
 
-    def get_user(self, id: Optional[str] = None, identifier: Optional[str] = None) -> "User":
+    def get_user(
+        self, id: Optional[str] = None, identifier: Optional[str] = None
+    ) -> "User":
         return self.gql_helper(*get_user_helper(id, identifier))
 
     def create_user(self, identifier: str, metadata: Optional[Dict] = None) -> "User":
@@ -244,7 +234,9 @@ class LiteralAPI(BaseLiteralAPI):
     def delete_user(self, id: str) -> Dict:
         return self.gql_helper(*delete_user_helper(id))
 
-    def get_or_create_user(self, identifier: str, metadata: Optional[Dict] = None) -> "User":
+    def get_or_create_user(
+        self, identifier: str, metadata: Optional[Dict] = None
+    ) -> "User":
         user = self.get_user(identifier=identifier)
         if user:
             return user
@@ -486,7 +478,7 @@ class LiteralAPI(BaseLiteralAPI):
                 thread_id = active_thread.id
 
         if not step_id:
-            if active_steps := active_steps_var.get([]):
+            if active_steps := active_steps_var.get():
                 step_id = active_steps[-1].id
             else:
                 raise Exception("No step_id provided and no active step found.")
@@ -525,7 +517,9 @@ class LiteralAPI(BaseLiteralAPI):
         response = self.make_gql_call(description, query, variables)
         return process_response(response)
 
-    def update_attachment(self, id: str, update_params: AttachmentUpload) -> "Attachment":
+    def update_attachment(
+        self, id: str, update_params: AttachmentUpload
+    ) -> "Attachment":
         return self.gql_helper(*update_attachment_helper(id, update_params))
 
     def get_attachment(self, id: str) -> Optional["Attachment"]:
@@ -728,7 +722,7 @@ class LiteralAPI(BaseLiteralAPI):
     ##################################################################################
     #                                 Dataset Item APIs                              #
     ##################################################################################
-    
+
     def create_dataset_item(
         self,
         dataset_id: str,
@@ -770,7 +764,9 @@ class LiteralAPI(BaseLiteralAPI):
         return self.gql_helper(*create_prompt_lineage_helper(name, description))
 
     @deprecated("Use get_or_create_prompt_lineage instead")
-    def create_prompt_lineage(self, name: str, description: Optional[str] = None) -> Dict:
+    def create_prompt_lineage(
+        self, name: str, description: Optional[str] = None
+    ) -> Dict:
         return self.get_or_create_prompt_lineage(name, description)
 
     def get_or_create_prompt(
@@ -804,15 +800,26 @@ class LiteralAPI(BaseLiteralAPI):
         if not (id or name):
             raise ValueError("At least the `id` or the `name` must be provided.")
 
-        get_prompt_query, description, variables, process_response, timeout, cached_prompt = get_prompt_helper(
-            api=self,id=id, name=name, version=version, cache=self.cache
+        (
+            get_prompt_query,
+            description,
+            variables,
+            process_response,
+            timeout,
+            cached_prompt,
+        ) = get_prompt_helper(
+            api=self, id=id, name=name, version=version, cache=self.cache
         )
 
         try:
             if id:
-                prompt = self.gql_helper(get_prompt_query, description, variables, process_response, timeout)
+                prompt = self.gql_helper(
+                    get_prompt_query, description, variables, process_response, timeout
+                )
             elif name:
-                prompt = self.gql_helper(get_prompt_query, description, variables, process_response, timeout)
+                prompt = self.gql_helper(
+                    get_prompt_query, description, variables, process_response, timeout
+                )
 
             return prompt
 
@@ -820,7 +827,7 @@ class LiteralAPI(BaseLiteralAPI):
             if cached_prompt:
                 logger.warning("Failed to get prompt from API, returning cached prompt")
                 return cached_prompt
-            
+
             raise e
 
     def create_prompt_variant(

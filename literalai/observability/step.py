@@ -381,7 +381,7 @@ class Step(Utils):
 
     def start(self):
         active_steps = active_steps_var.get()
-        if len(active_steps) > 0:
+        if active_steps:
             parent_step = active_steps[-1]
             if not self.parent_id:
                 self.parent_id = parent_step.id
@@ -398,8 +398,8 @@ class Step(Utils):
             if active_root_run := active_root_run_var.get():
                 self.root_run_id = active_root_run.id
 
-        active_steps.append(self)
-        active_steps_var.set(active_steps)
+        new_steps = (active_steps_var.get() or []) + [self]
+        active_steps_var.set(new_steps)
 
     def end(self):
         self.end_time = utc_now()
@@ -412,8 +412,8 @@ class Step(Utils):
             raise Exception("Step must be started before ending.")
 
         # Remove step from active steps
-        active_steps.remove(self)
-        active_steps_var.set(active_steps)
+        new_steps = [s for s in active_steps if s.id != self.id]
+        active_steps_var.set(new_steps)
 
         if self.processor is None:
             raise Exception(
@@ -507,7 +507,12 @@ class StepContextManager:
             self.client,
             func=func,
             name=self.step_name,
-            ctx_manager=self,
+            type=self.step_type,
+            id=self.id,
+            parent_id=self.parent_id,
+            thread_id=self.thread_id,
+            root_run_id=self.root_run_id,
+            **self.kwargs,
         )
 
     async def __aenter__(self):
@@ -611,35 +616,38 @@ def step_decorator(
     parent_id: Optional[str] = None,
     thread_id: Optional[str] = None,
     root_run_id: Optional[str] = None,
-    ctx_manager: Optional[StepContextManager] = None,
     **decorator_kwargs,
 ):
     if not name:
         name = func.__name__
-    if not ctx_manager:
-        ctx_manager = StepContextManager(
-            client=client,
-            type=type,
-            name=name,
-            id=id,
-            parent_id=parent_id,
-            thread_id=thread_id,
-            root_run_id=root_run_id,
-            **decorator_kwargs,
-        )
-    else:
-        ctx_manager.step_name = name
+
     # Handle async decorator
     if inspect.iscoroutinefunction(func):
 
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-            with ctx_manager as step:
+            # Create context manager here, when the function is actually called
+            ctx = StepContextManager(
+                client=client,
+                type=type,
+                name=name,
+                id=id,
+                parent_id=parent_id,
+                thread_id=thread_id,
+                root_run_id=root_run_id,
+                **decorator_kwargs,
+            )
+
+            ctx.step_name = name
+
+            async with ctx as step:
                 try:
                     step.input = flatten_args_kwargs(func, *args, **kwargs)
                 except Exception:
                     pass
+
                 result = await func(*args, **kwargs)
+
                 try:
                     if step.output is None:
                         if isinstance(result, dict):
@@ -648,6 +656,7 @@ def step_decorator(
                             step.output = {"content": deepcopy(result)}
                 except Exception:
                     pass
+
                 return result
 
         return async_wrapper
@@ -655,12 +664,28 @@ def step_decorator(
         # Handle sync decorator
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
-            with ctx_manager as step:
+            # Create context manager here, when the function is actually called
+            ctx = StepContextManager(
+                client=client,
+                type=type,
+                name=name,
+                id=id,
+                parent_id=parent_id,
+                thread_id=thread_id,
+                root_run_id=root_run_id,
+                **decorator_kwargs,
+            )
+
+            ctx.step_name = name
+
+            with ctx as step:
                 try:
                     step.input = flatten_args_kwargs(func, *args, **kwargs)
                 except Exception:
                     pass
+
                 result = func(*args, **kwargs)
+
                 try:
                     if step.output is None:
                         if isinstance(result, dict):

@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Callable, Optional, TypedDict, Union
 from literalai.context import active_steps_var
 
 if TYPE_CHECKING:
+    from literalai.observability.generation import ChatGeneration, CompletionGeneration
     from literalai.observability.step import Step
-    from literalai.observability.generation import CompletionGeneration, ChatGeneration
 
 
 class BeforeContext(TypedDict):
@@ -25,7 +25,7 @@ class AfterContext(TypedDict):
 
 
 def remove_literalai_args(kargs):
-    '''Remove argument prefixed with "literalai_" from kwargs and return them in a separate dict'''
+    """Remove argument prefixed with "literalai_" from kwargs and return them in a separate dict"""
     largs = {}
     for key in list(kargs.keys()):
         if key.startswith("literalai_"):
@@ -33,8 +33,9 @@ def remove_literalai_args(kargs):
             largs[key] = value
     return largs
 
+
 def restore_literalai_args(kargs, largs):
-    '''Reverse the effect of remove_literalai_args by merging the literal arguments into kwargs'''
+    """Reverse the effect of remove_literalai_args by merging the literal arguments into kwargs"""
     for key in list(largs.keys()):
         kargs[key] = largs[key]
 

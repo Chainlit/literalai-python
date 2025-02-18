@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
 import json
+import logging
+from datetime import datetime, timezone
+from typing import Dict, List, Optional, Sequence, Union, cast
+
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
-from typing import Dict, List, Optional, Sequence, Union, cast
-import logging
-
 
 from literalai.event_processor import EventProcessor
 from literalai.helper import utc_now
@@ -116,10 +116,16 @@ class LoggingSpanExporter(SpanExporter):
         )
         messages = self._extract_messages(cast(Dict, attributes)) if is_chat else []
 
-        message_completions = self._extract_messages(cast(Dict, attributes), "gen_ai.completion.") if is_chat else []
+        message_completions = (
+            self._extract_messages(cast(Dict, attributes), "gen_ai.completion.")
+            if is_chat
+            else []
+        )
 
         message_completion = message_completions[-1] if message_completions else None
-        previous_messages = messages + message_completions[:-1] if message_completions else messages
+        previous_messages = (
+            messages + message_completions[:-1] if message_completions else messages
+        )
 
         generation_content = {
             "duration": duration,

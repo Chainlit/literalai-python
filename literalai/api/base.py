@@ -1,29 +1,16 @@
 import os
-
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Union,
-)
+from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import deprecated
 
-from literalai.my_types import Environment
-
+from literalai.api.helpers.attachment_helpers import AttachmentUpload
+from literalai.api.helpers.prompt_helpers import PromptRollout
+from literalai.api.helpers.score_helpers import ScoreUpdate
 from literalai.cache.shared_cache import SharedCache
 from literalai.evaluation.dataset import DatasetType
-from literalai.evaluation.dataset_experiment import (
-    DatasetExperimentItem,
-)
-from literalai.api.helpers.attachment_helpers import (
-    AttachmentUpload)
-from literalai.api.helpers.score_helpers import (
-    ScoreUpdate,
-)
-
+from literalai.evaluation.dataset_experiment import DatasetExperimentItem
+from literalai.my_types import Environment
 from literalai.observability.filter import (
     generations_filters,
     generations_order_by,
@@ -35,24 +22,14 @@ from literalai.observability.filter import (
     threads_order_by,
     users_filters,
 )
-from literalai.prompt_engineering.prompt import ProviderSettings
-
-
-from literalai.api.helpers.prompt_helpers import (
-    PromptRollout)
-
 from literalai.observability.generation import (
     ChatGeneration,
     CompletionGeneration,
     GenerationMessage,
 )
-from literalai.observability.step import (
-    ScoreDict,
-    ScoreType,
-    Step,
-    StepDict,
-    StepType,
-)
+from literalai.observability.step import ScoreDict, ScoreType, Step, StepDict, StepType
+from literalai.prompt_engineering.prompt import ProviderSettings
+
 
 def prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -71,6 +48,7 @@ def prepare_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
         return item
 
     return handle_bytes(variables)
+
 
 class BaseLiteralAPI(ABC):
     def __init__(
@@ -676,7 +654,7 @@ class BaseLiteralAPI(ABC):
     @abstractmethod
     def send_steps(self, steps: List[Union[StepDict, "Step"]]):
         """
-        Sends a list of steps to process.  
+        Sends a list of steps to process.
         Step ingestion happens asynchronously if you configured a cache. See [Cache Configuration](https://docs.literalai.com/self-hosting/deployment#4-cache-configuration-optional).
 
         Args:
@@ -773,9 +751,7 @@ class BaseLiteralAPI(ABC):
         pass
 
     @abstractmethod
-    def get_dataset(
-        self, id: Optional[str] = None, name: Optional[str] = None
-    ):
+    def get_dataset(self, id: Optional[str] = None, name: Optional[str] = None):
         """
         Retrieves a dataset by its ID or name.
 
@@ -846,9 +822,7 @@ class BaseLiteralAPI(ABC):
         pass
 
     @abstractmethod
-    def create_experiment_item(
-        self, experiment_item: DatasetExperimentItem
-    ):
+    def create_experiment_item(self, experiment_item: DatasetExperimentItem):
         """
         Creates an experiment item within an existing experiment.
 
@@ -1065,9 +1039,7 @@ class BaseLiteralAPI(ABC):
         pass
 
     @abstractmethod
-    def update_prompt_ab_testing(
-        self, name: str, rollouts: List[PromptRollout]
-    ):
+    def update_prompt_ab_testing(self, name: str, rollouts: List[PromptRollout]):
         """
         Update the A/B testing configuration for a prompt lineage.
 

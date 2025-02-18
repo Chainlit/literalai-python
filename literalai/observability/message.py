@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 if TYPE_CHECKING:
     from literalai.event_processor import EventProcessor
 
-from literalai.context import active_steps_var, active_thread_var, active_root_run_var
+from literalai.context import active_root_run_var, active_steps_var, active_thread_var
 from literalai.helper import utc_now
 from literalai.my_types import Utils
-from literalai.observability.step import MessageStepType, StepDict, Score, Attachment
+from literalai.observability.step import Attachment, MessageStepType, Score, StepDict
 
 
 class Message(Utils):
@@ -73,7 +73,7 @@ class Message(Utils):
     def end(self):
         active_steps = active_steps_var.get()
 
-        if len(active_steps) > 0:
+        if active_steps:
             parent_step = active_steps[-1]
             if not self.parent_id:
                 self.parent_id = parent_step.id

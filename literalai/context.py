@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     from literalai.observability.step import Step
     from literalai.observability.thread import Thread
 
-active_steps_var = ContextVar[List["Step"]]("active_steps", default=[])
+active_steps_var = ContextVar[Optional[List["Step"]]]("active_steps", default=None)
 active_thread_var = ContextVar[Optional["Thread"]]("active_thread", default=None)
 active_root_run_var = ContextVar[Optional["Step"]]("active_root_run_var", default=None)
 
