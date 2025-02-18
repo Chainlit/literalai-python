@@ -276,12 +276,12 @@ class Teste2e:
                 step.metadata = {"foo": "bar"}
                 assert async_client.event_processor.event_queue._qsize() == 0
                 stack = active_steps_var.get()
-                assert len(stack) == 1
+                assert stack is not None and len(stack) == 1
 
             assert async_client.event_processor.event_queue._qsize() == 1
 
         stack = active_steps_var.get()
-        assert len(stack) == 0
+        assert stack is not None and len(stack) == 0
 
     @pytest.mark.timeout(5)
     async def test_thread_decorator(
@@ -666,14 +666,14 @@ is a templated list."""
     async def test_prompt_cache(self, async_client: AsyncLiteralClient):
         prompt = await async_client.api.get_prompt(name="Default", version=0)
         assert prompt is not None
-        
+
         original_key = async_client.api.api_key
         async_client.api.api_key = "invalid-api-key"
-        
+
         cached_prompt = await async_client.api.get_prompt(name="Default", version=0)
         assert cached_prompt is not None
         assert cached_prompt.id == prompt.id
-        
+
         async_client.api.api_key = original_key
 
     @pytest.mark.timeout(5)

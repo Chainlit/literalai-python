@@ -512,6 +512,7 @@ class StepContextManager:
             parent_id=self.parent_id,
             thread_id=self.thread_id,
             root_run_id=self.root_run_id,
+            **self.kwargs,
         )
 
     async def __aenter__(self):
