@@ -193,6 +193,8 @@ def get_langchain_callback():
             )
             model_keys = ["azure_deployment", "deployment_name", "model", "model_name"]
             model = next((settings[k] for k in model_keys if k in settings), None)
+            if isinstance(model, str):
+                model = model.replace("models/", "")
             tools = None
             if "functions" in settings:
                 tools = [

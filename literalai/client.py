@@ -9,6 +9,9 @@ from typing_extensions import deprecated
 
 from literalai.api import AsyncLiteralAPI, LiteralAPI
 from literalai.callback.langchain_callback import get_langchain_callback
+from literalai.callback.openai_agents_processor import (
+    get_openai_agents_tracing_processor,
+)
 from literalai.context import active_root_run_var, active_steps_var, active_thread_var
 from literalai.environment import EnvContextManager, env_decorator
 from literalai.evaluation.experiment_item_run import (
@@ -158,6 +161,16 @@ class BaseLiteralClient:
             self.to_sync(),
             to_ignore=to_ignore,
             to_keep=to_keep,
+            **kwargs,
+        )
+
+    def openai_agents_tracing_processor(
+        self,
+        **kwargs: Any,
+    ):
+        tracing_processor = get_openai_agents_tracing_processor()
+        return tracing_processor(
+            self.to_sync(),
             **kwargs,
         )
 

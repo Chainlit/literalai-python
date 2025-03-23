@@ -1,9 +1,11 @@
-from typing_extensions import TypedDict
-from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
-from llama_index.core.instrumentation.span import SimpleSpan
-from typing import Any, Dict, Optional
-from llama_index.core.query_engine import RetrieverQueryEngine
 import uuid
+from typing import Any, Dict, Optional
+
+from llama_index.core.instrumentation.span import SimpleSpan
+from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
+from llama_index.core.query_engine import RetrieverQueryEngine
+from typing_extensions import TypedDict
+
 from literalai.context import active_thread_var
 
 literalai_uuid_namespace = uuid.UUID("05f6b2b5-a912-47bd-958f-98a9c4496322")

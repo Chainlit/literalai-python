@@ -1,6 +1,7 @@
-from literalai import LiteralClient
-from llama_index.core import Document, VectorStoreIndex
 from dotenv import load_dotenv
+from llama_index.core import Document, VectorStoreIndex
+
+from literalai import LiteralClient
 
 load_dotenv()
 
@@ -14,7 +15,7 @@ query_engine = index.as_query_engine()
 questions = [
     "Tell me about LLMs",
     "How do you fine-tune a neural network ?",
-    "What is RAG ?"
+    "What is RAG ?",
 ]
 
 # No context, create a Thread (it will be named after the first user query)

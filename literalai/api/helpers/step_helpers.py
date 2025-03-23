@@ -1,10 +1,9 @@
 from typing import Any, Dict, List, Optional, Union
 
-from literalai.observability.filter import steps_filters, steps_order_by
-from literalai.my_types import PaginatedResponse
-from literalai.observability.step import Step, StepDict, StepType
-
 from literalai.api.helpers import gql
+from literalai.my_types import PaginatedResponse
+from literalai.observability.filter import steps_filters, steps_order_by
+from literalai.observability.step import Step, StepDict, StepType
 
 
 def create_step_helper(

@@ -1,13 +1,11 @@
-from enum import unique, Enum
-from typing import Optional, Union, List, Dict, Literal
+from enum import Enum, unique
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-
 from typing_extensions import TypedDict
 
-from literalai.my_types import TextContent, ImageUrlContent, Utils
-
+from literalai.my_types import ImageUrlContent, TextContent, Utils
 
 GenerationMessageRole = Literal["user", "assistant", "tool", "function", "system"]
 

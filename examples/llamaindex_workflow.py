@@ -1,12 +1,8 @@
 import asyncio
-from llama_index.core.workflow import (
-    Event,
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-)
+
+from llama_index.core.workflow import Event, StartEvent, StopEvent, Workflow, step
 from llama_index.llms.openai import OpenAI
+
 from literalai.client import LiteralClient
 
 lai_client = LiteralClient()
@@ -16,7 +12,8 @@ lai_client.initialize()
 class JokeEvent(Event):
     joke: str
 
-class RewriteJoke(Event): 
+
+class RewriteJoke(Event):
     joke: str
 
 

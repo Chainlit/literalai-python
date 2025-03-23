@@ -1,5 +1,5 @@
-from literalai.prompt_engineering.prompt import Prompt
 from literalai.cache.shared_cache import SharedCache
+from literalai.prompt_engineering.prompt import Prompt
 
 
 def put_prompt(cache: SharedCache, prompt: Prompt):
