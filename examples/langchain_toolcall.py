@@ -1,15 +1,12 @@
-from literalai import LiteralClient
-
-from langchain_openai import ChatOpenAI  # type: ignore
+from dotenv import load_dotenv
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain.agents.agent import BaseSingleActionAgent
 from langchain_community.tools.tavily_search import TavilySearchResults
-
-from langchain.agents import create_tool_calling_agent
-from langchain.agents import AgentExecutor
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables.config import RunnableConfig
-from langchain.agents.agent import BaseSingleActionAgent
+from langchain_openai import ChatOpenAI  # type: ignore
 
-from dotenv import load_dotenv
+from literalai import LiteralClient
 
 # Add OPENAI_API_KEY and TAVILY_API_KEY for this example.
 load_dotenv()

@@ -1,8 +1,7 @@
-from langchain.chat_models import init_chat_model
-from literalai import LiteralClient
-
-
 from dotenv import load_dotenv
+from langchain.chat_models import init_chat_model
+
+from literalai import LiteralClient
 
 load_dotenv()
 

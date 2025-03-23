@@ -2,10 +2,9 @@ import os
 import urllib.parse
 
 import pytest
+from dotenv import load_dotenv
 
 from literalai import LiteralClient
-
-from dotenv import load_dotenv
 
 load_dotenv()
 

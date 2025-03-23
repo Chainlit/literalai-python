@@ -1,17 +1,15 @@
 import logging
-from typing import TYPE_CHECKING, Optional, TypedDict, Callable
-
-from literalai.observability.generation import GenerationMessage
-from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
+from typing import TYPE_CHECKING, Callable, Optional, TypedDict
 
 from literalai.cache.prompt_helpers import put_prompt
+from literalai.observability.generation import GenerationMessage
+from literalai.prompt_engineering.prompt import Prompt, ProviderSettings
 
 if TYPE_CHECKING:
     from literalai.api import LiteralAPI
     from literalai.cache.shared_cache import SharedCache
 
 from literalai.api.helpers import gql
-
 
 logger = logging.getLogger(__name__)
 

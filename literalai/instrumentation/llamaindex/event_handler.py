@@ -1,47 +1,38 @@
-import uuid
 import logging
+import uuid
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.events import BaseEvent
-from pydantic import PrivateAttr
-
-from literalai.instrumentation.llamaindex.span_handler import LiteralSpanHandler
-from literalai.context import active_thread_var
-
 from llama_index.core.instrumentation.events.agent import (
-    AgentChatWithStepStartEvent,
     AgentChatWithStepEndEvent,
-    AgentRunStepStartEvent,
+    AgentChatWithStepStartEvent,
     AgentRunStepEndEvent,
+    AgentRunStepStartEvent,
 )
 from llama_index.core.instrumentation.events.embedding import (
-    EmbeddingStartEvent,
     EmbeddingEndEvent,
+    EmbeddingStartEvent,
 )
-
+from llama_index.core.instrumentation.events.llm import (
+    LLMChatEndEvent,
+    LLMChatStartEvent,
+)
 from llama_index.core.instrumentation.events.query import QueryEndEvent, QueryStartEvent
 from llama_index.core.instrumentation.events.retrieval import (
     RetrievalEndEvent,
     RetrievalStartEvent,
 )
-
-from llama_index.core.base.llms.types import MessageRole, ChatMessage
-from llama_index.core.base.response.schema import Response, StreamingResponse
-
-from llama_index.core.instrumentation.events.llm import (
-    LLMChatEndEvent,
-    LLMChatStartEvent,
-)
-
-from llama_index.core.instrumentation.events.synthesis import (
-    SynthesizeEndEvent,
-)
-
+from llama_index.core.instrumentation.events.synthesis import SynthesizeEndEvent
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
+from pydantic import PrivateAttr
 
+from literalai.context import active_thread_var
+from literalai.instrumentation.llamaindex.span_handler import LiteralSpanHandler
 from literalai.observability.generation import (
     ChatGeneration,
     GenerationMessage,

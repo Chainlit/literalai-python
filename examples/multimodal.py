@@ -1,12 +1,11 @@
 import base64
-import requests  # type: ignore
 import time
 
-from literalai import LiteralClient
+import requests  # type: ignore
+from dotenv import load_dotenv
 from openai import OpenAI
 
-from dotenv import load_dotenv
-
+from literalai import LiteralClient
 
 load_dotenv()
 

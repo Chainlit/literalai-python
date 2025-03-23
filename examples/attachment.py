@@ -32,7 +32,7 @@ async def main():
                 "url": "https://api.github.com/repos/chainlit/chainlit",
                 "mime": "application/json",
                 "metadata": {"test": "test"},
-            }
+            },
         )
 
         print(attachment.to_dict())

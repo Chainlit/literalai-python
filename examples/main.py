@@ -24,7 +24,7 @@ def get_completion(welcome_message, text):
             {
                 "role": "system",
                 "content": "Tell an inspiring quote to the user, mentioning their name. Be extremely supportive while "
-                           "keeping it short. Write one sentence per line.",
+                "keeping it short. Write one sentence per line.",
             },
             {
                 "role": "assistant",

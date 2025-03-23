@@ -1,11 +1,10 @@
 from typing import Any, Dict, List, Optional
 
-from literalai.observability.filter import threads_filters, threads_order_by
+from literalai.api.helpers import gql
 from literalai.my_types import PaginatedResponse
+from literalai.observability.filter import threads_filters, threads_order_by
 from literalai.observability.step import StepType
 from literalai.observability.thread import Thread
-
-from literalai.api.helpers import gql
 
 
 def get_threads_helper(

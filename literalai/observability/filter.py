@@ -1,6 +1,6 @@
-from typing_extensions import TypedDict
-
 from typing import Any, Generic, List, Literal, Optional, TypeVar, Union
+
+from typing_extensions import TypedDict
 
 Field = TypeVar("Field")
 Operators = TypeVar("Operators")

@@ -1,11 +1,10 @@
 import math
 from typing import Any, Dict, List, Optional, TypedDict
 
-from literalai.observability.filter import scores_filters, scores_order_by
-from literalai.my_types import PaginatedResponse
-from literalai.observability.step import ScoreType, ScoreDict, Score
-
 from literalai.api.helpers import gql
+from literalai.my_types import PaginatedResponse
+from literalai.observability.filter import scores_filters, scores_order_by
+from literalai.observability.step import Score, ScoreDict, ScoreType
 
 
 def get_scores_helper(
