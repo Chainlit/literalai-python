@@ -50,6 +50,7 @@ STEP_FIELDS = """
         attachments {
             id
             stepId
+            threadId
             metadata
             mime
             name
