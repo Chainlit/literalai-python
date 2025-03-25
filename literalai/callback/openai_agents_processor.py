@@ -143,7 +143,6 @@ def get_openai_agents_tracing_processor():
 
     def _extract_agent_span_data(span_data: AgentSpanData) -> Dict[str, Any]:
         """Extract data from an agent span."""
-        breakpoint()
         return {
             "inputs": force_dict(
                 ensure_values_serializable(getattr(span_data, "input", None))
