@@ -153,6 +153,8 @@ def get_langchain_callback():
                     tool_calls = []
                     content_parts = []
                     for item in message.content:
+                        if isinstance(item, str):
+                            continue
                         if item.get("type") == "tool_use":
                             tool_calls.append(
                                 {
