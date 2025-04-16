@@ -2,7 +2,7 @@ import io
 import json
 import os
 from contextlib import redirect_stdout
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from traceloop.sdk import Traceloop
 from typing_extensions import deprecated
@@ -29,6 +29,7 @@ from literalai.observability.step import (
     MessageStepType,
     Step,
     StepContextManager,
+    StepDict,
     TrueStepType,
     step_decorator,
 )
@@ -94,14 +95,54 @@ class BaseLiteralClient:
 
     def to_sync(self) -> "LiteralClient":
         if isinstance(self.api, AsyncLiteralAPI):
-            return LiteralClient(
+            sync_client = LiteralClient(
                 batch_size=self.event_processor.batch_size,
                 api_key=self.api.api_key,
                 url=self.api.url,
                 disabled=self.disabled,
             )
+            if self.event_processor.preprocess_steps_function:
+                sync_client.event_processor.set_preprocess_steps_function(
+                    self.event_processor.preprocess_steps_function
+                )
+
+            return sync_client
         else:
             return self  # type: ignore
+
+    def set_preprocess_steps_function(
+        self,
+        preprocess_steps_function: Optional[
+            Callable[[List["StepDict"]], List["StepDict"]]
+        ],
+    ) -> None:
+        """
+        Set a function that will preprocess steps before sending them to the API.
+        This can be used for tasks like PII removal or other data transformations.
+
+        The preprocess function should:
+        - Accept a list of StepDict objects as input
+        - Return a list of modified StepDict objects
+        - Be thread-safe as it will be called from a background thread
+        - Handle exceptions internally to avoid disrupting the event processing
+
+        Example:
+        ```python
+        def remove_pii(steps):
+            # Process steps to remove PII data
+            for step in steps:
+                if step.get("content"):
+                    step["content"] = my_pii_removal_function(step["content"])
+            return steps
+
+        client.set_preprocess_steps_function(remove_pii)
+        ```
+
+        Args:
+            preprocess_steps_function (Callable[[List["StepDict"]], List["StepDict"]]):
+                Function that takes a list of steps and returns a processed list
+        """
+        self.event_processor.set_preprocess_steps_function(preprocess_steps_function)
 
     @deprecated("Use Literal.initialize instead")
     def instrument_openai(self):

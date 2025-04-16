@@ -801,3 +801,97 @@ is a templated list."""
         persisted_run = staging_client.api.get_step(run_id)
         assert persisted_run is not None
         assert persisted_run.environment == "staging"
+
+    @pytest.mark.timeout(5)
+    async def test_pii_removal(
+        self, client: LiteralClient, async_client: AsyncLiteralClient
+    ):
+        """Test that PII is properly removed by the preprocess function."""
+        import re
+
+        # Define a PII removal function
+        def remove_pii(steps):
+            # Patterns for common PII
+            email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+            phone_pattern = r"\b(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b"
+            ssn_pattern = r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b"
+
+            for step in steps:
+                # Process content field if it exists
+                if "output" in step and step["output"]["content"]:
+                    # Replace emails with [EMAIL REDACTED]
+                    step["output"]["content"] = re.sub(
+                        email_pattern, "[EMAIL REDACTED]", step["output"]["content"]
+                    )
+
+                    # Replace phone numbers with [PHONE REDACTED]
+                    step["output"]["content"] = re.sub(
+                        phone_pattern, "[PHONE REDACTED]", step["output"]["content"]
+                    )
+
+                    # Replace SSNs with [SSN REDACTED]
+                    step["output"]["content"] = re.sub(
+                        ssn_pattern, "[SSN REDACTED]", step["output"]["content"]
+                    )
+
+            return steps
+
+        # Set the PII removal function on the client
+        client.set_preprocess_steps_function(remove_pii)
+
+        @client.thread
+        def thread_with_pii():
+            thread = client.get_current_thread()
+
+            # User message with PII
+            user_step = client.message(
+                content="My email is test@example.com and my phone is (123) 456-7890. My SSN is 123-45-6789.",
+                type="user_message",
+                metadata={"contact_info": "Call me at 987-654-3210"},
+            )
+            user_step_id = user_step.id
+
+            # Assistant message with PII reference
+            assistant_step = client.message(
+                content="I'll contact you at test@example.com", type="assistant_message"
+            )
+            assistant_step_id = assistant_step.id
+
+            return thread.id, user_step_id, assistant_step_id
+
+        # Run the thread
+        thread_id, user_step_id, assistant_step_id = thread_with_pii()
+
+        # Wait for processing to occur
+        client.flush()
+
+        # Fetch the steps and verify PII was removed
+        user_step = client.api.get_step(id=user_step_id)
+        assistant_step = client.api.get_step(id=assistant_step_id)
+
+        assert user_step
+        assert assistant_step
+
+        user_step_output = user_step.output["content"]  # type: ignore
+
+        # Check user message
+        assert "test@example.com" not in user_step_output
+        assert "(123) 456-7890" not in user_step_output
+        assert "123-45-6789" not in user_step_output
+        assert "[EMAIL REDACTED]" in user_step_output
+        assert "[PHONE REDACTED]" in user_step_output
+        assert "[SSN REDACTED]" in user_step_output
+
+        assistant_step_output = assistant_step.output["content"]  # type: ignore
+
+        # Check assistant message
+        assert "test@example.com" not in assistant_step_output
+        assert "[EMAIL REDACTED]" in assistant_step_output
+
+        # Clean up
+        client.api.delete_step(id=user_step_id)
+        client.api.delete_step(id=assistant_step_id)
+        client.api.delete_thread(id=thread_id)
+
+        # Reset the preprocess function to avoid affecting other tests
+        client.set_preprocess_steps_function(None)
