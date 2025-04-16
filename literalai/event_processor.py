@@ -4,7 +4,7 @@ import queue
 import threading
 import time
 import traceback
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Callable, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,15 @@ class EventProcessor:
     batch: List["StepDict"]
     batch_timeout: float = 5.0
 
-    def __init__(self, api: "LiteralAPI", batch_size: int = 1, disabled: bool = False):
+    def __init__(
+        self,
+        api: "LiteralAPI",
+        batch_size: int = 1,
+        disabled: bool = False,
+        preprocess_steps_function: Optional[
+            Callable[[List["StepDict"]], List["StepDict"]]
+        ] = None,
+    ):
         self.stop_event = threading.Event()
         self.batch_size = batch_size
         self.api = api
@@ -40,6 +48,7 @@ class EventProcessor:
         self.processing_counter = 0
         self.counter_lock = threading.Lock()
         self.last_batch_time = time.time()
+        self.preprocess_steps_function = preprocess_steps_function
         self.processing_thread = threading.Thread(
             target=self._process_events, daemon=True
         )
@@ -55,6 +64,22 @@ class EventProcessor:
         with self.counter_lock:
             self.processing_counter += 1
         await to_thread(self.event_queue.put, event)
+
+    def set_preprocess_steps_function(
+        self,
+        preprocess_steps_function: Optional[
+            Callable[[List["StepDict"]], List["StepDict"]]
+        ],
+    ):
+        """
+        Set a function that will preprocess steps before sending them to the API.
+        The function should take a list of StepDict objects and return a list of processed StepDict objects.
+        This can be used for tasks like PII removal.
+
+        Args:
+            preprocess_steps_function (Callable[[List["StepDict"]], List["StepDict"]]): The preprocessing function
+        """
+        self.preprocess_steps_function = preprocess_steps_function
 
     def _process_events(self):
         while True:
@@ -83,6 +108,24 @@ class EventProcessor:
 
     def _try_process_batch(self, batch: List):
         try:
+            # Apply preprocessing function if it exists
+            if self.preprocess_steps_function is not None:
+                try:
+                    processed_batch = self.preprocess_steps_function(batch)
+                    # Only use the processed batch if it's valid
+                    if processed_batch is not None and isinstance(
+                        processed_batch, list
+                    ):
+                        batch = processed_batch
+                    else:
+                        logger.warning(
+                            "Preprocess function returned invalid result, using original batch"
+                        )
+                except Exception as e:
+                    logger.error(f"Error in preprocess function: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    # Continue with the original batch
+
             return self.api.send_steps(batch)
         except Exception:
             logger.error(f"Failed to send steps: {traceback.format_exc()}")
