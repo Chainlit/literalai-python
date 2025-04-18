@@ -402,7 +402,7 @@ class Step(Utils):
         active_steps_var.set(new_steps)
 
     def end(self):
-        self.end_time = utc_now()
+        self.end_time = utc_now() if self.end_time is None else self.end_time
 
         # Update active steps
         active_steps = active_steps_var.get()
