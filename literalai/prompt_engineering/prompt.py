@@ -237,7 +237,7 @@ class Prompt(Utils):
                     except AttributeError:
                         for m in ChatPromptTemplate.from_messages(
                             [message]
-                        ).format_messages():
+                        ).format_messages(**kwargs):
                             rendered_messages.append(m)
                         continue
 
