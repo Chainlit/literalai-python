@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import BaseModel
 
@@ -35,10 +35,10 @@ def force_dict(data, default_key="content"):
 
 
 def utc_now():
-    dt = datetime.utcnow()
+    dt = datetime.now(timezone.utc).replace(tzinfo=None)
     return dt.isoformat() + "Z"
 
 
 def timestamp_utc(timestamp: float):
-    dt = datetime.utcfromtimestamp(timestamp)
+    dt = datetime.fromtimestamp(timestamp, timezone.utc).replace(tzinfo=None)
     return dt.isoformat() + "Z"
